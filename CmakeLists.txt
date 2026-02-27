@@ -1,0 +1,50 @@
+cmake_minimum_required(VERSION 3.14)
+project(RaylibGame CXX)
+
+# Set C++ standard
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(SOURCES
+    src/main.cpp
+    src/Location.cpp
+)
+
+# 1. Look for raylib installed via brew/system
+find_package(raylib QUIET)
+
+# 2. If not found, download it via FetchContent
+if (NOT raylib_FOUND)
+    message(STATUS "raylib not found locally → downloading v5.5 with FetchContent...")
+    
+    include(FetchContent)
+    
+    FetchContent_Declare(
+        raylib
+        URL https://github.com/raysan5/raylib/archive/refs/tags/5.5.tar.gz
+        # GIT_REPOSITORY https://github.com/raysan5/raylib.git
+        # GIT_TAG        5.5
+    )
+
+    FetchContent_MakeAvailable(raylib)
+endif()
+
+# 3. Create the executable (use ${PROJECT_NAME} so everything stays consistent)
+add_executable(${PROJECT_NAME} ${SOURCES})
+
+# 4. Include your own headers (src/ folder)
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+# 5. Link raylib
+target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
+
+# 6. macOS frameworks (required by raylib on Apple platforms)
+if (APPLE)
+    target_link_libraries(${PROJECT_NAME} PRIVATE
+        "-framework Cocoa"
+        "-framework OpenGL"
+        "-framework IOKit"
+        "-framework CoreVideo"
+    )
+endif()
+
