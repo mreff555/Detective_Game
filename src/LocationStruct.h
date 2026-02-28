@@ -2,18 +2,19 @@
 #define LOCATION_STRUCT_H
 
 #include <raylib.h>
+#include <string>
 namespace testgame
 {
 
 struct LocationStruct
 {
-    const Texture2D locationImage;
-    const char* locationDescription;
-    const Font descriptionFont;
-    const bool forward;
-    const bool backward;
-    const bool left;
-    const bool right;
+    Texture2D locationImage;
+    std::string locationDescription;
+    Font descriptionFont;
+    bool forward;
+    bool backward;
+    bool left;
+    bool right;
 };
 
 }

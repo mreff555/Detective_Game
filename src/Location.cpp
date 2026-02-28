@@ -23,39 +23,52 @@ namespace testgame
         UnloadTexture(locationImage);
     }
 
-    const Texture2D Location::getImage() const
+    Texture2D Location::getImage() const
     {
         return locationImage;
     }
-    const char* Location::getDescription() const
+    char* Location::getDescription() const
     {
-        return locationDescription;
+        return (char*)locationDescription.c_str();
     }
     const Font Location::getDescriptionFont() const
     {
         return descriptionFont;
     }
-    const bool Location::isForward() const
+    bool Location::isForward() const
     {
         return forward;
     }
-    const bool Location::isBackward() const
+    bool Location::isBackward() const
     {
         return backward;
     }
-    const bool Location::isLeft() const
+    bool Location::isLeft() const
     {
         return left;
     }
-    const bool Location::isRight() const
+    bool Location::isRight() const
     {
         return right;
     }
+    
     void Location::draw() const
     {
+        ClearBackground(BLACK);
         DrawTexture(locationImage, 0, 0, WHITE);
         DrawRectangleLinesEx(textBox, 4, GRAY);
-        DrawTextBoxed(locationDescription);
+        DrawTextBoxed(locationDescription.c_str());
+    }
+
+    void Location::update(const LocationStruct& locationStruct)
+    {
+        this->locationImage = locationStruct.locationImage;
+        this->locationDescription = locationStruct.locationDescription;
+        this->descriptionFont = locationStruct.descriptionFont;
+        this->forward = locationStruct.forward;
+        this->backward = locationStruct.backward;
+        this->left = locationStruct.left;
+        this->right = locationStruct.right;
     }
 
     void Location::DrawTextBoxed(const char *text) const

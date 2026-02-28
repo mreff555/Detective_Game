@@ -55,8 +55,6 @@ int main(void)
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-            ClearBackground(BLACK);
-
             location.draw();
 
         EndDrawing();
