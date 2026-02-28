@@ -2,20 +2,10 @@
 #define LOCATION_H
 
 #include <raylib.h>
+#include <LocationStruct.h>
 
 namespace testgame
 {
-
-struct LocationStruct
-{
-    const Texture2D locationImage;
-    const char* locationDescription;
-    const Font descriptionFont;
-    const bool forward;
-    const bool backward;
-    const bool left;
-    const bool right;
-};
 
 class Location
 {
