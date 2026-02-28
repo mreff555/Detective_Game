@@ -26,25 +26,37 @@ class Location
 
     const Texture2D getImage() const;
     const char* getDescription() const;
-    const Font getFont() const;
+    const Font getDescriptionFont() const;
     const bool isForward() const;
     const bool isBackward() const;
     const bool isLeft() const;
     const bool isRight() const;
 
     void draw() const;
+    void DrawTextBoxed(const char* text) const;
 
     private:
+    const int screenWidth;
+    const int screenHeight;
+    
     const Texture2D locationImage;
+
     const char* locationDescription;
     const Font descriptionFont;
+    const float fontSize = 20;
+    const bool wordWrap = true;
+    const int spacing = 2;
+    const Color textColor = DARKGRAY;
+    const int xOffset = 14;
+    const int yOffset = 14;
+
     const bool forward;
     const bool backward;
     const bool left;
     const bool right;
 
-    const int screenWidth;
-    const int screenHeight;
+    const Rectangle textBox;
+
     // TODO: class for observations and items
 };
 
