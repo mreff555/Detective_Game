@@ -7,13 +7,15 @@ namespace testgame
     : locationImage(locationStruct.locationImage),
       locationDescription(locationStruct.locationDescription),
       descriptionFont(locationStruct.descriptionFont),
-      forward(locationStruct.forward),
-      backward(locationStruct.backward),
-      left(locationStruct.left),
-      right(locationStruct.right),
+      forward(locationStruct.movementFilter.forward),
+      backward(locationStruct.movementFilter.backward),
+      left(locationStruct.movementFilter.left),
+      right(locationStruct.movementFilter.right),
       screenWidth((int)screenSize.x),
       screenHeight((int)screenSize.y),
-      textBox{screenWidth / 2.0f, 0, screenWidth / 2.0f, 800}
+      textBox{screenWidth / 2.0f, 0, screenWidth / 2.0f, screenHeight * 2.0f / 3.0f},
+      buttonBox{screenWidth / 2.0f, screenHeight * 2.0f / 3.0f, screenWidth / 2.0f, screenHeight / 3.0f},
+      buttonMgr(buttonBox, descriptionFont)
     {
         
     }
@@ -55,9 +57,17 @@ namespace testgame
     void Location::draw() const
     {
         ClearBackground(BLACK);
+
+        // Text Box
         DrawTexture(locationImage, 0, 0, WHITE);
         DrawRectangleLinesEx(textBox, 4, GRAY);
         DrawTextBoxed(locationDescription.c_str());
+
+        // Button Box
+        buttonMgr.draw();
+
+
+
     }
 
     void Location::update(const LocationStruct& locationStruct)
@@ -65,10 +75,10 @@ namespace testgame
         this->locationImage = locationStruct.locationImage;
         this->locationDescription = locationStruct.locationDescription;
         this->descriptionFont = locationStruct.descriptionFont;
-        this->forward = locationStruct.forward;
-        this->backward = locationStruct.backward;
-        this->left = locationStruct.left;
-        this->right = locationStruct.right;
+        this->forward = locationStruct.movementFilter.forward;
+        this->backward = locationStruct.movementFilter.backward;
+        this->left = locationStruct.movementFilter.left;
+        this->right = locationStruct.movementFilter.right;
     }
 
     void Location::DrawTextBoxed(const char *text) const

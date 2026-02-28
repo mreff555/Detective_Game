@@ -1,8 +1,9 @@
 #ifndef LOCATION_H
 #define LOCATION_H
 
-#include <raylib.h>
 #include <LocationStruct.h>
+#include <ButtonMgr.h>
+#include <raylib.h>
 #include <string>
 namespace testgame
 {
@@ -47,6 +48,8 @@ class Location
     const int yOffset = 14;
 
     const Rectangle textBox;
+    const Rectangle buttonBox;
+    ButtonMgr buttonMgr;
 
     // TODO: class for observations and items
 };

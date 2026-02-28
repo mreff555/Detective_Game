@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SOURCES
     src/main.cpp
     src/Location.cpp
+    src/Button.cpp
+    src/ButtonMgr.cpp
 )
 
 # 1. Look for raylib installed via brew/system
