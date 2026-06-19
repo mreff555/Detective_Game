@@ -76,7 +76,9 @@ namespace testgame
         float energyPercent = 20.0f;
         float tenacityPercent = 50.0f;
         float lucidityPercent = 30.0f;
-        bool mouseWasDownLastFrame = false;
+        int activePressButtonIndex = -1;
+        double activePressStartTime = 0.0;
+        bool activePressClickFired = false;
 
         Rectangle buttonBox;
         Rectangle healthBarBounds;
