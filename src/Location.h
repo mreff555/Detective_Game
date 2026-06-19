@@ -3,6 +3,7 @@
 
 #include <ConversationManager.h>
 #include <ConversationStruct.h>
+#include <InventoryMgr.h>
 #include <LocationStruct.h>
 #include <ButtonMgr.h>
 #include <RoomLoader.h>
@@ -63,8 +64,14 @@ class Location
     void trimNarrativeBuffer();
     void rebuildNarrativeLayout() const;
     void handleNarrativeScrollInput();
+    void handleInventoryExamineScrollInput();
+    void updateInventoryLayout();
     void drawNarrativeText() const;
     void drawNarrativeScrollbar() const;
+    void drawInventoryExamineView() const;
+    void drawInventoryExamineScrollbar() const;
+    Rectangle getDialogBounds() const;
+    Rectangle getInventoryPanelBounds() const;
     void appendNarrativeSection(const char* header, const std::string& details);
     void updateActionAvailability();
     bool tryApplyStatusDeltas(
@@ -133,9 +140,15 @@ class Location
 
     const Rectangle textBox;
     const Rectangle buttonBox;
+    const float fullDialogHeight;
     ButtonMgr buttonMgr;
+    InventoryMgr inventoryMgr;
 
     float narrativeScrollY = 0.0f;
+    float inventoryExamineScrollY = 0.0f;
+    mutable float inventoryExamineContentHeight = 0.0f;
+    bool inventoryExamineScrollbarDragging = false;
+    float inventoryExamineScrollbarDragOffsetY = 0.0f;
     mutable bool narrativeLayoutDirty = true;
     bool scrollbarDragging = false;
     float scrollbarDragOffsetY = 0.0f;

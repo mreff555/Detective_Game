@@ -49,10 +49,13 @@ namespace
       right(locationStruct.movementFilter.right),
       textBox{screenWidth / 2.0f, 0, screenWidth / 2.0f, screenHeight * 2.0f / 3.0f},
       buttonBox{screenWidth / 2.0f, screenHeight * 2.0f / 3.0f, screenWidth / 2.0f, screenHeight / 3.0f},
+      fullDialogHeight(screenHeight * 2.0f / 3.0f),
       buttonMgr(buttonBox, descriptionFont)
     {
+        inventoryMgr.setFont(descriptionFont);
         trimNarrativeBuffer();
         conversationMgr.onEnterRoom(currentRoomId, roomDatabase.getSpeakConfig(currentRoomId));
+        updateInventoryLayout();
         updateActionAvailability();
     }
 
@@ -104,14 +107,37 @@ namespace
         return (descriptionFont.baseSize + descriptionFont.baseSize / 2.0f) * scaleFactor;
     }
 
+    Rectangle Location::getDialogBounds() const
+    {
+        const float height = inventoryMgr.isOpen() ? fullDialogHeight * 0.5f : fullDialogHeight;
+        return { textBox.x, textBox.y, textBox.width, height };
+    }
+
+    Rectangle Location::getInventoryPanelBounds() const
+    {
+        const Rectangle dialog = getDialogBounds();
+        return {
+            textBox.x,
+            dialog.y + dialog.height,
+            textBox.width,
+            fullDialogHeight * 0.5f
+        };
+    }
+
+    void Location::updateInventoryLayout()
+    {
+        if (inventoryMgr.isOpen())
+            inventoryMgr.setPanelBounds(getInventoryPanelBounds());
+    }
+
     float Location::getNarrativeVisibleHeight() const
     {
-        return textBox.height - yOffset * 2.0f;
+        return getDialogBounds().height - yOffset * 2.0f;
     }
 
     float Location::getNarrativeWrapWidth() const
     {
-        return textBox.width - xOffset - kScrollbarWidth - 8.0f;
+        return getDialogBounds().width - xOffset - kScrollbarWidth - 8.0f;
     }
 
     void Location::trimNarrativeBuffer()
@@ -333,11 +359,12 @@ namespace
         if (!awaitingDialogChoice || narrativeChoiceHitAreas.empty())
             return;
 
+        const Rectangle dialog = getDialogBounds();
         const Rectangle textArea = {
-            textBox.x,
-            textBox.y,
-            textBox.width - kScrollbarWidth,
-            textBox.height
+            dialog.x,
+            dialog.y,
+            dialog.width - kScrollbarWidth,
+            dialog.height
         };
 
         const Vector2 mousePos = GetMousePosition();
@@ -402,32 +429,44 @@ namespace
     void Location::updateActionAvailability()
     {
         MovementStruct movement;
-        movement.up = up;
-        movement.down = down;
-        movement.forward = forward;
-        movement.backward = backward;
-        movement.left = left;
-        movement.right = right;
+        ActionStruct actions{};
 
-        if (currentRoomId == "saloon_interior" && !hasExaminedCurrentRoom)
+        if (inventoryMgr.isOpen())
         {
-            movement.up = false;
-            movement.right = false;
+            if (inventoryMgr.isExaminingItem())
+                movement.backward = true;
+            else if (inventoryMgr.canExamineSelectedItem())
+                actions.examine = true;
         }
-
-        ActionStruct actions = baseActionFilter;
-        const RoomSpeakConfig& speakConfig = roomDatabase.getSpeakConfig(currentRoomId);
-        if (speakConfig.hasPhases())
-            actions.speak = conversationMgr.canSpeak(speakConfig, baseActionFilter.speak);
-        else if (!speakDetails.empty())
-            actions.speak = !hasSpokenInCurrentRoom;
         else
-            actions.speak = false;
+        {
+            movement.up = up;
+            movement.down = down;
+            movement.forward = forward;
+            movement.backward = backward;
+            movement.left = left;
+            movement.right = right;
 
-        if (!useDetails.empty())
-            actions.use = hasExaminedCurrentRoom && !hasUsedInCurrentRoom;
-        else
-            actions.use = false;
+            if (currentRoomId == "saloon_interior" && !hasExaminedCurrentRoom)
+            {
+                movement.up = false;
+                movement.right = false;
+            }
+
+            actions = baseActionFilter;
+            const RoomSpeakConfig& speakConfig = roomDatabase.getSpeakConfig(currentRoomId);
+            if (speakConfig.hasPhases())
+                actions.speak = conversationMgr.canSpeak(speakConfig, baseActionFilter.speak);
+            else if (!speakDetails.empty())
+                actions.speak = !hasSpokenInCurrentRoom;
+            else
+                actions.speak = false;
+
+            if (!useDetails.empty())
+                actions.use = hasExaminedCurrentRoom && !hasUsedInCurrentRoom;
+            else
+                actions.use = false;
+        }
 
         buttonMgr.setAvailability(movement, actions);
         buttonMgr.setStatus(health, energy, tenacity, lucidity);
@@ -565,9 +604,10 @@ namespace
         const float maxScroll = std::max(0.0f, narrativeContentHeight - visibleHeight);
         const float lineHeight = getNarrativeLineHeight();
 
+        const Rectangle dialog = getDialogBounds();
         const Rectangle scrollTrack = {
-            textBox.x + textBox.width - kScrollbarWidth,
-            textBox.y + yOffset,
+            dialog.x + dialog.width - kScrollbarWidth,
+            dialog.y + yOffset,
             kScrollbarWidth,
             visibleHeight
         };
@@ -605,10 +645,10 @@ namespace
         }
 
         const Rectangle textScrollArea = {
-            textBox.x,
-            textBox.y,
-            textBox.width - kScrollbarWidth,
-            textBox.height
+            dialog.x,
+            dialog.y,
+            dialog.width - kScrollbarWidth,
+            dialog.height
         };
 
         if (CheckCollisionPointRec(mousePos, textScrollArea))
@@ -622,8 +662,49 @@ namespace
 
     void Location::update()
     {
-        handleNarrativeChoiceInput();
+        updateInventoryLayout();
+
+        if (!inventoryMgr.isExaminingItem())
+            handleNarrativeChoiceInput();
+
         buttonMgr.update();
+
+        if (buttonMgr.consumeInventoryButtonClick())
+        {
+            if (inventoryMgr.isOpen())
+                inventoryMgr.close();
+            else
+                inventoryMgr.open();
+
+            updateInventoryLayout();
+            updateActionAvailability();
+        }
+
+        if (inventoryMgr.isOpen())
+        {
+            inventoryMgr.update();
+
+            if (buttonMgr.consumeBackwardButtonClick() && inventoryMgr.isExaminingItem())
+            {
+                inventoryMgr.returnToItemList();
+                inventoryExamineScrollY = 0.0f;
+                updateActionAvailability();
+            }
+            else if (buttonMgr.consumeExamineButtonClick() && inventoryMgr.canExamineSelectedItem())
+            {
+                inventoryMgr.examineSelectedItem();
+                inventoryExamineScrollY = 0.0f;
+                updateActionAvailability();
+            }
+
+            if (inventoryMgr.isExaminingItem())
+                handleInventoryExamineScrollInput();
+            else
+                handleNarrativeScrollInput();
+
+            updateActionAvailability();
+            return;
+        }
 
         if (buttonMgr.consumeUpButtonClick())
             tryMove("up");
@@ -659,16 +740,210 @@ namespace
         handleNarrativeScrollInput();
     }
 
+    void Location::handleInventoryExamineScrollInput()
+    {
+        const Rectangle dialog = getDialogBounds();
+        const float visibleHeight = getNarrativeVisibleHeight();
+        const float maxScroll = std::max(0.0f, inventoryExamineContentHeight - visibleHeight);
+        const float lineHeight = getNarrativeLineHeight();
+
+        const Rectangle scrollTrack = {
+            dialog.x + dialog.width - kScrollbarWidth,
+            dialog.y + yOffset,
+            kScrollbarWidth,
+            visibleHeight
+        };
+
+        const float thumbHeight = (inventoryExamineContentHeight <= 0.0f)
+            ? visibleHeight
+            : std::max(24.0f, visibleHeight * (visibleHeight / inventoryExamineContentHeight));
+        const float thumbTravel = std::max(0.0f, visibleHeight - thumbHeight);
+        const float thumbY = scrollTrack.y + (maxScroll > 0.0f
+            ? (inventoryExamineScrollY / maxScroll) * thumbTravel
+            : 0.0f);
+
+        const Rectangle scrollThumb = {
+            scrollTrack.x + 2.0f,
+            thumbY,
+            scrollTrack.width - 4.0f,
+            thumbHeight
+        };
+        const Vector2 mousePos = GetMousePosition();
+
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        {
+            if (CheckCollisionPointRec(mousePos, scrollThumb))
+            {
+                inventoryExamineScrollbarDragging = true;
+                inventoryExamineScrollbarDragOffsetY = mousePos.y - scrollThumb.y;
+            }
+            else if (CheckCollisionPointRec(mousePos, scrollTrack) && thumbTravel > 0.0f)
+            {
+                inventoryExamineScrollY =
+                    ((mousePos.y - scrollTrack.y - thumbHeight * 0.5f) / thumbTravel) * maxScroll;
+            }
+        }
+
+        if (inventoryExamineScrollbarDragging)
+        {
+            if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && thumbTravel > 0.0f)
+            {
+                inventoryExamineScrollY =
+                    ((mousePos.y - scrollTrack.y - inventoryExamineScrollbarDragOffsetY) / thumbTravel) * maxScroll;
+            }
+            else
+            {
+                inventoryExamineScrollbarDragging = false;
+            }
+        }
+
+        const Rectangle textScrollArea = {
+            dialog.x,
+            dialog.y,
+            dialog.width - kScrollbarWidth,
+            dialog.height
+        };
+
+        if (CheckCollisionPointRec(mousePos, textScrollArea))
+            inventoryExamineScrollY -= GetMouseWheelMove() * lineHeight * 3.0f;
+
+        inventoryExamineScrollY = std::max(0.0f, std::min(inventoryExamineScrollY, maxScroll));
+    }
+
     void Location::draw() const
     {
         ClearBackground(BLACK);
 
         DrawTexture(locationImage, 0, 0, WHITE);
-        DrawRectangleLinesEx(textBox, 4, GRAY);
-        drawNarrativeText();
-        drawNarrativeScrollbar();
+
+        const Rectangle dialog = getDialogBounds();
+        DrawRectangleLinesEx(dialog, 4, GRAY);
+
+        if (inventoryMgr.isOpen() && inventoryMgr.isExaminingItem())
+        {
+            drawInventoryExamineView();
+            drawInventoryExamineScrollbar();
+        }
+        else
+        {
+            drawNarrativeText();
+            drawNarrativeScrollbar();
+        }
+
+        if (inventoryMgr.isOpen())
+            inventoryMgr.draw();
 
         buttonMgr.draw();
+    }
+
+    void Location::drawInventoryExamineScrollbar() const
+    {
+        const Rectangle dialog = getDialogBounds();
+        const float visibleHeight = getNarrativeVisibleHeight();
+        const float maxScroll = std::max(0.0f, inventoryExamineContentHeight - visibleHeight);
+
+        const Rectangle scrollTrack = {
+            dialog.x + dialog.width - kScrollbarWidth,
+            dialog.y + yOffset,
+            kScrollbarWidth,
+            visibleHeight
+        };
+
+        DrawRectangleRec(scrollTrack, kScrollTrack);
+
+        if (maxScroll <= 0.0f)
+            return;
+
+        const float thumbHeight = std::max(24.0f, visibleHeight * (visibleHeight / inventoryExamineContentHeight));
+        const float thumbTravel = std::max(0.0f, visibleHeight - thumbHeight);
+        const float thumbY = scrollTrack.y + (inventoryExamineScrollY / maxScroll) * thumbTravel;
+
+        const Rectangle scrollThumb = {
+            scrollTrack.x + 2.0f,
+            thumbY,
+            scrollTrack.width - 4.0f,
+            thumbHeight
+        };
+
+        const bool thumbHovered = CheckCollisionPointRec(GetMousePosition(), scrollThumb);
+        DrawRectangleRounded(scrollThumb, 0.4f, 6, thumbHovered ? kScrollThumbHover : kScrollThumb);
+    }
+
+    void Location::drawInventoryExamineView() const
+    {
+        const InventoryItem* item = inventoryMgr.getSelectedItem();
+        if (!item)
+            return;
+
+        const Rectangle dialog = getDialogBounds();
+        const Rectangle clipArea = {
+            dialog.x,
+            dialog.y,
+            dialog.width - kScrollbarWidth,
+            dialog.height
+        };
+
+        BeginScissorMode(
+            (int)clipArea.x,
+            (int)clipArea.y,
+            (int)clipArea.width,
+            (int)clipArea.height);
+
+        float contentY = 0.0f;
+        const float lineHeight = getNarrativeLineHeight();
+
+        const char* header = "Examining:";
+        DrawTextEx(
+            boldFont,
+            header,
+            { dialog.x + xOffset, dialog.y + yOffset + contentY - inventoryExamineScrollY },
+            fontSize,
+            spacing,
+            textColor);
+        contentY += lineHeight * 1.2f;
+
+        if (item->examineImage.id != 0)
+        {
+            const float imageWidth = dialog.width - xOffset * 2.0f - 8.0f;
+            const float imageHeight = imageWidth * 0.58f;
+            const Rectangle imageFrame = {
+                dialog.x + xOffset,
+                dialog.y + yOffset + contentY - inventoryExamineScrollY,
+                imageWidth,
+                imageHeight
+            };
+
+            DrawRectangleRounded(imageFrame, 0.06f, 8, {24, 22, 30, 255});
+            DrawRectangleRoundedLines(imageFrame, 0.06f, 8, 2.0f, {168, 138, 72, 255});
+
+            const float imagePad = 12.0f;
+            DrawTexturePro(
+                item->examineImage,
+                { 0.0f, 0.0f, (float)item->examineImage.width, (float)item->examineImage.height },
+                {
+                    imageFrame.x + imagePad,
+                    imageFrame.y + imagePad,
+                    imageFrame.width - imagePad * 2.0f,
+                    imageFrame.height - imagePad * 2.0f
+                },
+                { 0.0f, 0.0f },
+                0.0f,
+                WHITE);
+
+            contentY += imageHeight + lineHeight * 0.8f;
+        }
+
+        layoutWrappedParagraph(
+            item->examineText.c_str(),
+            descriptionFont,
+            fontSize,
+            contentY,
+            true,
+            inventoryExamineScrollY,
+            textColor);
+
+        inventoryExamineContentHeight = contentY;
+        EndScissorMode();
     }
 
     void Location::drawNarrativeScrollbar() const
@@ -676,12 +951,13 @@ namespace
         if (narrativeLayoutDirty)
             rebuildNarrativeLayout();
 
+        const Rectangle dialog = getDialogBounds();
         const float visibleHeight = getNarrativeVisibleHeight();
         const float maxScroll = std::max(0.0f, narrativeContentHeight - visibleHeight);
 
         const Rectangle scrollTrack = {
-            textBox.x + textBox.width - kScrollbarWidth,
-            textBox.y + yOffset,
+            dialog.x + dialog.width - kScrollbarWidth,
+            dialog.y + yOffset,
             kScrollbarWidth,
             visibleHeight
         };
@@ -713,11 +989,12 @@ namespace
 
         narrativeChoiceHitAreas.clear();
 
+        const Rectangle dialog = getDialogBounds();
         const Rectangle clipArea = {
-            textBox.x,
-            textBox.y,
-            textBox.width - kScrollbarWidth,
-            textBox.height
+            dialog.x,
+            dialog.y,
+            dialog.width - kScrollbarWidth,
+            dialog.height
         };
 
         BeginScissorMode(
@@ -748,11 +1025,11 @@ namespace
                     if (line != choice.lineText)
                         continue;
 
-                    const float drawY = textBox.y + yOffset + textOffsetY - narrativeScrollY;
+                    const float drawY = dialog.y + yOffset + textOffsetY - narrativeScrollY;
                     const Vector2 textSize = MeasureTextEx(lineFont, line.c_str(), fontSize, spacing);
                     narrativeChoiceHitAreas.push_back({
                         choice.id,
-                        { textBox.x + xOffset, drawY, textSize.x, getNarrativeLineHeight() }
+                        { dialog.x + xOffset, drawY, textSize.x, getNarrativeLineHeight() }
                     });
                     break;
                 }
@@ -773,6 +1050,7 @@ namespace
         float lineHeight = (font.baseSize + font.baseSize / 2.0f) * scaleFactor;
         const float wrapWidth = getNarrativeWrapWidth();
         const float visibleHeight = getNarrativeVisibleHeight();
+        const Rectangle dialog = getDialogBounds();
 
         enum { MEASURE_STATE = 0, DRAW_STATE = 1 };
         int state = wordWrap ? MEASURE_STATE : DRAW_STATE;
@@ -848,7 +1126,7 @@ namespace
                         textOffsetX = 0;
                     }
 
-                    const float drawY = textBox.y + yOffset + textOffsetY - scrollY;
+                    const float drawY = dialog.y + yOffset + textOffsetY - scrollY;
                     const bool visible = (textOffsetY + lineHeight > scrollY) &&
                                          (textOffsetY < scrollY + visibleHeight);
 
@@ -857,7 +1135,7 @@ namespace
                         DrawTextCodepoint(
                             font,
                             codepoint,
-                            (Vector2){ textBox.x + xOffset + textOffsetX, drawY },
+                            (Vector2){ dialog.x + xOffset + textOffsetX, drawY },
                             paragraphFontSize,
                             lineColor);
                     }

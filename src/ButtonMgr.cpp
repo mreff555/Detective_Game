@@ -254,6 +254,7 @@ void ButtonMgr::registerButtonClick(int buttonIndex)
         case 6: examineButtonClicked = true; break;
         case 7: speakButtonClicked = true; break;
         case 9: useButtonClicked = true; break;
+        case 12: inventoryButtonClicked = true; break;
         default: break;
     }
 }
@@ -284,6 +285,7 @@ void ButtonMgr::update()
     examineButtonClicked = false;
     speakButtonClicked = false;
     useButtonClicked = false;
+    inventoryButtonClicked = false;
 
     Vector2 mousePos = GetMousePosition();
     const bool mouseDown = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
@@ -381,6 +383,13 @@ bool ButtonMgr::consumeRightButtonClick()
 {
     const bool clicked = rightButtonClicked;
     rightButtonClicked = false;
+    return clicked;
+}
+
+bool ButtonMgr::consumeInventoryButtonClick()
+{
+    const bool clicked = inventoryButtonClicked;
+    inventoryButtonClicked = false;
     return clicked;
 }
 

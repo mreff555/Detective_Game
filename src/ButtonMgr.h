@@ -38,6 +38,7 @@ namespace testgame
         bool consumeRightButtonClick();
         bool isSpeakButtonPressed() const { return speakButtonPressed; }
         bool isInventoryButtonPressed() const { return inventoryButtonPressed; }
+        bool consumeInventoryButtonClick();
         bool isHitButtonPressed() const { return hitButtonPressed; }
         bool isUseButtonPressed() const { return useButtonPressed; }
 
@@ -59,6 +60,7 @@ namespace testgame
         bool examineButtonClicked = false;
         bool speakButtonClicked = false;
         bool useButtonClicked = false;
+        bool inventoryButtonClicked = false;
         bool upButtonClicked = false;
         bool downButtonClicked = false;
         bool forwardButtonClicked = false;
