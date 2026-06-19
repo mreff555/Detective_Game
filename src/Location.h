@@ -60,6 +60,8 @@ class Location
     std::string narrativeText;
     std::string examineDetails;
     std::string useDetails;
+    float useHealthDelta = 0.0f;
+    float useEnergyDelta = 0.0f;
     Font descriptionFont;
     Font boldFont;
     ActionStruct baseActionFilter;

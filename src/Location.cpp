@@ -25,6 +25,8 @@ namespace
       narrativeText(locationStruct.locationDescription),
       examineDetails(locationStruct.examineDetails),
       useDetails(locationStruct.useDetails),
+      useHealthDelta(locationStruct.useHealthDelta),
+      useEnergyDelta(locationStruct.useEnergyDelta),
       baseActionFilter(locationStruct.actionFilter),
       descriptionFont(locationStruct.descriptionFont),
       boldFont(locationStruct.boldFont),
@@ -150,7 +152,8 @@ namespace
             return;
 
         appendNarrativeSection("Using:", useDetails);
-        energy = std::min(100.0f, energy + 30.0f);
+        health = std::min(100.0f, health + useHealthDelta);
+        energy = std::min(100.0f, energy + useEnergyDelta);
         hasUsedInCurrentRoom = true;
         updateActionAvailability();
     }
@@ -210,6 +213,8 @@ namespace
         narrativeText = locationStruct.locationDescription;
         examineDetails = locationStruct.examineDetails;
         useDetails = locationStruct.useDetails;
+        useHealthDelta = locationStruct.useHealthDelta;
+        useEnergyDelta = locationStruct.useEnergyDelta;
         baseActionFilter = locationStruct.actionFilter;
         descriptionFont = locationStruct.descriptionFont;
         boldFont = locationStruct.boldFont;
