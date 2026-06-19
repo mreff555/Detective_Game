@@ -22,6 +22,7 @@ struct LocationStruct
     bool useRepeatStatus = false;
     Font descriptionFont;
     Font boldFont;
+    Font uiFont;
     MovementStruct movementFilter;
     ActionStruct actionFilter;
 };

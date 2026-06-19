@@ -51,6 +51,7 @@ class RoomDatabase
     std::map<std::string, RoomData> rooms;
     Font descriptionFont;
     Font boldFont;
+    Font uiFont;
     bool fontsLoaded;
     std::string assetRoot;
     mutable Texture2D underConstructionTexture{};
