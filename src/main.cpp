@@ -16,7 +16,10 @@ int main(void)
     InitWindow(screenSize.x, screenSize.y, "raylib test game");
 
     RoomDatabase roomDatabase;
-    if (!roomDatabase.load("../resources/rooms.json", ".."))
+    const bool roomsLoaded =
+        roomDatabase.load("../resources/rooms.json", "..") ||
+        roomDatabase.load("resources/rooms.json", ".");
+    if (!roomsLoaded)
     {
         TraceLog(LOG_ERROR, "Failed to load rooms from resources/rooms.json");
         CloseWindow();
