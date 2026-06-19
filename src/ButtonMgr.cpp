@@ -209,6 +209,7 @@ void ButtonMgr::registerButtonClick(int buttonIndex)
         case 2: rightButtonClicked = true; break;
         case 3: backwardButtonClicked = true; break;
         case 4: examineButtonClicked = true; break;
+        case 5: speakButtonClicked = true; break;
         case 7: useButtonClicked = true; break;
         default: break;
     }
@@ -234,6 +235,7 @@ void ButtonMgr::update()
     leftButtonClicked = false;
     rightButtonClicked = false;
     examineButtonClicked = false;
+    speakButtonClicked = false;
     useButtonClicked = false;
 
     Vector2 mousePos = GetMousePosition();
@@ -276,6 +278,13 @@ bool ButtonMgr::consumeExamineButtonClick()
 {
     const bool clicked = examineButtonClicked;
     examineButtonClicked = false;
+    return clicked;
+}
+
+bool ButtonMgr::consumeSpeakButtonClick()
+{
+    const bool clicked = speakButtonClicked;
+    speakButtonClicked = false;
     return clicked;
 }
 

@@ -24,6 +24,7 @@ namespace
       baseDescription(locationStruct.locationDescription),
       narrativeText(locationStruct.locationDescription),
       examineDetails(locationStruct.examineDetails),
+      speakDetails(locationStruct.speakDetails),
       useDetails(locationStruct.useDetails),
       useHealthDelta(locationStruct.useHealthDelta),
       useEnergyDelta(locationStruct.useEnergyDelta),
@@ -120,7 +121,7 @@ namespace
 
     bool Location::isBoldNarrativeHeader(const std::string& line) const
     {
-        return line == "Examining:" || line == "Using:";
+        return line == "Examining:" || line == "Speaking:" || line == "Using:";
     }
 
     void Location::appendNarrativeSection(const char* header, const std::string& details)
@@ -146,6 +147,16 @@ namespace
         updateActionAvailability();
     }
 
+    void Location::appendSpeakDetails()
+    {
+        if (speakDetails.empty() || hasSpokenInCurrentRoom)
+            return;
+
+        appendNarrativeSection("Speaking:", speakDetails);
+        hasSpokenInCurrentRoom = true;
+        updateActionAvailability();
+    }
+
     void Location::appendUseDetails()
     {
         if (useDetails.empty() || hasUsedInCurrentRoom)
@@ -167,6 +178,11 @@ namespace
         movement.right = right;
 
         ActionStruct actions = baseActionFilter;
+        if (!speakDetails.empty())
+            actions.speak = !hasSpokenInCurrentRoom;
+        else
+            actions.speak = false;
+
         if (!useDetails.empty())
             actions.use = hasExaminedCurrentRoom && !hasUsedInCurrentRoom;
         else
@@ -212,6 +228,7 @@ namespace
         baseDescription = locationStruct.locationDescription;
         narrativeText = locationStruct.locationDescription;
         examineDetails = locationStruct.examineDetails;
+        speakDetails = locationStruct.speakDetails;
         useDetails = locationStruct.useDetails;
         useHealthDelta = locationStruct.useHealthDelta;
         useEnergyDelta = locationStruct.useEnergyDelta;
@@ -223,6 +240,7 @@ namespace
         left = locationStruct.movementFilter.left;
         right = locationStruct.movementFilter.right;
         hasExaminedCurrentRoom = false;
+        hasSpokenInCurrentRoom = false;
         hasUsedInCurrentRoom = false;
         narrativeScrollY = 0.0f;
         narrativeLayoutDirty = true;
@@ -334,6 +352,12 @@ namespace
         if (buttonMgr.consumeExamineButtonClick())
         {
             appendExamineDetails();
+            scrollNarrativeToBottom();
+        }
+
+        if (buttonMgr.consumeSpeakButtonClick())
+        {
+            appendSpeakDetails();
             scrollNarrativeToBottom();
         }
 

@@ -26,6 +26,7 @@ namespace testgame
         bool isRightButtonPressed() const { return rightButtonPressed; }
         bool isExamineButtonPressed() const { return examineButtonPressed; }
         bool consumeExamineButtonClick();
+        bool consumeSpeakButtonClick();
         bool consumeUseButtonClick();
         bool consumeForwardButtonClick();
         bool consumeBackwardButtonClick();
@@ -50,6 +51,7 @@ namespace testgame
         bool rightButtonPressed = false;
         bool examineButtonPressed = false;
         bool examineButtonClicked = false;
+        bool speakButtonClicked = false;
         bool useButtonClicked = false;
         bool forwardButtonClicked = false;
         bool backwardButtonClicked = false;

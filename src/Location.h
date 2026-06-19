@@ -27,6 +27,7 @@ class Location
     void update();
     void draw() const;
     void appendExamineDetails();
+    void appendSpeakDetails();
     void appendUseDetails();
 
     private:
@@ -59,6 +60,7 @@ class Location
     std::string baseDescription;
     std::string narrativeText;
     std::string examineDetails;
+    std::string speakDetails;
     std::string useDetails;
     float useHealthDelta = 0.0f;
     float useEnergyDelta = 0.0f;
@@ -71,6 +73,7 @@ class Location
     bool left;
     bool right;
     bool hasExaminedCurrentRoom = false;
+    bool hasSpokenInCurrentRoom = false;
     bool hasUsedInCurrentRoom = false;
 
     float health = 90.0f;
