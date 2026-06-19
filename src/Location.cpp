@@ -146,4 +146,4 @@ namespace
             WHITE);
     }
 
-__LOCATION_CPP_PART2__
+PLACEHOLDER_PART2
