@@ -168,16 +168,33 @@ void ButtonMgr::setAvailability(const MovementStruct& movement, const ActionStru
     buttons[8].setEnabled(true);
 }
 
+namespace
+{
+    bool isPointInClickableBounds(Vector2 point, Rectangle bounds, float padding)
+    {
+        const Rectangle expanded = {
+            bounds.x - padding,
+            bounds.y - padding,
+            bounds.width + padding * 2.0f,
+            bounds.height + padding * 2.0f
+        };
+        return CheckCollisionPointRec(point, expanded);
+    }
+}
+
 int ButtonMgr::findEnabledButtonUnderMouse(Vector2 mousePos) const
 {
+    const float clickPadding = 3.0f;
     const int movementAndActionCount = 8;
     for (int i = 0; i < movementAndActionCount; ++i)
     {
-        if (buttons[i].isEnabled() && CheckCollisionPointRec(mousePos, buttons[i].getBounds()))
+        if (buttons[i].isEnabled() &&
+            isPointInClickableBounds(mousePos, buttons[i].getBounds(), clickPadding))
             return i;
     }
 
-    if (buttons[8].isEnabled() && CheckCollisionPointRec(mousePos, buttons[8].getBounds()))
+    if (buttons[8].isEnabled() &&
+        isPointInClickableBounds(mousePos, buttons[8].getBounds(), clickPadding))
         return 8;
 
     return -1;

@@ -48,20 +48,20 @@
       },
       "exits": {
         "backward": "cabin",
-        "forward": "cabin_exterior"
+        "forward": "mountain_road"
       }
     },
-    "cabin_exterior": {
+    "mountain_road": {
       "start": false,
-      "image": "resources/cabin_exterior.png",
-      "description": "You step out into the mountain air. A rough-hewn log cabin sits beneath dark pines, smoke curling from its chimney into a slate-gray sky. A narrow dirt path winds away through the trees.",
-      "examineDetails": "The cabin's exterior is built from thick, weathered logs darkened by years of mountain rain. The front door you just closed is reinforced with iron straps and a heavy latch. Frost still clings to the shaded north wall. Pine needles carpet the ground around the stoop, and boot prints — yours and older ones — mark the path leading into the woods. No other buildings are visible from here.",
+      "image": "resources/mountain_road.png",
+      "description": "You step out onto a narrow dirt road cut along the flank of a mountain. Rough-hewn cabins line both sides — some with curtains drawn and firewood stacked neatly by the door, others with hand-painted signs and goods displayed in front windows. The air is thin and cold and carries the scent of pine resin and woodsmoke. Beyond the row of buildings the road falls away toward a sheer overlook, and there the world opens into impossible depth: clouds tower below you, slow and white as tides, parting here and there to reveal a small city far beneath — a grid of streets and rooftops swimming in silver mist — and beyond it, a dark mantle of forest spreading across the lower slopes. You are very high. High enough that the sky feels close and the earth feels far away.",
+      "examineDetails": "You work methodically, the way detectives do when the scene is too large to trust at a glance. Start with the ground. The road is packed clay and coarse gravel mixed with crushed granite — alpine construction, drained by shallow ditches cut along the shoulders to carry snowmelt. Wildflowers cling to the embankment in stubborn clumps: alpine asters with violet petals, yellow arnica, and low mats of moss campion growing from cracks in the stone. The flora is subalpine to alpine transition zone — you are above the dense timberline but not yet in bare rock. That pins the elevation somewhere between nine and eleven thousand feet, perhaps higher.\n\nThe cabins tell a second story. To your left, smoke rises from a stone chimney and a wool blanket hangs airing on a porch rail — a residence. Next door, a hand-carved sign shows a crossed hammer and awl; through the window you see leather goods and metal fittings laid out on a counter — a smith or harness maker's shop. Across the road, warm lamplight bleeds through calico curtains, while farther down a wider frontage displays jars and bundled herbs on a trestle table — apothecary or general store. This is not an abandoned outpost. People live and trade here, high above the world.\n\nYou turn to the view and read the town below the way you would read a map at night. The city is small — perhaps twenty thousand souls at most — laid out in a neat grid with a central square whose lamps burn steady and yellow. A clock tower catches what little sun remains, its face just visible through the cloud deck. Rail yards glint along the eastern edge: freight cars parked in parallel lines, a roundhouse dome barely clearing the fog. To the south, a river bends cold and metallic between factory roofs and warehouse walls. The lights are not random — main thoroughfares burn brighter, residential blocks softer, the industrial quarter a low amber smear along the water. Whoever built this city expected commerce, not merely shelter.\n\nThe clouds themselves are orographic — piled against the leeward face of the range, pouring over the ridge like a slow waterfall and breaking apart as they descend. You are on the windward upper slope, standing on a mountain road above an inversion layer, looking down on a valley city wrapped in forest. The combination is rare but not impossible: a high-elevation settlement road servicing cabins and shops, overlooking a mill town or rail hub in the valley below.\n\nYou still cannot name the place. Your memory offers nothing — no signpost, no familiar peak profile, no voice to confirm what your eyes assemble. But you are somewhere in serious mountains, above a working city, on a road that expects travelers. The lights in the valley are coming on, one by one, as the afternoon fails. Whatever this town is, it is waking up beneath the clouds.",
       "useDetails": "",
       "movement": {
         "forward": false,
         "backward": true,
         "left": false,
-        "right": false
+        "right": true
       },
       "actions": {
         "examine": true,

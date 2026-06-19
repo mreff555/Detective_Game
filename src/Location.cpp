@@ -321,7 +321,6 @@ namespace
     void Location::update()
     {
         buttonMgr.update();
-        handleNarrativeScrollInput();
 
         if (buttonMgr.consumeForwardButtonClick())
             tryMove("forward");
@@ -343,6 +342,8 @@ namespace
             appendUseDetails();
             scrollNarrativeToBottom();
         }
+
+        handleNarrativeScrollInput();
     }
 
     void Location::draw() const
