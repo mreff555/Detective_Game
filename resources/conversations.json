@@ -97,10 +97,37 @@
   "saloon_balcony": {
     "speakPhases": [
       {
+        "id": "blue_woman",
+        "type": "scripted",
+        "resetOnRoomEnter": true,
+        "intro": "The woman in blue does not startle when you approach. She finishes her thought with the two at the rail, lets them laugh without her, and turns as though you were expected.\n\nShe takes a slow drag from her cigarette, exhales through the side of her mouth, and studies you with that same focused calm.\n\n\"You disappeared this morning,\" she says. Not accusation. Inventory.",
+        "choices": [
+          {
+            "id": "stay_last_night",
+            "label": "> Did I stay with you last night?",
+            "response": "Her smile returns for half a heartbeat, then goes still.\n\n\"You stayed,\" she says. \"You always do, until you don't.\" She taps ash into the rail groove with a neat flick of her wrist. \"You asked questions in your sleep. The same ones. Where you are. Who brought you. Whether the fog was weather.\" She holds your gaze without blinking. \"I answered none of them. I am not sure you heard me when you woke either.\"\n\nBelow, the piano stumbles and recovers. The two women at the rail glance back once, decide you are not their business, and return to their gossip.",
+            "status": {
+              "key": "saloon_balcony:stay_last_night",
+              "lucidity": -5
+            }
+          },
+          {
+            "id": "ignore_comment",
+            "label": "> Ignore the comment",
+            "response": "You let the words hang and look out over the room instead. Patrons, cards, smoke, the machinery of appetite running on schedule.\n\n\"Suit yourself,\" she says, voice mild. Not offended. Accustomed. She takes another drag and watches the main floor the way the other women do, as though you have chosen a role she already priced.\n\nAfter a moment she adds, quietly, \"You will ask eventually. You always do.\"",
+            "status": {
+              "key": "saloon_balcony:ignore_comment",
+              "tenacity": 5
+            }
+          }
+        ]
+      },
+      {
         "id": "burgundy_path",
         "type": "once",
+        "requiresPhase": "blue_woman",
         "requiresFlag": "path_c:hanging_tree",
-        "text": "The woman in burgundy silk finds you at the rail before you can decide whether to speak. She does not flirt. She inventories.\n\n\"You went up the path,\" she says. It is not a question. \"You always do, and you always come back with that look - like the mountain showed you a face you refused to wear.\"\n\nHer voice drops beneath the piano.\n\n\"They hung the wrong man. He was still breathing when they cut him down.\" She holds your gaze without blinking. \"He still is.\"\n\nThen the room reclaims her. She leans over the rail and laughs for a patron below as though nothing happened, leaving you with the words like a splinter under the nail."
+        "text": "The woman in blue listens while you tell her about the hanging tree marker, the charcoal ring, the stakes, the silk in the ice house. She does not interrupt.\n\nWhen you finish, she nods once, as though a column in her ledger has finally balanced.\n\n\"You went up the path,\" she says. It is not a question. \"You always do, and you always come back with that look - like the mountain showed you a face you refused to wear.\"\n\nHer voice drops beneath the piano.\n\n\"They hung the wrong man. He was still breathing when they cut him down.\" She holds your gaze without blinking. \"He still is.\"\n\nThen the room reclaims her. She leans over the rail and laughs for a patron below as though nothing happened, leaving you with the words like a splinter under the nail."
       }
     ]
   }
