@@ -62,14 +62,18 @@ namespace
       buttonMgr(buttonBox, locationStruct.uiFont)
     {
         inventoryMgr.setFont(locationStruct.uiFont);
+        takeMgr.setFont(locationStruct.uiFont);
         const std::string& assetRoot = sceneDatabase.getAssetRoot();
         const std::string fallbackRoot = (assetRoot == ".") ? ".." : ".";
         inventoryMgr.setAssetRoots(assetRoot, fallbackRoot);
+        takeMgr.setAssetRoots(assetRoot, fallbackRoot);
         if (!inventoryMgr.ensureAssetsLoaded())
             TraceLog(LOG_WARNING, "Some inventory images failed to load at startup");
         trimNarrativeBuffer();
         conversationMgr.onEnterScene(currentSceneId, sceneDatabase.getSpeakConfig(currentSceneId));
+        refreshTakeables();
         updateInventoryLayout();
+        updateTakeLayout();
         updateActionAvailability();
     }
 
@@ -363,7 +367,8 @@ namespace
 
     Rectangle Location::getDialogBounds() const
     {
-        const float height = inventoryMgr.isOpen() ? fullDialogHeight * 0.5f : fullDialogHeight;
+        const bool panelOpen = inventoryMgr.isOpen() || takeMgr.isOpen();
+        const float height = panelOpen ? fullDialogHeight * 0.5f : fullDialogHeight;
         return { textBox.x, textBox.y, textBox.width, height };
     }
 
@@ -378,10 +383,107 @@ namespace
         };
     }
 
+    Rectangle Location::getTakePanelBounds() const
+    {
+        return getInventoryPanelBounds();
+    }
+
     void Location::updateInventoryLayout()
     {
         if (inventoryMgr.isOpen())
             inventoryMgr.setPanelBounds(getInventoryPanelBounds());
+    }
+
+    void Location::updateTakeLayout()
+    {
+        if (takeMgr.isOpen())
+            takeMgr.setPanelBounds(getTakePanelBounds());
+    }
+
+    const TakeableItem* Location::findTakeableDefinition(const std::string& itemId) const
+    {
+        const std::vector<TakeableItem>& takeables = sceneDatabase.getTakeables(currentSceneId);
+        for (const TakeableItem& item : takeables)
+        {
+            if (item.id == itemId)
+                return &item;
+        }
+        return nullptr;
+    }
+
+    void Location::refreshTakeables()
+    {
+        std::vector<TakeableItem> available;
+        const std::vector<TakeableItem>& takeables = sceneDatabase.getTakeables(currentSceneId);
+        available.reserve(takeables.size());
+
+        for (const TakeableItem& item : takeables)
+        {
+            if (takenItemIds.find(item.id) == takenItemIds.end())
+                available.push_back(item);
+        }
+
+        takeMgr.setTakeables(available);
+    }
+
+    void Location::takeItem(const std::string& itemId)
+    {
+        if (itemId.empty() || takenItemIds.find(itemId) != takenItemIds.end())
+            return;
+
+        const TakeableItem* definition = findTakeableDefinition(itemId);
+        if (definition == nullptr)
+            return;
+
+        InventoryItem inventoryItem;
+        inventoryItem.id = definition->id;
+        inventoryItem.name = definition->name;
+        inventoryItem.iconPath = definition->iconPath;
+        inventoryItem.examineImagePath = definition->examineImagePath;
+        inventoryItem.examineText = definition->examineText;
+
+        if (!inventoryMgr.addItem(inventoryItem))
+            return;
+
+        takenItemIds.insert(itemId);
+        takeMgr.removeTakeable(itemId);
+        appendNarrativeSection("Taking:", definition->takeMessage);
+        scrollNarrativeToHeader("Taking:");
+
+        if (!takeMgr.hasTakeables())
+            takeMgr.close();
+
+        updateTakeLayout();
+        updateActionAvailability();
+    }
+
+    void Location::takeAllItems()
+    {
+        std::vector<std::string> itemIds;
+        const std::vector<TakeableItem>& takeables = sceneDatabase.getTakeables(currentSceneId);
+        for (const TakeableItem& item : takeables)
+        {
+            if (takenItemIds.find(item.id) == takenItemIds.end())
+                itemIds.push_back(item.id);
+        }
+
+        for (const std::string& itemId : itemIds)
+            takeItem(itemId);
+    }
+
+    bool Location::canTakeInCurrentScene() const
+    {
+        if (!baseActionFilter.take)
+            return false;
+
+        const std::vector<TakeableItem>& takeables = sceneDatabase.getTakeables(currentSceneId);
+        for (const TakeableItem& item : takeables)
+        {
+            if (takenItemIds.find(item.id) == takenItemIds.end())
+                return true;
+        }
+
+        return false;
     }
 
     float Location::getNarrativeVisibleHeight() const
@@ -828,6 +930,16 @@ namespace
             else if (inventoryMgr.canExamineSelectedItem())
                 actions.examine = true;
         }
+        else if (takeMgr.isOpen())
+        {
+            movement.up = false;
+            movement.down = false;
+            movement.forward = false;
+            movement.left = false;
+            movement.right = false;
+            movement.backward = false;
+            actions.take = true;
+        }
         else if (isUnderConstruction)
         {
             movement.backward = !previousSceneId.empty();
@@ -860,6 +972,7 @@ namespace
                 actions.speak = false;
 
             actions.use = canUseInCurrentScene();
+            actions.take = canTakeInCurrentScene();
         }
 
         buttonMgr.setAvailability(movement, actions);
@@ -1040,9 +1153,14 @@ namespace
 
         conversationMgr.onEnterScene(currentSceneId, sceneDatabase.getSpeakConfig(currentSceneId));
 
+        takeMgr.close();
+        refreshTakeables();
+
         narrativeScrollY = 0.0f;
         narrativeLayoutDirty = true;
         trimNarrativeBuffer();
+        updateInventoryLayout();
+        updateTakeLayout();
         updateActionAvailability();
     }
 
@@ -1138,6 +1256,7 @@ namespace
     void Location::update()
     {
         updateInventoryLayout();
+        updateTakeLayout();
         updateActionAvailability();
 
         if (!inventoryMgr.isExaminingItem())
@@ -1150,9 +1269,13 @@ namespace
             if (inventoryMgr.isOpen())
                 inventoryMgr.close();
             else
+            {
+                takeMgr.close();
                 inventoryMgr.open();
+            }
 
             updateInventoryLayout();
+            updateTakeLayout();
             updateActionAvailability();
         }
 
@@ -1178,6 +1301,38 @@ namespace
             else
                 handleNarrativeScrollInput();
 
+            updateActionAvailability();
+            return;
+        }
+
+        if (buttonMgr.consumeTakeButtonClick())
+        {
+            if (takeMgr.isOpen())
+                takeMgr.close();
+            else if (canTakeInCurrentScene())
+            {
+                inventoryMgr.close();
+                refreshTakeables();
+                takeMgr.open();
+            }
+
+            updateInventoryLayout();
+            updateTakeLayout();
+            updateActionAvailability();
+        }
+
+        if (takeMgr.isOpen())
+        {
+            takeMgr.update();
+
+            const std::string clickedItemId = takeMgr.consumeClickedItemId();
+            if (!clickedItemId.empty())
+                takeItem(clickedItemId);
+
+            if (takeMgr.consumeTakeAllClick())
+                takeAllItems();
+
+            handleNarrativeScrollInput();
             updateActionAvailability();
             return;
         }
@@ -1308,6 +1463,9 @@ namespace
 
         if (inventoryMgr.isOpen())
             inventoryMgr.draw();
+
+        if (takeMgr.isOpen())
+            takeMgr.draw();
 
         buttonMgr.draw();
     }

@@ -29,6 +29,7 @@ namespace testgame
         bool isExamineButtonPressed() const { return examineButtonPressed; }
         bool consumeExamineButtonClick();
         bool consumeSpeakButtonClick();
+        bool consumeTakeButtonClick();
         bool consumeUseButtonClick();
         bool consumeUpButtonClick();
         bool consumeDownButtonClick();
@@ -59,6 +60,7 @@ namespace testgame
         bool examineButtonPressed = false;
         bool examineButtonClicked = false;
         bool speakButtonClicked = false;
+        bool takeButtonClicked = false;
         bool useButtonClicked = false;
         bool inventoryButtonClicked = false;
         bool upButtonClicked = false;

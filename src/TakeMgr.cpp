@@ -1,4 +1,4 @@
-#include <InventoryMgr.h>
+#include <TakeMgr.h>
 #include <SceneLoader.h>
 #include <algorithm>
 
@@ -16,54 +16,46 @@ namespace
     const Color kScrollThumbHover = {168, 142, 88, 255};
     const Color kSlotFill = {40, 38, 50, 255};
     const Color kSlotHover = {54, 50, 64, 255};
-    const Color kSlotSelected = {62, 52, 34, 255};
     const Color kCloseHover = {210, 178, 108, 255};
-
-    const char* kWalletExamineText =
-        "The wallet is worked from thick full-grain leather, hand-stitched along the edges "
-        "with waxed thread the color of strong tea. The dye is uneven in the way of good hides, "
-        "not factory perfect. A maker's stamp inside the flap is too worn to read. It sits heavy "
-        "in your palm, the sort of piece a man buys once and carries for years.\n\n"
-        "You count what it holds. Twenty dollars in worn notes, nothing more. No credit cards. "
-        "No identification. The pockets are otherwise empty except for a small slip of paper, "
-        "tucked deep into a corner seam as though someone meant to forget it and could not quite.";
-
-    const char* kWalletIconFiles[] = { "icons/wallet_icon.png", "icons/wallet_icon.jpg" };
-    const char* kWalletExamineFiles[] = { "images/wallet_examine.png", "images/wallet_examine.jpg" };
+    const Color kTakeAllFill = {54, 50, 64, 255};
+    const Color kTakeAllHover = {72, 64, 82, 255};
+    const Color kTakeAllText = {228, 220, 198, 255};
 }
 
-const float InventoryMgr::kScrollbarWidth = 16.0f;
-const float InventoryMgr::kCloseButtonSize = 28.0f;
-const float InventoryMgr::kItemSlotSize = 76.0f;
-const float InventoryMgr::kItemGap = 12.0f;
+const float TakeMgr::kScrollbarWidth = 16.0f;
+const float TakeMgr::kCloseButtonSize = 28.0f;
+const float TakeMgr::kItemSlotSize = 76.0f;
+const float TakeMgr::kItemGap = 12.0f;
+const float TakeMgr::kTakeAllButtonHeight = 44.0f;
 
-InventoryMgr::InventoryMgr()
+TakeMgr::TakeMgr() = default;
+
+TakeMgr::~TakeMgr()
 {
-    createDefaultItems();
+    unloadItemTextures();
 }
 
-InventoryMgr::~InventoryMgr()
+void TakeMgr::unloadItemTextures()
 {
-    for (InventoryItem& item : items)
+    for (TakeableItem& item : items)
     {
         if (item.icon.id != 0)
             UnloadTexture(item.icon);
-        if (item.examineImage.id != 0)
-            UnloadTexture(item.examineImage);
+        item.icon = Texture2D{};
     }
 }
 
-void InventoryMgr::setPanelBounds(Rectangle bounds)
+void TakeMgr::setPanelBounds(Rectangle bounds)
 {
     panelBounds = bounds;
 }
 
-void InventoryMgr::setFont(Font font)
+void TakeMgr::setFont(Font font)
 {
     panelFont = font;
 }
 
-void InventoryMgr::setAssetRoots(
+void TakeMgr::setAssetRoots(
     const std::string& primaryRoot,
     const std::string& fallbackRoot)
 {
@@ -71,23 +63,7 @@ void InventoryMgr::setAssetRoots(
     fallbackAssetRoot = fallbackRoot;
 }
 
-bool InventoryMgr::hasLoadedAssets() const
-{
-    for (const InventoryItem& item : items)
-    {
-        if (item.icon.id == 0 || item.examineImage.id == 0)
-            return false;
-    }
-
-    return !items.empty();
-}
-
-bool InventoryMgr::loadItemTexture(const char* filename, Texture2D& outTexture) const
-{
-    return loadItemTexturePath(filename, outTexture);
-}
-
-bool InventoryMgr::loadItemTexturePath(const std::string& relativePath, Texture2D& outTexture) const
+bool TakeMgr::loadItemTexture(const std::string& relativePath, Texture2D& outTexture) const
 {
     if (relativePath.empty())
         return false;
@@ -103,161 +79,77 @@ bool InventoryMgr::loadItemTexturePath(const std::string& relativePath, Texture2
         return true;
     }
 
-    TraceLog(LOG_ERROR, "Failed to load inventory image: %s", relativePath.c_str());
     return false;
 }
 
-void InventoryMgr::loadTexturesForItem(InventoryItem& item)
+void TakeMgr::loadItemTextures()
 {
-    if (item.icon.id != 0)
+    for (TakeableItem& item : items)
     {
-        UnloadTexture(item.icon);
-        item.icon = Texture2D{};
-    }
-    if (item.examineImage.id != 0)
-    {
-        UnloadTexture(item.examineImage);
-        item.examineImage = Texture2D{};
-    }
+        if (item.icon.id != 0)
+        {
+            UnloadTexture(item.icon);
+            item.icon = Texture2D{};
+        }
 
-    if (!item.iconPath.empty())
-    {
-        if (loadItemTexturePath(item.iconPath, item.icon))
+        if (!item.iconPath.empty() && loadItemTexture(item.iconPath, item.icon))
             SetTextureFilter(item.icon, TEXTURE_FILTER_BILINEAR);
-        else if (item.id == "wallet")
-        {
-            for (const char* filename : kWalletIconFiles)
-            {
-                if (loadItemTexture(filename, item.icon))
-                {
-                    SetTextureFilter(item.icon, TEXTURE_FILTER_BILINEAR);
-                    break;
-                }
-            }
-        }
-    }
-
-    if (!item.examineImagePath.empty())
-    {
-        if (loadItemTexturePath(item.examineImagePath, item.examineImage))
-            SetTextureFilter(item.examineImage, TEXTURE_FILTER_BILINEAR);
-        else if (item.id == "wallet")
-        {
-            for (const char* filename : kWalletExamineFiles)
-            {
-                if (loadItemTexture(filename, item.examineImage))
-                {
-                    SetTextureFilter(item.examineImage, TEXTURE_FILTER_BILINEAR);
-                    break;
-                }
-            }
-        }
     }
 }
 
-void InventoryMgr::loadItemTextures()
+void TakeMgr::setTakeables(const std::vector<TakeableItem>& takeables)
 {
-    for (InventoryItem& item : items)
-        loadTexturesForItem(item);
-}
-
-bool InventoryMgr::ensureAssetsLoaded()
-{
-    if (hasLoadedAssets())
-        return true;
-
+    unloadItemTextures();
+    items = takeables;
     loadItemTextures();
-    return hasLoadedAssets();
+    scrollY = 0.0f;
 }
 
-void InventoryMgr::createDefaultItems()
+void TakeMgr::open()
 {
-    InventoryItem wallet;
-    wallet.id = "wallet";
-    wallet.name = "Wallet";
-    wallet.iconPath = kWalletIconFiles[0];
-    wallet.examineImagePath = kWalletExamineFiles[0];
-    wallet.examineText = kWalletExamineText;
-    items.push_back(wallet);
+    isPanelOpen = true;
+    scrollY = 0.0f;
+    clickedItemId.clear();
+    takeAllClicked = false;
 }
 
-bool InventoryMgr::hasItem(const std::string& id) const
+void TakeMgr::close()
 {
-    return findItem(id) != nullptr;
+    isPanelOpen = false;
+    scrollY = 0.0f;
+    clickedItemId.clear();
+    takeAllClicked = false;
 }
 
-bool InventoryMgr::addItem(InventoryItem item)
+void TakeMgr::removeTakeable(const std::string& id)
 {
-    if (item.id.empty() || hasItem(item.id))
-        return false;
-
-    loadTexturesForItem(item);
-    items.push_back(std::move(item));
-    return true;
-}
-
-void InventoryMgr::open()
-{
-    if (!ensureAssetsLoaded())
-        TraceLog(LOG_WARNING, "Inventory images are not loaded; wallet art may be missing");
-
-    viewState = InventoryViewState::ItemList;
-    selectedItemId.clear();
-    inventoryScrollY = 0.0f;
-}
-
-void InventoryMgr::close()
-{
-    viewState = InventoryViewState::Closed;
-    selectedItemId.clear();
-    inventoryScrollY = 0.0f;
-}
-
-void InventoryMgr::returnToItemList()
-{
-    viewState = InventoryViewState::ItemList;
-    inventoryScrollY = 0.0f;
-}
-
-bool InventoryMgr::canExamineSelectedItem() const
-{
-    if (viewState != InventoryViewState::ItemList || selectedItemId.empty())
-        return false;
-
-    const InventoryItem* item = findItem(selectedItemId);
-    return item != nullptr && !item->examineText.empty();
-}
-
-void InventoryMgr::examineSelectedItem()
-{
-    if (!canExamineSelectedItem())
-        return;
-
-    ensureAssetsLoaded();
-    viewState = InventoryViewState::ExaminingItem;
-}
-
-const InventoryItem* InventoryMgr::findItem(const std::string& id) const
-{
-    for (const InventoryItem& item : items)
+    for (auto it = items.begin(); it != items.end(); ++it)
     {
-        if (item.id == id)
-            return &item;
+        if (it->id == id)
+        {
+            if (it->icon.id != 0)
+                UnloadTexture(it->icon);
+            items.erase(it);
+            return;
+        }
     }
-    return nullptr;
 }
 
-int InventoryMgr::findItemIndex(const std::string& id) const
+std::string TakeMgr::consumeClickedItemId()
 {
-    for (size_t i = 0; i < items.size(); ++i)
-    {
-        if (items[i].id == id)
-            return (int)i;
-    }
-    return -1;
+    const std::string id = clickedItemId;
+    clickedItemId.clear();
+    return id;
 }
 
-Rectangle InventoryMgr::getCloseButtonBounds() const
+bool TakeMgr::consumeTakeAllClick()
+{
+    const bool clicked = takeAllClicked;
+    takeAllClicked = false;
+    return clicked;
+}
+
+Rectangle TakeMgr::getCloseButtonBounds() const
 {
     const float pad = 14.0f;
     return {
@@ -268,14 +160,26 @@ Rectangle InventoryMgr::getCloseButtonBounds() const
     };
 }
 
-float InventoryMgr::getInventoryVisibleHeight() const
+Rectangle TakeMgr::getTakeAllButtonBounds() const
+{
+    const float pad = 14.0f;
+    return {
+        panelBounds.x + pad,
+        panelBounds.y + panelBounds.height - pad - kTakeAllButtonHeight,
+        panelBounds.width - pad * 2.0f - kScrollbarWidth - 4.0f,
+        kTakeAllButtonHeight
+    };
+}
+
+float TakeMgr::getContentVisibleHeight() const
 {
     const float pad = 14.0f;
     const float headerHeight = 28.0f;
-    return panelBounds.height - pad * 2.0f - headerHeight;
+    const float footerGap = 10.0f;
+    return panelBounds.height - pad * 2.0f - headerHeight - kTakeAllButtonHeight - footerGap;
 }
 
-void InventoryMgr::handleCloseButtonInput()
+void TakeMgr::handleCloseButtonInput()
 {
     const Rectangle closeBounds = getCloseButtonBounds();
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
@@ -285,36 +189,45 @@ void InventoryMgr::handleCloseButtonInput()
     }
 }
 
-void InventoryMgr::handleItemGridInput()
+void TakeMgr::handleTakeAllInput()
 {
-    if (viewState != InventoryViewState::ItemList)
+    if (!IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         return;
 
+    const Rectangle takeAllBounds = getTakeAllButtonBounds();
+    if (CheckCollisionPointRec(GetMousePosition(), takeAllBounds) && !items.empty())
+        takeAllClicked = true;
+}
+
+void TakeMgr::handleItemGridInput()
+{
     if (!IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         return;
 
     const Vector2 mousePos = GetMousePosition();
     for (size_t i = 0; i < itemSlotBounds.size(); ++i)
     {
+        if (i >= items.size())
+            break;
+
         if (CheckCollisionPointRec(mousePos, itemSlotBounds[i]))
         {
-            if (i < items.size())
-                selectedItemId = items[i].id;
+            clickedItemId = items[i].id;
             return;
         }
     }
 }
 
-void InventoryMgr::handleInventoryScrollInput()
+void TakeMgr::handleScrollInput()
 {
-    if (viewState == InventoryViewState::Closed)
+    if (!isPanelOpen)
         return;
 
-    const float visibleHeight = getInventoryVisibleHeight();
-    const float maxScroll = std::max(0.0f, inventoryContentHeight - visibleHeight);
-    const float lineHeight = 24.0f;
     const float pad = 14.0f;
     const float headerHeight = 28.0f;
+    const float visibleHeight = getContentVisibleHeight();
+    const float maxScroll = std::max(0.0f, contentHeight - visibleHeight);
+    const float lineHeight = 24.0f;
     const float contentY = panelBounds.y + pad + headerHeight;
 
     const Rectangle scrollTrack = {
@@ -324,12 +237,12 @@ void InventoryMgr::handleInventoryScrollInput()
         visibleHeight
     };
 
-    const float thumbHeight = (inventoryContentHeight <= 0.0f)
+    const float thumbHeight = (contentHeight <= 0.0f)
         ? visibleHeight
-        : std::max(24.0f, visibleHeight * (visibleHeight / inventoryContentHeight));
+        : std::max(24.0f, visibleHeight * (visibleHeight / contentHeight));
     const float thumbTravel = std::max(0.0f, visibleHeight - thumbHeight);
     const float thumbY = scrollTrack.y + (maxScroll > 0.0f
-        ? (inventoryScrollY / maxScroll) * thumbTravel
+        ? (scrollY / maxScroll) * thumbTravel
         : 0.0f);
 
     const Rectangle scrollThumb = {
@@ -345,21 +258,21 @@ void InventoryMgr::handleInventoryScrollInput()
     {
         if (CheckCollisionPointRec(mousePos, scrollThumb))
         {
-            inventoryScrollbarDragging = true;
-            inventoryScrollbarDragOffsetY = mousePos.y - scrollThumb.y;
+            scrollbarDragging = true;
+            scrollbarDragOffsetY = mousePos.y - scrollThumb.y;
         }
         else if (CheckCollisionPointRec(mousePos, scrollTrack) && thumbTravel > 0.0f)
         {
-            inventoryScrollY = ((mousePos.y - scrollTrack.y - thumbHeight * 0.5f) / thumbTravel) * maxScroll;
+            scrollY = ((mousePos.y - scrollTrack.y - thumbHeight * 0.5f) / thumbTravel) * maxScroll;
         }
     }
 
-    if (inventoryScrollbarDragging)
+    if (scrollbarDragging)
     {
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && thumbTravel > 0.0f)
-            inventoryScrollY = ((mousePos.y - scrollTrack.y - inventoryScrollbarDragOffsetY) / thumbTravel) * maxScroll;
+            scrollY = ((mousePos.y - scrollTrack.y - scrollbarDragOffsetY) / thumbTravel) * maxScroll;
         else
-            inventoryScrollbarDragging = false;
+            scrollbarDragging = false;
     }
 
     const Rectangle scrollArea = {
@@ -370,12 +283,12 @@ void InventoryMgr::handleInventoryScrollInput()
     };
 
     if (CheckCollisionPointRec(mousePos, scrollArea))
-        inventoryScrollY -= GetMouseWheelMove() * lineHeight * 2.0f;
+        scrollY -= GetMouseWheelMove() * lineHeight * 2.0f;
 
-    inventoryScrollY = std::max(0.0f, std::min(inventoryScrollY, maxScroll));
+    scrollY = std::max(0.0f, std::min(scrollY, maxScroll));
 }
 
-void InventoryMgr::layoutItemSlots()
+void TakeMgr::layoutItemSlots()
 {
     const float pad = 14.0f;
     const float headerHeight = 28.0f;
@@ -385,7 +298,7 @@ void InventoryMgr::layoutItemSlots()
 
     const int columns = std::max(1, (int)((contentW + kItemGap) / (kItemSlotSize + kItemGap)));
     const int rows = (int)items.size() / columns + ((int)items.size() % columns > 0 ? 1 : 0);
-    inventoryContentHeight = rows > 0
+    contentHeight = rows > 0
         ? rows * kItemSlotSize + (rows - 1) * kItemGap
         : 0.0f;
 
@@ -405,18 +318,19 @@ void InventoryMgr::layoutItemSlots()
     }
 }
 
-void InventoryMgr::update()
+void TakeMgr::update()
 {
-    if (viewState == InventoryViewState::Closed)
+    if (!isPanelOpen)
         return;
 
     layoutItemSlots();
     handleCloseButtonInput();
     handleItemGridInput();
-    handleInventoryScrollInput();
+    handleTakeAllInput();
+    handleScrollInput();
 }
 
-void InventoryMgr::drawCloseButton() const
+void TakeMgr::drawCloseButton() const
 {
     const Rectangle closeBounds = getCloseButtonBounds();
     const bool hovered = CheckCollisionPointRec(GetMousePosition(), closeBounds);
@@ -434,14 +348,14 @@ void InventoryMgr::drawCloseButton() const
         lineColor);
 }
 
-void InventoryMgr::drawItemGrid() const
+void TakeMgr::drawItemGrid() const
 {
     const float pad = 14.0f;
     const float headerHeight = 28.0f;
     const float contentX = panelBounds.x + pad;
     const float contentY = panelBounds.y + pad + headerHeight;
     const float contentW = panelBounds.width - pad * 2.0f - kScrollbarWidth - 4.0f;
-    const float visibleHeight = getInventoryVisibleHeight();
+    const float visibleHeight = getContentVisibleHeight();
 
     const float borderPad = 3.0f;
     BeginScissorMode(
@@ -453,14 +367,13 @@ void InventoryMgr::drawItemGrid() const
     for (size_t i = 0; i < items.size() && i < itemSlotBounds.size(); ++i)
     {
         Rectangle slot = itemSlotBounds[i];
-        slot.y -= inventoryScrollY;
+        slot.y -= scrollY;
 
         if (slot.y + kItemSlotSize < contentY || slot.y > contentY + visibleHeight)
             continue;
 
-        const bool selected = items[i].id == selectedItemId;
         const bool hovered = CheckCollisionPointRec(GetMousePosition(), slot);
-        const Color fill = selected ? kSlotSelected : (hovered ? kSlotHover : kSlotFill);
+        const Color fill = hovered ? kSlotHover : kSlotFill;
 
         DrawRectangleRounded(slot, 0.18f, 8, fill);
 
@@ -481,7 +394,7 @@ void InventoryMgr::drawItemGrid() const
                 0.0f,
                 WHITE);
         }
-        else if (!items[i].name.empty())
+        else
         {
             const float labelSize = 13.0f;
             const Vector2 textSize = MeasureTextEx(panelFont, items[i].name.c_str(), labelSize, 1);
@@ -494,7 +407,7 @@ void InventoryMgr::drawItemGrid() const
                 },
                 labelSize,
                 1,
-                {228, 220, 198, 255});
+                kTakeAllText);
         }
     }
 
@@ -503,20 +416,19 @@ void InventoryMgr::drawItemGrid() const
     for (size_t i = 0; i < items.size() && i < itemSlotBounds.size(); ++i)
     {
         Rectangle slot = itemSlotBounds[i];
-        slot.y -= inventoryScrollY;
+        slot.y -= scrollY;
 
         if (slot.y + kItemSlotSize < contentY || slot.y > contentY + visibleHeight)
             continue;
 
-        const bool selected = items[i].id == selectedItemId;
-        DrawRectangleRoundedLines(slot, 0.18f, 8, 2.0f, selected ? kPanelBorder : kPanelAccent);
+        DrawRectangleRoundedLines(slot, 0.18f, 8, 2.0f, kPanelAccent);
     }
 }
 
-void InventoryMgr::drawInventoryScrollbar() const
+void TakeMgr::drawScrollbar() const
 {
-    const float visibleHeight = getInventoryVisibleHeight();
-    const float maxScroll = std::max(0.0f, inventoryContentHeight - visibleHeight);
+    const float visibleHeight = getContentVisibleHeight();
+    const float maxScroll = std::max(0.0f, contentHeight - visibleHeight);
     if (maxScroll <= 0.0f)
         return;
 
@@ -533,9 +445,9 @@ void InventoryMgr::drawInventoryScrollbar() const
 
     DrawRectangleRec(scrollTrack, kScrollTrack);
 
-    const float thumbHeight = std::max(24.0f, visibleHeight * (visibleHeight / inventoryContentHeight));
+    const float thumbHeight = std::max(24.0f, visibleHeight * (visibleHeight / contentHeight));
     const float thumbTravel = std::max(0.0f, visibleHeight - thumbHeight);
-    const float thumbY = scrollTrack.y + (inventoryScrollY / maxScroll) * thumbTravel;
+    const float thumbY = scrollTrack.y + (scrollY / maxScroll) * thumbTravel;
 
     const Rectangle scrollThumb = {
         scrollTrack.x + 2.0f,
@@ -548,9 +460,36 @@ void InventoryMgr::drawInventoryScrollbar() const
     DrawRectangleRounded(scrollThumb, 0.4f, 6, thumbHovered ? kScrollThumbHover : kScrollThumb);
 }
 
-void InventoryMgr::draw() const
+void TakeMgr::drawTakeAllButton() const
 {
-    if (viewState == InventoryViewState::Closed)
+    const Rectangle bounds = getTakeAllButtonBounds();
+    const bool hovered = CheckCollisionPointRec(GetMousePosition(), bounds);
+    const bool enabled = !items.empty();
+    const Color fill = enabled ? (hovered ? kTakeAllHover : kTakeAllFill) : kSlotFill;
+    const Color border = enabled ? kPanelBorder : kPanelAccent;
+    const Color textColor = enabled ? kTakeAllText : kSectionLabel;
+
+    DrawRectangleRounded(bounds, 0.18f, 8, fill);
+    DrawRectangleRoundedLines(bounds, 0.18f, 8, 2.0f, border);
+
+    const char* label = "Take All";
+    const float labelSize = 16.0f;
+    const Vector2 textSize = MeasureTextEx(panelFont, label, labelSize, 1);
+    DrawTextEx(
+        panelFont,
+        label,
+        {
+            bounds.x + (bounds.width - textSize.x) * 0.5f,
+            bounds.y + (bounds.height - textSize.y) * 0.5f
+        },
+        labelSize,
+        1,
+        textColor);
+}
+
+void TakeMgr::draw() const
+{
+    if (!isPanelOpen)
         return;
 
     DrawRectangleRounded(panelBounds, 0.04f, 10, kPanelFill);
@@ -565,16 +504,12 @@ void InventoryMgr::draw() const
     DrawRectangleRounded(accentBar, 1.0f, 4, kPanelAccent);
 
     const float pad = 14.0f;
-    DrawTextEx(panelFont, "INVENTORY", { panelBounds.x + pad, panelBounds.y + pad }, 15.0f, 1, kSectionLabel);
+    DrawTextEx(panelFont, "TAKE", { panelBounds.x + pad, panelBounds.y + pad }, 15.0f, 1, kSectionLabel);
 
     drawCloseButton();
     drawItemGrid();
-    drawInventoryScrollbar();
-}
-
-const InventoryItem* InventoryMgr::getSelectedItem() const
-{
-    return findItem(selectedItemId);
+    drawScrollbar();
+    drawTakeAllButton();
 }
 
 }

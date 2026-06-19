@@ -44,10 +44,15 @@ class InventoryMgr
     void examineSelectedItem();
     const InventoryItem* getSelectedItem() const;
 
+    bool hasItem(const std::string& id) const;
+    bool addItem(InventoryItem item);
+
     private:
     void createDefaultItems();
     void loadItemTextures();
+    void loadTexturesForItem(InventoryItem& item);
     bool loadItemTexture(const char* filename, Texture2D& outTexture) const;
+    bool loadItemTexturePath(const std::string& relativePath, Texture2D& outTexture) const;
     bool hasLoadedAssets() const;
     void drawCloseButton() const;
     void drawItemGrid() const;

@@ -21,8 +21,17 @@
         "examine": true,
         "speak": false,
         "hit": false,
-        "use": true
+        "use": true,
+        "take": true
       },
+      "takeables": [
+        {
+          "id": "moby_dick",
+          "name": "Moby-Dick",
+          "examineText": "A vintage cloth-bound copy of Moby-Dick, its gilt title still legible: The Whale. The pages are well preserved, and a crease marks the passage left open: \"There is a wisdom that is woe; but there is a woe that is madness.\"",
+          "takeMessage": "You lift the worn copy of Moby-Dick from the armchair. The book is heavier than it looks, as though it carries more than paper."
+        }
+      ],
       "exits": {
         "backward": "cabin_kitchen"
       }
@@ -45,8 +54,17 @@
         "examine": true,
         "speak": false,
         "hit": false,
-        "use": true
+        "use": true,
+        "take": true
       },
+      "takeables": [
+        {
+          "id": "coffee_beans",
+          "name": "Coffee Beans",
+          "examineText": "Dark roasted beans fill a mason jar to the brim, their oily surface catching the lamplight. Whoever lives here drinks like a connoisseur.",
+          "takeMessage": "You tuck the mason jar of coffee beans into your coat. The bitter scent follows you."
+        }
+      ],
       "exits": {
         "backward": "cabin",
         "forward": "mountain_road"

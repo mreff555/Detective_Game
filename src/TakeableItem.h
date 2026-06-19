@@ -1,5 +1,5 @@
-#ifndef INVENTORY_ITEM_H
-#define INVENTORY_ITEM_H
+#ifndef TAKEABLE_ITEM_H
+#define TAKEABLE_ITEM_H
 
 #include <raylib.h>
 #include <string>
@@ -7,17 +7,17 @@
 namespace testgame
 {
 
-struct InventoryItem
+struct TakeableItem
 {
     std::string id;
     std::string name;
     std::string iconPath;
     std::string examineImagePath;
-    Texture2D icon{};
-    Texture2D examineImage{};
     std::string examineText;
+    std::string takeMessage;
+    Texture2D icon{};
 };
 
 }
 
-#endif /* INVENTORY_ITEM_H */
+#endif /* TAKEABLE_ITEM_H */

@@ -255,6 +255,7 @@ void ButtonMgr::registerButtonClick(int buttonIndex)
         case 5: backwardButtonClicked = true; break;
         case 6: examineButtonClicked = true; break;
         case 7: speakButtonClicked = true; break;
+        case 8: takeButtonClicked = true; break;
         case 9: useButtonClicked = true; break;
         case 12: inventoryButtonClicked = true; break;
         default: break;
@@ -286,6 +287,7 @@ void ButtonMgr::update()
     rightButtonClicked = false;
     examineButtonClicked = false;
     speakButtonClicked = false;
+    takeButtonClicked = false;
     useButtonClicked = false;
     inventoryButtonClicked = false;
 
@@ -365,6 +367,13 @@ bool ButtonMgr::consumeSpeakButtonClick()
 {
     const bool clicked = speakButtonClicked;
     speakButtonClicked = false;
+    return clicked;
+}
+
+bool ButtonMgr::consumeTakeButtonClick()
+{
+    const bool clicked = takeButtonClicked;
+    takeButtonClicked = false;
     return clicked;
 }
 

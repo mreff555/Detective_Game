@@ -3,9 +3,11 @@
 
 #include <ConversationStruct.h>
 #include <LocationStruct.h>
+#include <TakeableItem.h>
 #include <raylib.h>
 #include <map>
 #include <string>
+#include <vector>
 
 namespace testgame
 {
@@ -29,6 +31,7 @@ struct SceneData
     bool isStart;
     std::map<std::string, std::string> exits;
     SceneSpeakConfig speakConfig;
+    std::vector<TakeableItem> takeables;
 };
 
 class SceneDatabase
@@ -42,6 +45,7 @@ class SceneDatabase
     bool loadScene(const std::string& sceneId, LocationStruct& outLocation) const;
     std::string getExitSceneId(const std::string& sceneId, const std::string& direction) const;
     const SceneSpeakConfig& getSpeakConfig(const std::string& sceneId) const;
+    const std::vector<TakeableItem>& getTakeables(const std::string& sceneId) const;
     const std::string& getAssetRoot() const { return assetRoot; }
 
     private:

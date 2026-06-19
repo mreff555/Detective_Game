@@ -67,6 +67,49 @@ bool parseMovement(const nlohmann::json& movement, MovementStruct& out)
     return true;
 }
 
+std::string normalizeAssetPath(const std::string& path)
+{
+    if (path.empty())
+        return path;
+
+    const std::string prefix = "resources/";
+    if (path.compare(0, prefix.size(), prefix) == 0)
+        return path.substr(prefix.size());
+
+    return path;
+}
+
+bool parseTakeables(const nlohmann::json& takeablesJson, std::vector<TakeableItem>& out)
+{
+    out.clear();
+    if (!takeablesJson.is_array())
+        return true;
+
+    for (const nlohmann::json& entry : takeablesJson)
+    {
+        if (!entry.is_object())
+            continue;
+
+        TakeableItem item;
+        item.id = entry.value("id", "");
+        item.name = entry.value("name", "");
+        item.iconPath = normalizeAssetPath(entry.value("icon", ""));
+        item.examineImagePath = normalizeAssetPath(entry.value("examineImage", ""));
+        item.examineText = entry.value("examineText", "");
+        item.takeMessage = entry.value("takeMessage", "");
+
+        if (item.id.empty() || item.name.empty())
+            continue;
+
+        if (item.takeMessage.empty())
+            item.takeMessage = "You pick up the " + item.name + ".";
+
+        out.push_back(item);
+    }
+
+    return true;
+}
+
 bool parseActions(const nlohmann::json& actions, ActionStruct& out)
 {
     if (!actions.is_object())
@@ -318,6 +361,9 @@ bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneDat
         return false;
 
     if (!parseSpeakConfig(sceneJson, out.speakConfig))
+        return false;
+
+    if (!parseTakeables(sceneJson.value("takeables", nlohmann::json::array()), out.takeables))
         return false;
 
     return true;
@@ -640,6 +686,16 @@ const SceneSpeakConfig& SceneDatabase::getSpeakConfig(const std::string& sceneId
         return kEmptyConfig;
 
     return it->second.speakConfig;
+}
+
+const std::vector<TakeableItem>& SceneDatabase::getTakeables(const std::string& sceneId) const
+{
+    static const std::vector<TakeableItem> kEmptyTakeables;
+    std::map<std::string, SceneData>::const_iterator it = scenes.find(sceneId);
+    if (it == scenes.end())
+        return kEmptyTakeables;
+
+    return it->second.takeables;
 }
 
 std::string SceneDatabase::getExitSceneId(const std::string& sceneId, const std::string& direction) const

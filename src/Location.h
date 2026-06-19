@@ -4,6 +4,7 @@
 #include <ConversationManager.h>
 #include <ConversationStruct.h>
 #include <InventoryMgr.h>
+#include <TakeMgr.h>
 #include <LocationStruct.h>
 #include <ButtonMgr.h>
 #include <SceneLoader.h>
@@ -63,6 +64,10 @@ class Location
     void handleNarrativeScrollInput();
     void handleInventoryExamineScrollInput();
     void updateInventoryLayout();
+    void updateTakeLayout();
+    void refreshTakeables();
+    void takeItem(const std::string& itemId);
+    void takeAllItems();
     void drawNarrativeText() const;
     void drawNarrativeScrollbar() const;
     void drawInventoryExamineView() const;
@@ -73,6 +78,7 @@ class Location
     Rectangle getMainImageBounds() const;
     Rectangle getDialogBounds() const;
     Rectangle getInventoryPanelBounds() const;
+    Rectangle getTakePanelBounds() const;
     void appendNarrativeSection(const char* header, const std::string& details);
     void updateActionAvailability();
     bool tryApplyStatusDeltas(
@@ -94,6 +100,8 @@ class Location
     bool isBoldNarrativeLine(const std::string& line) const;
     bool hasExaminedScene(const std::string& sceneId) const;
     bool canUseInCurrentScene() const;
+    bool canTakeInCurrentScene() const;
+    const TakeableItem* findTakeableDefinition(const std::string& itemId) const;
 
     static const int kMaxNarrativeLines = 500;
     static const float kScrollbarWidth;
@@ -131,6 +139,7 @@ class Location
     bool hasUsedInCurrentScene = false;
     std::set<std::string> examinedSceneIds;
     std::set<std::string> usedSceneIds;
+    std::set<std::string> takenItemIds;
     std::set<std::string> committedPlayerDialogLines;
     ConversationManager conversationMgr;
     mutable std::vector<NarrativeChoiceHitArea> narrativeChoiceHitAreas;
@@ -154,6 +163,7 @@ class Location
     const float fullDialogHeight;
     ButtonMgr buttonMgr;
     InventoryMgr inventoryMgr;
+    TakeMgr takeMgr;
 
     float narrativeScrollY = 0.0f;
     float inventoryExamineScrollY = 0.0f;
