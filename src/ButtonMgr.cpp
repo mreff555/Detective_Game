@@ -6,62 +6,96 @@
 namespace testgame
 {
 
-ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
-    : buttonBox(_buttonBox),
-      buttonFont(_buttonFont)
+namespace
 {
-    // TODO:  Note to self: the border is throwing off the button placement.  Don't care at the moment.
-
-    // TODO: use a std::pair to like pointer functions for now
-    
-    buttons.push_back(Button("Foreward",
-            {buttonBox.x + 110, buttonBox.y + 10},
-            {buttonBox.width / 6.5f, buttonBox.height / 7.0f},
-            buttonFont,
-            WHITE,
-            GRAY));
-
-    buttons.push_back(Button("Backward",
-            {buttonBox.x + 110, buttonBox.y + 70},
-            {buttonBox.width / 6.5f, buttonBox.height / 7.0f},
-            buttonFont,
-            WHITE,
-            GRAY));
-
-    buttons.push_back(Button("Left",
-        {buttonBox.x + 10, buttonBox.y + 10},
-        {buttonBox.width / 8.0f, buttonBox.height / 3.275f},
-        buttonFont,
-        WHITE,
-        GRAY));
-
-    buttons.push_back(Button("Right",
-        {buttonBox.x + 20 + buttonBox.width / 6.5f + buttonBox.width / 8.0f, buttonBox.y + 10},
-        {buttonBox.width / 8.0f, buttonBox.height / 3.275f},
-        buttonFont,
-        WHITE,
-        GRAY));
-
-    buttons.push_back(Button("Examine",
-        {buttonBox.x + buttonBox.width - 10 - buttonBox.width / 6, buttonBox.y + 10},
-        {buttonBox.width / 6.0f, buttonBox.height / 7.0f},
-        buttonFont,
-        WHITE,
-        GRAY));
-
-    buttons.push_back(Button("Speak",
-        {buttonBox.x + buttonBox.width - 10 - buttonBox.width / 6, buttonBox.y + 10 + buttonBox.height / 7.0f + 10},
-        {buttonBox.width / 6.0f, buttonBox.height / 7.0f},
-        buttonFont,
-        WHITE,
-        GRAY));
-
-
+    const Color kPanelFill = {28, 26, 34, 255};
+    const Color kPanelBorder = {168, 138, 72, 255};
+    const Color kPanelAccent = {96, 78, 48, 255};
+    const Color kSectionLabel = {132, 122, 104, 255};
+    const Color kDivider = {68, 62, 54, 255};
 }
 
+ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
+    : buttonBox(_buttonBox),
+      buttonFont(_buttonFont),
+      buttonStyle{
+          {228, 220, 198, 255},
+          {54, 50, 64, 255},
+          {78, 72, 92, 255},
+          {40, 38, 50, 255},
+          {118, 96, 58, 255},
+          0.18f,
+          18.0f
+      }
+{
+    const float pad = 18.0f;
+    const float labelHeight = 22.0f;
+    const float gap = 10.0f;
+    const float inventoryHeight = 52.0f;
+
+    const float contentX = buttonBox.x + pad;
+    const float contentY = buttonBox.y + pad + labelHeight;
+    const float contentW = buttonBox.width - pad * 2.0f;
+    const float contentH = buttonBox.height - pad * 2.0f - labelHeight - inventoryHeight - gap;
+
+    const float moveW = contentW * 0.34f;
+    const float actionW = contentW * 0.40f;
+    const float actionX = contentX + moveW + gap;
+    const float actionH = (contentH - gap) / 2.0f;
+
+    const float moveBtnW = (moveW - gap) / 2.0f;
+    const float moveBtnH = (contentH - gap * 2.0f) / 3.0f;
+
+    addButton("Forward",
+        { contentX + moveBtnW / 2.0f + gap / 2.0f, contentY, moveBtnW, moveBtnH });
+
+    addButton("Left",
+        { contentX, contentY + moveBtnH + gap, moveBtnW, moveBtnH });
+
+    addButton("Right",
+        { contentX + moveBtnW + gap, contentY + moveBtnH + gap, moveBtnW, moveBtnH });
+
+    addButton("Backward",
+        { contentX + moveBtnW / 2.0f + gap / 2.0f, contentY + (moveBtnH + gap) * 2.0f, moveBtnW, moveBtnH });
+
+    addButton("Examine",
+        { actionX, contentY, actionW, actionH });
+
+    addButton("Speak",
+        { actionX, contentY + actionH + gap, actionW, actionH });
+
+    const float combatW = (actionW - gap) / 2.0f;
+    const float combatY = contentY + (actionH + gap) * 2.0f;
+    const float combatH = contentH - (actionH + gap) * 2.0f;
+
+    addButton("Hit",
+        { actionX, combatY, combatW, combatH });
+
+    addButton("Use",
+        { actionX + combatW + gap, combatY, combatW, combatH });
+
+    const float inventoryY = buttonBox.y + buttonBox.height - pad - inventoryHeight;
+    addButton("Inventory",
+        { contentX, inventoryY, contentW, inventoryHeight });
+}
 
 ButtonMgr::~ButtonMgr()
 {
+}
+
+void ButtonMgr::addButton(const char* label, Rectangle bounds)
+{
+    buttons.push_back(Button(
+        label,
+        { bounds.x, bounds.y },
+        { bounds.width, bounds.height },
+        buttonFont,
+        buttonStyle));
+}
+
+void ButtonMgr::drawSectionLabel(const char* label, float x, float y) const
+{
+    DrawTextEx(buttonFont, label, { x, y }, 14.0f, 1, kSectionLabel);
 }
 
 void ButtonMgr::update()
@@ -81,11 +115,46 @@ void ButtonMgr::update()
             button.setState(NORMAL);
         }
     }
+
+    forwardButtonPressed = buttons[0].getState() == PRESSED;
+    backButtonPressed = buttons[3].getState() == PRESSED;
+    leftButtonPressed = buttons[1].getState() == PRESSED;
+    rightButtonPressed = buttons[2].getState() == PRESSED;
+    examineButtonPressed = buttons[4].getState() == PRESSED;
+    speakButtonPressed = buttons[5].getState() == PRESSED;
+    hitButtonPressed = buttons[6].getState() == PRESSED;
+    useButtonPressed = buttons[7].getState() == PRESSED;
+    inventoryButtonPressed = buttons[8].getState() == PRESSED;
 }
 
 void ButtonMgr::draw() const
 {
-    DrawRectangleLinesEx(buttonBox, 4, GRAY);
+    const float pad = 18.0f;
+    const float labelHeight = 22.0f;
+
+    DrawRectangleRounded(buttonBox, 0.04f, 10, kPanelFill);
+    DrawRectangleRoundedLines(buttonBox, 0.04f, 10, 3.0f, kPanelBorder);
+
+    Rectangle accentBar = {
+        buttonBox.x + 8.0f,
+        buttonBox.y + 8.0f,
+        buttonBox.width - 16.0f,
+        4.0f
+    };
+    DrawRectangleRounded(accentBar, 1.0f, 4, kPanelAccent);
+
+    drawSectionLabel("MOVE", buttonBox.x + pad, buttonBox.y + pad);
+    drawSectionLabel("ACTIONS", buttonBox.x + pad + buttonBox.width * 0.36f, buttonBox.y + pad);
+
+    const float dividerY = buttonBox.y + buttonBox.height - pad - 52.0f - 8.0f;
+    DrawLineEx(
+        { buttonBox.x + pad, dividerY },
+        { buttonBox.x + buttonBox.width - pad, dividerY },
+        1.0f,
+        kDivider);
+
+    drawSectionLabel("INVENTORY", buttonBox.x + pad, dividerY + 6.0f);
+
     for (const auto& button : buttons)
         button.draw();
 }
