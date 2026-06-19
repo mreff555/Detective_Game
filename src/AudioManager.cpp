@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <fstream>
 #include <sstream>
+#include <unordered_set>
 
 namespace testgame
 {
@@ -622,7 +623,7 @@ void AudioManager::syncRoomStreams(const RoomAudioConfig& roomAudio)
         unloadMusicTrack(musicTrack);
     }
 
-    std::vector<bool> retainAmbient(ambientTracks.size(), false);
+    std::unordered_set<std::string> retainedAmbientPaths;
 
     for (const AudioClipDef& ambientClip : roomAudio.ambient)
     {
@@ -630,11 +631,7 @@ void AudioManager::syncRoomStreams(const RoomAudioConfig& roomAudio)
         if (existingTrack != nullptr && isStreamActive(*existingTrack))
         {
             retainMusicTrack(*existingTrack, ambientClip, AudioCategory::Ambient);
-            for (size_t index = 0; index < ambientTracks.size(); ++index)
-            {
-                if (&ambientTracks[index] == existingTrack)
-                    retainAmbient[index] = true;
-            }
+            retainedAmbientPaths.insert(ambientClip.path);
             continue;
         }
 
@@ -642,17 +639,17 @@ void AudioManager::syncRoomStreams(const RoomAudioConfig& roomAudio)
             unloadMusicTrack(*existingTrack);
 
         startAmbientTrack(ambientClip);
+        retainedAmbientPaths.insert(ambientClip.path);
     }
 
-    for (size_t index = 0; index < ambientTracks.size(); ++index)
+    for (FadingMusicTrack& track : ambientTracks)
     {
-        if (retainAmbient[index])
+        if (retainedAmbientPaths.count(track.path) > 0)
             continue;
 
-        FadingMusicTrack& track = ambientTracks[index];
         if (isStreamActive(track))
             fadeOutMusicTrack(track, track.fadeOutSeconds);
-        else
+        else if (track.loaded)
             unloadMusicTrack(track);
     }
 }
