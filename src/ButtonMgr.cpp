@@ -113,11 +113,15 @@ void ButtonMgr::setAvailability(const MovementStruct& movement, const ActionStru
 
 int ButtonMgr::findEnabledButtonUnderMouse(Vector2 mousePos) const
 {
-    for (size_t i = 0; i < buttons.size(); ++i)
+    const int movementAndActionCount = 8;
+    for (int i = 0; i < movementAndActionCount; ++i)
     {
         if (buttons[i].isEnabled() && CheckCollisionPointRec(mousePos, buttons[i].getBounds()))
-            return (int)i;
+            return i;
     }
+
+    if (buttons[8].isEnabled() && CheckCollisionPointRec(mousePos, buttons[8].getBounds()))
+        return 8;
 
     return -1;
 }
@@ -159,12 +163,10 @@ void ButtonMgr::update()
     Vector2 mousePos = GetMousePosition();
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-        activePressButtonIndex = findEnabledButtonUnderMouse(mousePos);
-
-    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && activePressButtonIndex >= 0)
     {
-        registerButtonClick(activePressButtonIndex);
-        activePressButtonIndex = -1;
+        const int buttonIndex = findEnabledButtonUnderMouse(mousePos);
+        if (buttonIndex >= 0)
+            registerButtonClick(buttonIndex);
     }
 
     for (auto& button : buttons)

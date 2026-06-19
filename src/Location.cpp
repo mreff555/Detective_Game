@@ -75,11 +75,17 @@ namespace testgame
     {
         const std::string nextRoomId = roomDatabase.getExitRoomId(currentRoomId, direction);
         if (nextRoomId.empty())
+        {
+            TraceLog(LOG_WARNING, "No exit '%s' from room '%s'", direction.c_str(), currentRoomId.c_str());
             return;
+        }
 
         LocationStruct nextLocation;
         if (!roomDatabase.loadRoom(nextRoomId, nextLocation))
+        {
+            TraceLog(LOG_ERROR, "Failed to load room '%s'", nextRoomId.c_str());
             return;
+        }
 
         UnloadTexture(locationImage);
         currentRoomId = nextRoomId;
@@ -107,17 +113,17 @@ namespace testgame
     {
         buttonMgr.update();
 
-        if (buttonMgr.consumeExamineButtonClick())
-            appendExamineDetails();
-
         if (buttonMgr.consumeForwardButtonClick())
             tryMove("forward");
-        if (buttonMgr.consumeBackwardButtonClick())
+        else if (buttonMgr.consumeBackwardButtonClick())
             tryMove("backward");
-        if (buttonMgr.consumeLeftButtonClick())
+        else if (buttonMgr.consumeLeftButtonClick())
             tryMove("left");
-        if (buttonMgr.consumeRightButtonClick())
+        else if (buttonMgr.consumeRightButtonClick())
             tryMove("right");
+
+        if (buttonMgr.consumeExamineButtonClick())
+            appendExamineDetails();
     }
 
     void Location::draw() const

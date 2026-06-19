@@ -41,8 +41,6 @@ namespace testgame
         void registerButtonClick(int buttonIndex);
         int findEnabledButtonUnderMouse(Vector2 mousePos) const;
 
-        int activePressButtonIndex = -1;
-
         bool forwardButtonPressed = false;
         bool backButtonPressed = false;
         bool leftButtonPressed = false;

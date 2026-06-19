@@ -165,10 +165,24 @@ bool RoomDatabase::load(const std::string& configPath, const std::string& assetR
 
 bool RoomDatabase::buildLocationStruct(const RoomData& room, LocationStruct& outLocation) const
 {
-    const std::string imagePath = resolveAssetPath(assetRoot, room.imagePath);
+    const std::string primaryPath = resolveAssetPath(assetRoot, room.imagePath);
+    std::string imagePath = primaryPath;
+
+    if (!FileExists(imagePath.c_str()) && FileExists(room.imagePath.c_str()))
+        imagePath = room.imagePath;
+
+    if (!FileExists(imagePath.c_str()))
+    {
+        TraceLog(LOG_ERROR, "Room image not found: %s", primaryPath.c_str());
+        return false;
+    }
+
     const Texture2D texture = LoadTexture(imagePath.c_str());
     if (texture.id == 0)
+    {
+        TraceLog(LOG_ERROR, "Failed to load room image: %s", imagePath.c_str());
         return false;
+    }
 
     outLocation.locationImage = texture;
     outLocation.locationDescription = room.description;
