@@ -3,6 +3,7 @@
 
 #include <ConversationStruct.h>
 #include <LocationStruct.h>
+#include <raylib.h>
 #include <map>
 #include <string>
 
@@ -10,6 +11,7 @@ namespace testgame
 {
 
 std::string resolveAssetPath(const std::string& assetRoot, const std::string& path);
+bool loadResourceTexture(const std::string& assetRoot, const std::string& relativePath, Texture2D& outTexture);
 
 struct RoomData
 {
