@@ -5,6 +5,8 @@
 #include <ConversationManager.h>
 #include <ConversationStruct.h>
 #include <InventoryMgr.h>
+#include <TakeMgr.h>
+#include <TakeableItemDef.h>
 #include <LocationStruct.h>
 #include <ButtonMgr.h>
 #include <SceneLoader.h>
@@ -69,6 +71,13 @@ class Location
     void handleNarrativeScrollInput();
     void handleInventoryExamineScrollInput();
     void updateInventoryLayout();
+    void refreshTakeItems();
+    void addTakenItemToInventory(const TakeableItemDef& taken);
+    void processPendingTakes();
+    bool isSidePanelOpen() const;
+    bool canTakeInCurrentScene() const;
+    std::vector<TakeableItemDef> getAvailableTakeables() const;
+    std::string takenItemKey(const std::string& itemId) const;
     void drawNarrativeText() const;
     void drawNarrativeScrollbar() const;
     void drawInventoryExamineView() const;
@@ -161,6 +170,8 @@ class Location
     const float fullDialogHeight;
     ButtonMgr buttonMgr;
     InventoryMgr inventoryMgr;
+    TakeMgr takeMgr;
+    std::set<std::string> takenItemKeys;
 
     float narrativeScrollY = 0.0f;
     float inventoryExamineScrollY = 0.0f;

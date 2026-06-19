@@ -255,6 +255,7 @@ void ButtonMgr::registerButtonClick(int buttonIndex)
         case 5: backwardButtonClicked = true; break;
         case 6: examineButtonClicked = true; break;
         case 7: speakButtonClicked = true; break;
+        case 8: takeButtonClicked = true; break;
         case 9: useButtonClicked = true; break;
         case 12: inventoryButtonClicked = true; break;
         default: break;
@@ -271,7 +272,7 @@ void ButtonMgr::updatePressedFlags()
     backButtonPressed = buttons[5].isEnabled() && buttons[5].getState() == PRESSED;
     examineButtonPressed = buttons[6].isEnabled() && buttons[6].getState() == PRESSED;
     speakButtonPressed = buttons[7].isEnabled() && buttons[7].getState() == PRESSED;
-    hitButtonPressed = false;
+    hitButtonPressed = buttons[8].isEnabled() && buttons[8].getState() == PRESSED;
     useButtonPressed = buttons[9].isEnabled() && buttons[9].getState() == PRESSED;
     inventoryButtonPressed = buttons[12].isEnabled() && buttons[12].getState() == PRESSED;
 }
@@ -287,6 +288,7 @@ void ButtonMgr::update()
     examineButtonClicked = false;
     speakButtonClicked = false;
     useButtonClicked = false;
+    takeButtonClicked = false;
     inventoryButtonClicked = false;
 
     Vector2 mousePos = GetMousePosition();
@@ -365,6 +367,13 @@ bool ButtonMgr::consumeSpeakButtonClick()
 {
     const bool clicked = speakButtonClicked;
     speakButtonClicked = false;
+    return clicked;
+}
+
+bool ButtonMgr::consumeTakeButtonClick()
+{
+    const bool clicked = takeButtonClicked;
+    takeButtonClicked = false;
     return clicked;
 }
 

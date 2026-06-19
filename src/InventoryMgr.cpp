@@ -100,49 +100,64 @@ bool InventoryMgr::loadItemTexture(const char* filename, Texture2D& outTexture) 
     return false;
 }
 
+void InventoryMgr::loadItemAssets(InventoryItem& item)
+{
+    if (item.icon.id != 0)
+    {
+        UnloadTexture(item.icon);
+        item.icon = Texture2D{};
+    }
+    if (item.examineImage.id != 0)
+    {
+        UnloadTexture(item.examineImage);
+        item.examineImage = Texture2D{};
+    }
+
+    if (item.id == "wallet")
+    {
+        for (const char* filename : kWalletIconFiles)
+        {
+            if (loadItemTexture(filename, item.icon))
+            {
+                SetTextureFilter(item.icon, TEXTURE_FILTER_BILINEAR);
+                break;
+            }
+        }
+
+        for (const char* filename : kWalletExamineFiles)
+        {
+            if (loadItemTexture(filename, item.examineImage))
+            {
+                SetTextureFilter(item.examineImage, TEXTURE_FILTER_BILINEAR);
+                break;
+            }
+        }
+        return;
+    }
+
+    if (!item.iconPath.empty())
+    {
+        const std::string path = item.iconPath.find("resources/") == 0
+            ? item.iconPath.substr(10)
+            : item.iconPath;
+        if (loadItemTexture(path.c_str(), item.icon))
+            SetTextureFilter(item.icon, TEXTURE_FILTER_BILINEAR);
+    }
+
+    if (!item.examineImagePath.empty())
+    {
+        const std::string path = item.examineImagePath.find("resources/") == 0
+            ? item.examineImagePath.substr(10)
+            : item.examineImagePath;
+        if (loadItemTexture(path.c_str(), item.examineImage))
+            SetTextureFilter(item.examineImage, TEXTURE_FILTER_BILINEAR);
+    }
+}
+
 void InventoryMgr::loadItemTextures()
 {
     for (InventoryItem& item : items)
-    {
-        if (item.icon.id != 0)
-        {
-            UnloadTexture(item.icon);
-            item.icon = Texture2D{};
-        }
-        if (item.examineImage.id != 0)
-        {
-            UnloadTexture(item.examineImage);
-            item.examineImage = Texture2D{};
-        }
-    }
-
-    InventoryItem* wallet = nullptr;
-    for (InventoryItem& item : items)
-    {
-        if (item.id == "wallet")
-            wallet = &item;
-    }
-
-    if (wallet == nullptr)
-        return;
-
-    for (const char* filename : kWalletIconFiles)
-    {
-        if (loadItemTexture(filename, wallet->icon))
-        {
-            SetTextureFilter(wallet->icon, TEXTURE_FILTER_BILINEAR);
-            break;
-        }
-    }
-
-    for (const char* filename : kWalletExamineFiles)
-    {
-        if (loadItemTexture(filename, wallet->examineImage))
-        {
-            SetTextureFilter(wallet->examineImage, TEXTURE_FILTER_BILINEAR);
-            break;
-        }
-    }
+        loadItemAssets(item);
 }
 
 bool InventoryMgr::ensureAssetsLoaded()
@@ -527,6 +542,20 @@ void InventoryMgr::draw() const
 const InventoryItem* InventoryMgr::getSelectedItem() const
 {
     return findItem(selectedItemId);
+}
+
+bool InventoryMgr::hasItem(const std::string& id) const
+{
+    return findItem(id) != nullptr;
+}
+
+void InventoryMgr::addItem(const InventoryItem& item)
+{
+    if (item.id.empty() || hasItem(item.id))
+        return;
+
+    items.push_back(item);
+    loadItemAssets(items.back());
 }
 
 }

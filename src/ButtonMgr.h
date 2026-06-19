@@ -30,6 +30,7 @@ namespace testgame
         bool consumeExamineButtonClick();
         bool consumeSpeakButtonClick();
         bool consumeUseButtonClick();
+        bool consumeTakeButtonClick();
         bool consumeUpButtonClick();
         bool consumeDownButtonClick();
         bool consumeForwardButtonClick();
@@ -60,6 +61,7 @@ namespace testgame
         bool examineButtonClicked = false;
         bool speakButtonClicked = false;
         bool useButtonClicked = false;
+        bool takeButtonClicked = false;
         bool inventoryButtonClicked = false;
         bool upButtonClicked = false;
         bool downButtonClicked = false;

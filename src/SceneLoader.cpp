@@ -374,6 +374,38 @@ bool parseExits(const nlohmann::json& exits, std::map<std::string, std::string>&
     return true;
 }
 
+bool parseTakeableItem(const nlohmann::json& item, TakeableItemDef& out)
+{
+    if (!item.is_object())
+        return false;
+
+    out.id = item.value("id", "");
+    out.name = item.value("name", "");
+    out.iconPath = item.value("icon", "");
+    out.examineImagePath = item.value("examineImage", "");
+    out.examineText = item.value("examineText", "");
+    out.requiresExamine = item.value("requiresExamine", true);
+
+    return !out.id.empty() && !out.name.empty();
+}
+
+bool parseTakeables(const nlohmann::json& takeables, std::vector<TakeableItemDef>& out)
+{
+    out.clear();
+    if (!takeables.is_array())
+        return true;
+
+    for (const nlohmann::json& item : takeables)
+    {
+        TakeableItemDef parsed;
+        if (!parseTakeableItem(item, parsed))
+            return false;
+        out.push_back(parsed);
+    }
+
+    return true;
+}
+
 bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneData& out)
 {
     if (!sceneJson.is_object())
@@ -407,6 +439,9 @@ bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneDat
         return false;
 
     if (!parseRoomAudio(sceneJson.value("audio", nlohmann::json::object()), out.audio))
+        return false;
+
+    if (!parseTakeables(sceneJson.value("takeables", nlohmann::json::array()), out.takeables))
         return false;
 
     return true;
@@ -739,6 +774,16 @@ const RoomAudioConfig& SceneDatabase::getSceneAudio(const std::string& sceneId) 
         return kEmptyConfig;
 
     return it->second.audio;
+}
+
+const std::vector<TakeableItemDef>& SceneDatabase::getTakeables(const std::string& sceneId) const
+{
+    static const std::vector<TakeableItemDef> kEmptyTakeables;
+    std::map<std::string, SceneData>::const_iterator it = scenes.find(sceneId);
+    if (it == scenes.end())
+        return kEmptyTakeables;
+
+    return it->second.takeables;
 }
 
 std::string SceneDatabase::getExitSceneId(const std::string& sceneId, const std::string& direction) const

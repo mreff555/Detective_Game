@@ -4,6 +4,7 @@
 #include <AudioTypes.h>
 #include <ConversationStruct.h>
 #include <LocationStruct.h>
+#include <TakeableItemDef.h>
 #include <raylib.h>
 #include <map>
 #include <string>
@@ -31,6 +32,7 @@ struct SceneData
     std::map<std::string, std::string> exits;
     SceneSpeakConfig speakConfig;
     RoomAudioConfig audio;
+    std::vector<TakeableItemDef> takeables;
 };
 
 class SceneDatabase
@@ -45,6 +47,7 @@ class SceneDatabase
     std::string getExitSceneId(const std::string& sceneId, const std::string& direction) const;
     const SceneSpeakConfig& getSpeakConfig(const std::string& sceneId) const;
     const RoomAudioConfig& getSceneAudio(const std::string& sceneId) const;
+    const std::vector<TakeableItemDef>& getTakeables(const std::string& sceneId) const;
     const std::string& getAssetRoot() const { return assetRoot; }
 
     private:

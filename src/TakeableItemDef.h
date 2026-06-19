@@ -1,23 +1,21 @@
-#ifndef INVENTORY_ITEM_H
-#define INVENTORY_ITEM_H
+#ifndef TAKEABLE_ITEM_DEF_H
+#define TAKEABLE_ITEM_DEF_H
 
-#include <raylib.h>
 #include <string>
 
 namespace testgame
 {
 
-struct InventoryItem
+struct TakeableItemDef
 {
     std::string id;
     std::string name;
     std::string iconPath;
     std::string examineImagePath;
-    Texture2D icon{};
-    Texture2D examineImage{};
     std::string examineText;
+    bool requiresExamine = true;
 };
 
 }
 
-#endif /* INVENTORY_ITEM_H */
+#endif /* TAKEABLE_ITEM_DEF_H */

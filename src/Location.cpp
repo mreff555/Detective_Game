@@ -68,9 +68,11 @@ namespace
       buttonMgr(buttonBox, locationStruct.uiFont)
     {
         inventoryMgr.setFont(locationStruct.uiFont);
+        takeMgr.setFont(locationStruct.uiFont);
         const std::string& assetRoot = sceneDatabase.getAssetRoot();
         const std::string fallbackRoot = (assetRoot == ".") ? ".." : ".";
         inventoryMgr.setAssetRoots(assetRoot, fallbackRoot);
+        takeMgr.setAssetRoots(assetRoot, fallbackRoot);
         if (!inventoryMgr.ensureAssetsLoaded())
             TraceLog(LOG_WARNING, "Some inventory images failed to load at startup");
         trimNarrativeBuffer();
@@ -367,9 +369,89 @@ namespace
         }
     }
 
+    bool Location::isSidePanelOpen() const
+    {
+        return inventoryMgr.isOpen() || takeMgr.isOpen();
+    }
+
+    std::string Location::takenItemKey(const std::string& itemId) const
+    {
+        return currentSceneId + ":" + itemId;
+    }
+
+    std::vector<TakeableItemDef> Location::getAvailableTakeables() const
+    {
+        std::vector<TakeableItemDef> available;
+        const std::vector<TakeableItemDef>& takeables = sceneDatabase.getTakeables(currentSceneId);
+
+        for (const TakeableItemDef& item : takeables)
+        {
+            if (takenItemKeys.count(takenItemKey(item.id)) > 0)
+                continue;
+
+            if (item.requiresExamine && !hasExaminedScene(currentSceneId))
+                continue;
+
+            available.push_back(item);
+        }
+
+        return available;
+    }
+
+    bool Location::canTakeInCurrentScene() const
+    {
+        return !getAvailableTakeables().empty();
+    }
+
+    void Location::addTakenItemToInventory(const TakeableItemDef& taken)
+    {
+        if (inventoryMgr.hasItem(taken.id))
+            return;
+
+        InventoryItem item;
+        item.id = taken.id;
+        item.name = taken.name;
+        item.iconPath = taken.iconPath;
+        item.examineImagePath = taken.examineImagePath;
+        item.examineText = taken.examineText;
+        inventoryMgr.addItem(item);
+    }
+
+    void Location::refreshTakeItems()
+    {
+        takeMgr.setAvailableItems(getAvailableTakeables());
+    }
+
+    void Location::processPendingTakes()
+    {
+        if (takeMgr.consumePendingTakeAll())
+        {
+            const std::vector<TakeableItemDef> takenItems = takeMgr.takeAll();
+            for (const TakeableItemDef& taken : takenItems)
+            {
+                takenItemKeys.insert(takenItemKey(taken.id));
+                addTakenItemToInventory(taken);
+            }
+            updateActionAvailability();
+            return;
+        }
+
+        const std::string takeId = takeMgr.consumePendingTakeId();
+        if (takeId.empty())
+            return;
+
+        TakeableItemDef taken;
+        if (!takeMgr.tryTakeItem(takeId, taken))
+            return;
+
+        takenItemKeys.insert(takenItemKey(taken.id));
+        addTakenItemToInventory(taken);
+        updateActionAvailability();
+    }
+
     Rectangle Location::getDialogBounds() const
     {
-        const float height = inventoryMgr.isOpen() ? fullDialogHeight * 0.5f : fullDialogHeight;
+        const float height = isSidePanelOpen() ? fullDialogHeight * 0.5f : fullDialogHeight;
         return { textBox.x, textBox.y, textBox.width, height };
     }
 
@@ -386,8 +468,14 @@ namespace
 
     void Location::updateInventoryLayout()
     {
-        if (inventoryMgr.isOpen())
-            inventoryMgr.setPanelBounds(getInventoryPanelBounds());
+        if (inventoryMgr.isOpen() || takeMgr.isOpen())
+        {
+            const Rectangle panelBounds = getInventoryPanelBounds();
+            if (inventoryMgr.isOpen())
+                inventoryMgr.setPanelBounds(panelBounds);
+            if (takeMgr.isOpen())
+                takeMgr.setPanelBounds(panelBounds);
+        }
     }
 
     float Location::getNarrativeVisibleHeight() const
@@ -718,6 +806,9 @@ namespace
         currentSceneId = startSceneId;
         examinedSceneIds.clear();
         usedSceneIds.clear();
+        takenItemKeys.clear();
+        takeMgr.close();
+        inventoryMgr.close();
         applyLocationStruct(cabinLocation);
 
         narrativeText += "\n\n";
@@ -820,7 +911,17 @@ namespace
         MovementStruct movement{};
         ActionStruct actions{};
 
-        if (inventoryMgr.isOpen())
+        if (takeMgr.isOpen())
+        {
+            movement.up = false;
+            movement.down = false;
+            movement.forward = false;
+            movement.left = false;
+            movement.right = false;
+            movement.backward = false;
+            actions.take = true;
+        }
+        else if (inventoryMgr.isOpen())
         {
             movement.up = false;
             movement.down = false;
@@ -866,6 +967,7 @@ namespace
                 actions.speak = false;
 
             actions.use = canUseInCurrentScene();
+            actions.take = canTakeInCurrentScene();
         }
 
         buttonMgr.setAvailability(movement, actions);
@@ -1172,10 +1274,39 @@ namespace
             if (inventoryMgr.isOpen())
                 inventoryMgr.close();
             else
+            {
+                if (takeMgr.isOpen())
+                    takeMgr.close();
                 inventoryMgr.open();
+            }
 
             updateInventoryLayout();
             updateActionAvailability();
+        }
+
+        if (buttonMgr.consumeTakeButtonClick())
+        {
+            if (takeMgr.isOpen())
+                takeMgr.close();
+            else
+            {
+                if (inventoryMgr.isOpen())
+                    inventoryMgr.close();
+                refreshTakeItems();
+                takeMgr.open();
+            }
+
+            updateInventoryLayout();
+            updateActionAvailability();
+        }
+
+        if (takeMgr.isOpen())
+        {
+            takeMgr.update();
+            processPendingTakes();
+            handleNarrativeScrollInput();
+            updateActionAvailability();
+            return;
         }
 
         if (inventoryMgr.isOpen())
@@ -1330,6 +1461,8 @@ namespace
 
         if (inventoryMgr.isOpen())
             inventoryMgr.draw();
+        else if (takeMgr.isOpen())
+            takeMgr.draw();
 
         buttonMgr.draw();
     }
