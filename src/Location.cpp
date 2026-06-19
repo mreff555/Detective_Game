@@ -75,7 +75,6 @@ namespace
             TraceLog(LOG_WARNING, "Some inventory images failed to load at startup");
         trimNarrativeBuffer();
         conversationMgr.onEnterRoom(currentRoomId, roomDatabase.getSpeakConfig(currentRoomId));
-        audioManager.onRoomEnter(roomDatabase.getRoomAudio(currentRoomId));
         updateInventoryLayout();
         updateActionAvailability();
     }
@@ -1117,6 +1116,16 @@ namespace
 
     void Location::update()
     {
+        if (!initialFrameComplete)
+        {
+            initialFrameComplete = true;
+        }
+        else if (deferInitialRoomAudio)
+        {
+            audioManager.onRoomEnter(roomDatabase.getRoomAudio(currentRoomId));
+            deferInitialRoomAudio = false;
+        }
+
         audioManager.update(GetFrameTime());
         updateInventoryLayout();
         updateActionAvailability();

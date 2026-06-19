@@ -39,6 +39,7 @@ class AudioManager
         bool fadingIn = false;
         bool fadingOut = false;
         std::string path;
+        std::string tempFilePath;
     };
 
     struct ActiveSound
@@ -48,9 +49,12 @@ class AudioManager
         float remainingSeconds = 0.0f;
     };
 
-    bool loadMusicClip(const std::string& path, Music& outMusic) const;
+    bool ensureDeviceReady();
+    bool loadMusicClip(const std::string& path, Music& outMusic, std::string& outTempFile);
     bool loadSoundClip(const std::string& path, Sound& outSound, float& outDurationSeconds) const;
     bool resolveAssetBytes(const std::string& relativePath, std::vector<unsigned char>& outBytes) const;
+    bool resolveMusicAssetFile(const std::string& relativePath, std::string& outPlayablePath, std::string& outTempFile) const;
+    void removeTempFile(const std::string& path);
     float effectiveVolume(AudioCategory category, float clipVolume) const;
     void startMusicTrack(FadingMusicTrack& track, const AudioClipDef& clip);
     void startAmbientTrack(const AudioClipDef& clip);

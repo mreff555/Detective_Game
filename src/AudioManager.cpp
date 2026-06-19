@@ -3,6 +3,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
+#include <fstream>
+#include <sstream>
 
 namespace testgame
 {
@@ -59,16 +62,20 @@ bool AudioManager::initialize(const std::string& root, const AudioVolumeConfig& 
 {
     assetRoot = root;
     volumes = volumeConfig;
+    return true;
+}
 
+bool AudioManager::ensureDeviceReady()
+{
+    if (deviceReady)
+        return true;
+
+    InitAudioDevice();
+    deviceReady = IsAudioDeviceReady();
     if (!deviceReady)
     {
-        InitAudioDevice();
-        deviceReady = IsAudioDeviceReady();
-        if (!deviceReady)
-        {
-            TraceLog(LOG_WARNING, "Audio device failed to initialize");
-            return false;
-        }
+        TraceLog(LOG_WARNING, "Audio device failed to initialize");
+        return false;
     }
 
     SetMasterVolume(volumes.master);
@@ -120,6 +127,63 @@ float AudioManager::effectiveVolume(AudioCategory category, float clipVolume) co
     return std::max(0.0f, std::min(1.0f, clipVolume * categoryVolume));
 }
 
+void AudioManager::removeTempFile(const std::string& path)
+{
+    if (path.empty())
+        return;
+
+    if (path.compare(0, 5, "/tmp/") == 0)
+        std::remove(path.c_str());
+}
+
+bool AudioManager::resolveMusicAssetFile(
+    const std::string& relativePath,
+    std::string& outPlayablePath,
+    std::string& outTempFile) const
+{
+    outPlayablePath.clear();
+    outTempFile.clear();
+
+    const std::vector<std::string> paths = buildAssetSearchPaths(assetRoot, relativePath);
+    for (const std::string& path : paths)
+    {
+        if (FileExists(path.c_str()))
+        {
+            outPlayablePath = path;
+            return true;
+        }
+
+        const std::string compressedPath = compressedAssetPath(path);
+        if (!FileExists(compressedPath.c_str()))
+            continue;
+
+        std::vector<unsigned char> bytes;
+        if (!loadAssetBytesFromFile(compressedPath, bytes) || bytes.empty())
+            continue;
+
+        std::ostringstream tempName;
+        tempName << "/tmp/highline_ridge_audio_" << GetRandomValue(100000, 999999) << ".mp3";
+        outTempFile = tempName.str();
+
+        std::ofstream tempFile(outTempFile.c_str(), std::ios::binary);
+        if (!tempFile.is_open())
+            return false;
+
+        tempFile.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+        if (!tempFile.good())
+        {
+            std::remove(outTempFile.c_str());
+            outTempFile.clear();
+            return false;
+        }
+
+        outPlayablePath = outTempFile;
+        return true;
+    }
+
+    return false;
+}
+
 bool AudioManager::resolveAssetBytes(const std::string& relativePath, std::vector<unsigned char>& outBytes) const
 {
     const std::vector<std::string> paths = buildAssetSearchPaths(assetRoot, relativePath);
@@ -136,12 +200,8 @@ bool AudioManager::resolveAssetBytes(const std::string& relativePath, std::vecto
     return false;
 }
 
-bool AudioManager::loadMusicClip(const std::string& path, Music& outMusic) const
+bool AudioManager::loadMusicClip(const std::string& path, Music& outMusic, std::string& outTempFile)
 {
-    std::vector<unsigned char> bytes;
-    if (!resolveAssetBytes(path, bytes) || bytes.empty())
-        return false;
-
     const std::string extension = fileExtensionFromPath(stripXzSuffix(path));
     if (extension != ".mp3")
     {
@@ -149,12 +209,12 @@ bool AudioManager::loadMusicClip(const std::string& path, Music& outMusic) const
         return false;
     }
 
-    outMusic = LoadMusicStreamFromMemory(
-        extension.c_str(),
-        bytes.data(),
-        static_cast<int>(bytes.size()));
+    std::string playablePath;
+    if (!resolveMusicAssetFile(path, playablePath, outTempFile))
+        return false;
 
-    return outMusic.frameCount > 0;
+    outMusic = LoadMusicStream(playablePath.c_str());
+    return IsMusicReady(outMusic);
 }
 
 bool AudioManager::loadSoundClip(const std::string& path, Sound& outSound, float& outDurationSeconds) const
@@ -196,6 +256,7 @@ void AudioManager::unloadMusicTrack(FadingMusicTrack& track)
         StopMusicStream(track.music);
 
     UnloadMusicStream(track.music);
+    removeTempFile(track.tempFilePath);
     track = FadingMusicTrack{};
 }
 
@@ -239,7 +300,8 @@ void AudioManager::startMusicTrack(FadingMusicTrack& track, const AudioClipDef& 
         return;
 
     Music music{};
-    if (!loadMusicClip(clip.path, music))
+    std::string tempFile;
+    if (!loadMusicClip(clip.path, music, tempFile))
     {
         TraceLog(LOG_WARNING, "Failed to load music clip: %s", clip.path.c_str());
         return;
@@ -248,6 +310,7 @@ void AudioManager::startMusicTrack(FadingMusicTrack& track, const AudioClipDef& 
     track.music = music;
     track.loaded = true;
     track.path = clip.path;
+    track.tempFilePath = tempFile;
     track.targetVolume = effectiveVolume(AudioCategory::Music, clip.volume);
     track.fadeInSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_in", clip.fadeIn));
     track.fadeOutSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_out", clip.fadeOut));
@@ -268,7 +331,8 @@ void AudioManager::startAmbientTrack(const AudioClipDef& clip)
 
     FadingMusicTrack track;
     Music music{};
-    if (!loadMusicClip(clip.path, music))
+    std::string tempFile;
+    if (!loadMusicClip(clip.path, music, tempFile))
     {
         TraceLog(LOG_WARNING, "Failed to load ambient clip: %s", clip.path.c_str());
         return;
@@ -277,6 +341,7 @@ void AudioManager::startAmbientTrack(const AudioClipDef& clip)
     track.music = music;
     track.loaded = true;
     track.path = clip.path;
+    track.tempFilePath = tempFile;
     track.targetVolume = effectiveVolume(AudioCategory::Ambient, clip.volume);
     track.fadeInSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_in", clip.fadeIn));
     track.fadeOutSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_out", clip.fadeOut));
@@ -403,7 +468,7 @@ void AudioManager::update(float deltaSeconds)
 
 void AudioManager::playSfx(const AudioClipDef& clip)
 {
-    if (!deviceReady || clip.path.empty())
+    if (clip.path.empty() || !ensureDeviceReady())
         return;
 
     Sound sound{};
@@ -441,6 +506,9 @@ bool AudioManager::hasActiveStreamAudio() const
 
 void AudioManager::applyRoomAudio(const RoomAudioConfig& roomAudio)
 {
+    if (!ensureDeviceReady())
+        return;
+
     if (roomAudio.hasMusic)
         startMusicTrack(musicTrack, roomAudio.music);
     else

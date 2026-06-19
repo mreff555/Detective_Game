@@ -148,6 +148,17 @@
       "exits": {
         "forward": "charcoal_burner_camp",
         "backward": "mountain_road"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
+            "volume": 0.65,
+            "fade_in": 3.0,
+            "fade_out": 2.5,
+            "loop": true
+          }
+        ]
       }
     },
     "charcoal_burner_camp": {

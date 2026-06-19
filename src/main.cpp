@@ -69,8 +69,7 @@ int main(void)
     InitWindow(screenSize.x, screenSize.y, "Highline Ridge");
 
     AudioManager audioManager;
-    if (!audioManager.initialize(".", gameConfig.audio))
-        TraceLog(LOG_WARNING, "Audio manager failed to initialize");
+    audioManager.initialize(".", gameConfig.audio);
 
     RoomDatabase roomDatabase;
     const bool roomsLoaded =

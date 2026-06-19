@@ -177,6 +177,9 @@ class Location
 
     mutable Texture2D notebookPaperTexture{};
     mutable bool notebookPaperTextureReady = false;
+
+    bool deferInitialRoomAudio = true;
+    bool initialFrameComplete = false;
 };
 
 }
