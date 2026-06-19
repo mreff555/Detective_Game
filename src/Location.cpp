@@ -53,6 +53,10 @@ namespace
       buttonMgr(buttonBox, descriptionFont)
     {
         inventoryMgr.setFont(descriptionFont);
+        const std::string& assetRoot = roomDatabase.getAssetRoot();
+        const std::string fallbackRoot = (assetRoot == ".") ? ".." : ".";
+        if (!inventoryMgr.initializeAssets(assetRoot, fallbackRoot))
+            TraceLog(LOG_WARNING, "Some inventory images failed to load");
         trimNarrativeBuffer();
         conversationMgr.onEnterRoom(currentRoomId, roomDatabase.getSpeakConfig(currentRoomId));
         updateInventoryLayout();
@@ -105,6 +109,34 @@ namespace
     {
         const float scaleFactor = fontSize / (float)descriptionFont.baseSize;
         return (descriptionFont.baseSize + descriptionFont.baseSize / 2.0f) * scaleFactor;
+    }
+
+    Rectangle Location::getMainImageBounds() const
+    {
+        return { 0.0f, 0.0f, (float)screenWidth * 0.5f, (float)screenHeight };
+    }
+
+    void Location::drawMainImage() const
+    {
+        const Rectangle mainBounds = getMainImageBounds();
+
+        if (inventoryMgr.isOpen() && inventoryMgr.isExaminingItem())
+        {
+            const InventoryItem* item = inventoryMgr.getSelectedItem();
+            if (item != nullptr && item->examineImage.id != 0)
+            {
+                DrawTexturePro(
+                    item->examineImage,
+                    { 0.0f, 0.0f, (float)item->examineImage.width, (float)item->examineImage.height },
+                    mainBounds,
+                    { 0.0f, 0.0f },
+                    0.0f,
+                    WHITE);
+                return;
+            }
+        }
+
+        DrawTexture(locationImage, 0, 0, WHITE);
     }
 
     Rectangle Location::getDialogBounds() const
@@ -822,7 +854,7 @@ namespace
     {
         ClearBackground(BLACK);
 
-        DrawTexture(locationImage, 0, 0, WHITE);
+        drawMainImage();
 
         const Rectangle dialog = getDialogBounds();
         DrawRectangleLinesEx(dialog, 4, GRAY);
@@ -909,37 +941,6 @@ namespace
             spacing,
             textColor);
         contentY += lineHeight * 1.2f;
-
-        if (item->examineImage.id != 0)
-        {
-            const float imageWidth = dialog.width - xOffset * 2.0f - 8.0f;
-            const float imageHeight = imageWidth * 0.58f;
-            const Rectangle imageFrame = {
-                dialog.x + xOffset,
-                dialog.y + yOffset + contentY - inventoryExamineScrollY,
-                imageWidth,
-                imageHeight
-            };
-
-            DrawRectangleRounded(imageFrame, 0.06f, 8, {24, 22, 30, 255});
-            DrawRectangleRoundedLines(imageFrame, 0.06f, 8, 2.0f, {168, 138, 72, 255});
-
-            const float imagePad = 12.0f;
-            DrawTexturePro(
-                item->examineImage,
-                { 0.0f, 0.0f, (float)item->examineImage.width, (float)item->examineImage.height },
-                {
-                    imageFrame.x + imagePad,
-                    imageFrame.y + imagePad,
-                    imageFrame.width - imagePad * 2.0f,
-                    imageFrame.height - imagePad * 2.0f
-                },
-                { 0.0f, 0.0f },
-                0.0f,
-                WHITE);
-
-            contentY += imageHeight + lineHeight * 0.8f;
-        }
 
         layoutWrappedParagraph(
             item->examineText.c_str(),
