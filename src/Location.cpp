@@ -428,13 +428,15 @@ namespace
 
     void Location::updateActionAvailability()
     {
-        MovementStruct movement;
+        MovementStruct movement{};
         ActionStruct actions{};
 
         if (inventoryMgr.isOpen())
         {
             if (inventoryMgr.isExaminingItem())
+            {
                 movement.backward = true;
+            }
             else if (inventoryMgr.canExamineSelectedItem())
                 actions.examine = true;
         }

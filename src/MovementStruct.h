@@ -5,12 +5,12 @@ namespace testgame
 {
     struct MovementStruct
     {
-        bool up;
-        bool down;
-        bool forward;
-        bool backward;
-        bool left;
-        bool right;
+        bool up = false;
+        bool down = false;
+        bool forward = false;
+        bool backward = false;
+        bool left = false;
+        bool right = false;
     };
 }
 
