@@ -71,6 +71,7 @@ class Location
     void drawInventoryExamineView() const;
     void drawInventoryExamineScrollbar() const;
     void drawMainImage() const;
+    void drawNotebookBackdrop(const Rectangle& bounds) const;
     Rectangle getMainImageBounds() const;
     Rectangle getDialogBounds() const;
     Rectangle getInventoryPanelBounds() const;
@@ -133,12 +134,12 @@ class Location
     float lucidity = 30.0f;
     std::set<std::string> consumedStatusActions;
 
-    float fontSize = 20;
+    float fontSize = 28.0f;
     const bool wordWrap = true;
-    const int spacing = 2;
-    const Color textColor = DARKGRAY;
-    const int xOffset = 14;
-    const int yOffset = 14;
+    const int spacing = 3;
+    const Color textColor = {32, 42, 68, 255};
+    const int xOffset = 78;
+    const int yOffset = 36;
 
     const Rectangle textBox;
     const Rectangle buttonBox;

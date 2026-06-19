@@ -1,6 +1,6 @@
 {
-  "font": "/System/Library/Fonts/Geneva.ttf",
-  "boldFont": "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+  "font": "resources/fonts/Caveat-Regular.ttf",
+  "boldFont": "resources/fonts/Caveat-Bold.ttf",
   "rooms": {
     "cabin": {
       "start": true,

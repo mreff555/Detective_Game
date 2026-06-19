@@ -11,6 +11,47 @@ namespace testgame
 namespace
 {
 
+Font loadGameFont(const std::string& assetRoot, const std::string& fontPath)
+{
+    std::vector<std::string> paths;
+    auto tryAdd = [&](const std::string& candidate)
+    {
+        if (candidate.empty())
+            return;
+
+        if (std::find(paths.begin(), paths.end(), candidate) == paths.end())
+            paths.push_back(candidate);
+    };
+
+    tryAdd(fontPath);
+    tryAdd(resolveAssetPath(assetRoot, fontPath));
+    tryAdd(resolveAssetPath(".", fontPath));
+    tryAdd(resolveAssetPath("..", fontPath));
+
+    const char* appDir = GetApplicationDirectory();
+    if (appDir != nullptr && appDir[0] != '\0')
+    {
+        const std::string appDirectory(appDir);
+        tryAdd(resolveAssetPath(appDirectory, fontPath));
+        tryAdd(resolveAssetPath(appDirectory + "/..", fontPath));
+    }
+
+    for (const std::string& path : paths)
+    {
+        if (!FileExists(path.c_str()))
+            continue;
+
+        Font font = LoadFontEx(path.c_str(), 64, nullptr, 0);
+        if (font.texture.id != 0)
+        {
+            TraceLog(LOG_INFO, "Loaded game font: %s", path.c_str());
+            return font;
+        }
+    }
+
+    return Font{};
+}
+
 bool parseMovement(const nlohmann::json& movement, MovementStruct& out)
 {
     if (!movement.is_object())
@@ -399,11 +440,11 @@ bool RoomDatabase::load(const std::string& configPath, const std::string& assetR
 
     if (!fontsLoaded)
     {
-        descriptionFont = LoadFont(fontPath.c_str());
+        descriptionFont = loadGameFont(assetRoot, fontPath);
         if (descriptionFont.texture.id == 0)
             return false;
 
-        boldFont = LoadFont(boldFontPath.c_str());
+        boldFont = loadGameFont(assetRoot, boldFontPath);
         if (boldFont.texture.id == 0)
             boldFont = descriptionFont;
 

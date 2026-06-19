@@ -12,11 +12,19 @@ const float Location::kScrollbarWidth = 16.0f;
 
 namespace
 {
-    const Color kScrollTrack = {48, 44, 56, 255};
-    const Color kScrollThumb = {140, 118, 72, 255};
-    const Color kScrollThumbHover = {168, 142, 88, 255};
-    const Color kChoiceText = {168, 138, 72, 255};
-    const Color kChoiceHover = {210, 178, 108, 255};
+    const Color kPaperBase = {251, 246, 232, 255};
+    const Color kPaperShadow = {214, 198, 168, 255};
+    const Color kPaperEdge = {196, 176, 142, 255};
+    const Color kRuleLine = {168, 198, 228, 110};
+    const Color kMarginLine = {214, 108, 98, 170};
+    const Color kBindingRing = {118, 104, 88, 255};
+    const Color kBindingHole = {72, 62, 52, 255};
+    const Color kCoffeeStain = {196, 164, 126, 28};
+    const Color kScrollTrack = {236, 224, 202, 255};
+    const Color kScrollThumb = {176, 148, 108, 255};
+    const Color kScrollThumbHover = {148, 118, 78, 255};
+    const Color kChoiceText = {126, 82, 42, 255};
+    const Color kChoiceHover = {168, 108, 48, 255};
 
     const char* kWakeOnFloorPrefix =
         "You come back to yourself on the floor of the cabin, cheek pressed to the Persian rug, "
@@ -115,6 +123,110 @@ namespace
     Rectangle Location::getMainImageBounds() const
     {
         return { 0.0f, 0.0f, (float)screenWidth * 0.5f, (float)screenHeight };
+    }
+
+    void Location::drawNotebookBackdrop(const Rectangle& bounds) const
+    {
+        const Rectangle shadow = {
+            bounds.x + 6.0f,
+            bounds.y + 8.0f,
+            bounds.width,
+            bounds.height
+        };
+        DrawRectangleRec(shadow, kPaperShadow);
+
+        DrawRectangleRec(bounds, kPaperBase);
+        DrawRectangleGradientV(
+            (int)bounds.x,
+            (int)bounds.y,
+            (int)bounds.width,
+            (int)bounds.height,
+            kPaperBase,
+            {238, 228, 206, 255});
+
+        const float lineStep = getNarrativeLineHeight();
+        const float firstLineY = bounds.y + yOffset + lineStep * 0.35f;
+        for (float ruleY = firstLineY; ruleY < bounds.y + bounds.height - 18.0f; ruleY += lineStep)
+        {
+            DrawLineEx(
+                { bounds.x + 18.0f, ruleY },
+                { bounds.x + bounds.width - 24.0f, ruleY },
+                1.0f,
+                kRuleLine);
+        }
+
+        const float marginX = bounds.x + 58.0f;
+        DrawLineEx(
+            { marginX, bounds.y + 16.0f },
+            { marginX, bounds.y + bounds.height - 16.0f },
+            2.0f,
+            kMarginLine);
+
+        const Rectangle bindingStrip = {
+            bounds.x,
+            bounds.y,
+            18.0f,
+            bounds.height
+        };
+        DrawRectangleRec(bindingStrip, {226, 214, 188, 255});
+
+        const float holeRadius = 5.5f;
+        const float holeSpacing = 42.0f;
+        for (float holeY = bounds.y + 34.0f; holeY < bounds.y + bounds.height - 34.0f; holeY += holeSpacing)
+        {
+            const Vector2 holeCenter = { bounds.x + 9.0f, holeY };
+            DrawCircleV(holeCenter, holeRadius + 1.5f, kBindingRing);
+            DrawCircleV(holeCenter, holeRadius, kBindingHole);
+            DrawCircleV({ holeCenter.x - 1.0f, holeCenter.y - 1.0f }, holeRadius - 2.0f, {96, 84, 72, 255});
+        }
+
+        const Rectangle headerBand = {
+            bounds.x + 18.0f,
+            bounds.y + 10.0f,
+            bounds.width - 36.0f,
+            22.0f
+        };
+        DrawTextEx(
+            boldFont,
+            "CASE NOTES",
+            { headerBand.x + 8.0f, headerBand.y + 2.0f },
+            18.0f,
+            1.0f,
+            Fade({120, 96, 72, 255}, 0.55f));
+
+        const Vector2 stainCenter = {
+            bounds.x + bounds.width * 0.78f,
+            bounds.y + bounds.height * 0.22f
+        };
+        DrawRing(stainCenter, 34.0f, 48.0f, 0.0f, 360.0f, 48, kCoffeeStain);
+        DrawRing(stainCenter, 24.0f, 30.0f, 0.0f, 360.0f, 32, Fade(kCoffeeStain, 0.65f));
+
+        const float foldSize = 28.0f;
+        DrawTriangle(
+            { bounds.x + bounds.width, bounds.y },
+            { bounds.x + bounds.width - foldSize, bounds.y },
+            { bounds.x + bounds.width, bounds.y + foldSize },
+            {228, 216, 194, 255});
+        DrawLineEx(
+            { bounds.x + bounds.width - foldSize, bounds.y },
+            { bounds.x + bounds.width, bounds.y + foldSize },
+            1.0f,
+            kPaperEdge);
+
+        DrawRectangleLinesEx(bounds, 2.0f, kPaperEdge);
+
+        const Rectangle scrollbarGutter = {
+            bounds.x + bounds.width - kScrollbarWidth,
+            bounds.y,
+            kScrollbarWidth,
+            bounds.height
+        };
+        DrawRectangleRec(scrollbarGutter, {244, 232, 210, 255});
+        DrawLineEx(
+            { scrollbarGutter.x, scrollbarGutter.y + 8.0f },
+            { scrollbarGutter.x, scrollbarGutter.y + scrollbarGutter.height - 8.0f },
+            1.0f,
+            Fade(kPaperEdge, 0.8f));
     }
 
     void Location::drawMainImage() const
@@ -864,7 +976,7 @@ namespace
         drawMainImage();
 
         const Rectangle dialog = getDialogBounds();
-        DrawRectangleLinesEx(dialog, 4, GRAY);
+        drawNotebookBackdrop(dialog);
 
         if (inventoryMgr.isOpen() && inventoryMgr.isExaminingItem())
         {
