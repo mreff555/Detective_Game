@@ -4,6 +4,7 @@
 #include <AudioTypes.h>
 #include <GameConfig.h>
 #include <raylib.h>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -59,6 +60,7 @@ class AudioManager
         std::string path;
         std::string tempFilePath;
         bool loop = true;
+        bool usesCachedAlias = false;
     };
 
     struct ActiveSound
@@ -72,6 +74,8 @@ class AudioManager
     bool ensureDeviceReady();
     bool loadMusicClip(const std::string& path, Music& outMusic, std::string& outTempFile);
     bool loadSoundClip(const std::string& path, Sound& outSound, float& outDurationSeconds, std::string& outTempFile);
+    bool acquireAmbientSound(const std::string& path, Sound& outSound, bool& outUsesAlias);
+    void releaseAmbientSound(const std::string& path, Sound& sound, bool usesAlias);
     bool resolveAssetBytes(const std::string& relativePath, std::vector<unsigned char>& outBytes) const;
     bool resolveMusicAssetFile(const std::string& relativePath, std::string& outPlayablePath, std::string& outTempFile) const;
     void removeTempFile(const std::string& path);
@@ -98,9 +102,17 @@ class AudioManager
         const std::string& fromRoom,
         const std::string& toRoom);
 
+    struct CachedAmbientSample
+    {
+        Sound sound{};
+        bool loaded = false;
+        std::string tempFilePath;
+    };
+
     std::string assetRoot;
     AudioVolumeConfig volumes;
     bool deviceReady = false;
+    std::map<std::string, CachedAmbientSample> ambientSampleCache;
 
     FadingMusicTrack musicTrack;
     std::vector<FadingAmbientTrack> ambientTracks;

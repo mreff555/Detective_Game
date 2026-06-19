@@ -187,6 +187,17 @@
       "exits": {
         "forward": "survey_stake_line",
         "backward": "narrow_path"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
+            "volume": 0.85,
+            "fade_in": 1.0,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
       }
     },
     "survey_stake_line": {
@@ -210,6 +221,17 @@
       "exits": {
         "forward": "ice_house",
         "backward": "charcoal_burner_camp"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
+            "volume": 0.85,
+            "fade_in": 1.0,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
       }
     },
     "ice_house": {
@@ -233,6 +255,17 @@
       "exits": {
         "forward": "private_overlook",
         "backward": "survey_stake_line"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
+            "volume": 0.85,
+            "fade_in": 1.0,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
       }
     },
     "private_overlook": {
@@ -256,6 +289,17 @@
       },
       "exits": {
         "backward": "ice_house"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
+            "volume": 0.85,
+            "fade_in": 1.0,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
       }
     },
     "mountain_road_forward": {

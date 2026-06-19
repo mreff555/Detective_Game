@@ -108,6 +108,14 @@ void AudioManager::shutdown()
     unloadMusicTrack(musicTrack);
     unloadAmbientTracks();
 
+    for (std::pair<const std::string, CachedAmbientSample>& cachedSample : ambientSampleCache)
+    {
+        if (cachedSample.second.loaded)
+            UnloadSound(cachedSample.second.sound);
+        removeTempFile(cachedSample.second.tempFilePath);
+    }
+    ambientSampleCache.clear();
+
     for (ActiveSound& activeSound : activeSounds)
     {
         if (activeSound.loaded)
@@ -275,6 +283,43 @@ bool AudioManager::loadSoundClip(
     return true;
 }
 
+bool AudioManager::acquireAmbientSound(const std::string& path, Sound& outSound, bool& outUsesAlias)
+{
+    outSound = Sound{};
+    outUsesAlias = false;
+
+    CachedAmbientSample& cachedSample = ambientSampleCache[path];
+    if (!cachedSample.loaded)
+    {
+        float durationSeconds = 0.0f;
+        if (!loadSoundClip(path, cachedSample.sound, durationSeconds, cachedSample.tempFilePath))
+            return false;
+
+        cachedSample.loaded = true;
+    }
+
+    outSound = LoadSoundAlias(cachedSample.sound);
+    if (outSound.frameCount == 0)
+        return false;
+
+    outUsesAlias = true;
+    return true;
+}
+
+void AudioManager::releaseAmbientSound(const std::string& path, Sound& sound, bool usesAlias)
+{
+    if (!sound.frameCount)
+        return;
+
+    if (usesAlias)
+        UnloadSoundAlias(sound);
+    else
+        UnloadSound(sound);
+
+    sound = Sound{};
+    (void)path;
+}
+
 void AudioManager::unloadMusicTrack(FadingMusicTrack& track)
 {
     if (!track.loaded)
@@ -296,8 +341,7 @@ void AudioManager::unloadAmbientTrack(FadingAmbientTrack& track)
     if (track.playing)
         StopSound(track.sound);
 
-    UnloadSound(track.sound);
-    removeTempFile(track.tempFilePath);
+    releaseAmbientSound(track.path, track.sound, track.usesCachedAlias);
     track = FadingAmbientTrack{};
 }
 
@@ -387,9 +431,8 @@ void AudioManager::startAmbientTrack(const AudioClipDef& clip)
 
     FadingAmbientTrack track;
     Sound sound{};
-    float durationSeconds = 0.0f;
-    std::string tempFile;
-    if (!loadSoundClip(clip.path, sound, durationSeconds, tempFile))
+    bool usesAlias = false;
+    if (!acquireAmbientSound(clip.path, sound, usesAlias))
     {
         TraceLog(LOG_WARNING, "Failed to load ambient clip: %s", clip.path.c_str());
         return;
@@ -398,7 +441,7 @@ void AudioManager::startAmbientTrack(const AudioClipDef& clip)
     track.sound = sound;
     track.loaded = true;
     track.path = clip.path;
-    track.tempFilePath = tempFile;
+    track.usesCachedAlias = usesAlias;
     track.targetVolume = effectiveVolume(AudioCategory::Ambient, clip.volume);
     track.fadeInSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_in", clip.fadeIn));
     track.fadeOutSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_out", clip.fadeOut));
@@ -676,6 +719,12 @@ void AudioManager::retainAmbientTrack(FadingAmbientTrack& track, const AudioClip
         track.currentVolume = track.targetVolume;
 
     SetSoundVolume(track.sound, track.currentVolume);
+
+    if (track.loop && !IsSoundPlaying(track.sound))
+    {
+        track.playing = true;
+        PlaySound(track.sound);
+    }
 }
 
 AudioManager::FadingAmbientTrack* AudioManager::findAmbientTrackByPath(const std::string& path)
@@ -729,15 +778,12 @@ void AudioManager::syncRoomStreams(const RoomAudioConfig& roomAudio)
     for (const AudioClipDef& ambientClip : roomAudio.ambient)
     {
         FadingAmbientTrack* existingTrack = findAmbientTrackByPath(ambientClip.path);
-        if (existingTrack != nullptr && isAmbientTrackActive(*existingTrack))
+        if (existingTrack != nullptr)
         {
             retainAmbientTrack(*existingTrack, ambientClip);
             retainedAmbientPaths.insert(ambientClip.path);
             continue;
         }
-
-        if (existingTrack != nullptr)
-            unloadAmbientTrack(*existingTrack);
 
         startAmbientTrack(ambientClip);
         retainedAmbientPaths.insert(ambientClip.path);
