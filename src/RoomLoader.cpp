@@ -30,6 +30,7 @@ bool parseActions(const nlohmann::json& actions, ActionStruct& out)
     out.speak = actions.value("speak", false);
     out.hit = actions.value("hit", false);
     out.use = actions.value("use", false);
+    out.take = actions.value("take", false);
     return true;
 }
 

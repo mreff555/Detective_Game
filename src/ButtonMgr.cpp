@@ -69,8 +69,10 @@ ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
     const float statusW = contentW - moveW - actionW - gap * 2.0f;
     const float actionX = contentX + moveW + gap;
     const float statusX = actionX + actionW + gap;
-    const float actionCount = 4.0f;
-    const float actionH = (contentH - gap * (actionCount - 1.0f)) / actionCount;
+    const float actionCols = 2.0f;
+    const float actionRows = 3.0f;
+    const float actionBtnW = (actionW - gap) / actionCols;
+    const float actionBtnH = (contentH - gap * (actionRows - 1.0f)) / actionRows;
 
     const float moveBtnW = (moveW - gap) / 2.0f;
     const float moveBtnH = (contentH - gap * 2.0f) / 3.0f;
@@ -88,16 +90,22 @@ ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
         { contentX + moveBtnW / 2.0f + gap / 2.0f, contentY + (moveBtnH + gap) * 2.0f, moveBtnW, moveBtnH });
 
     addButton("Examine",
-        { actionX, contentY, actionW, actionH });
+        { actionX, contentY, actionBtnW, actionBtnH });
 
     addButton("Speak",
-        { actionX, contentY + (actionH + gap) * 1.0f, actionW, actionH });
+        { actionX + actionBtnW + gap, contentY, actionBtnW, actionBtnH });
 
-    addButton("Hit",
-        { actionX, contentY + (actionH + gap) * 2.0f, actionW, actionH });
+    addButton("Take",
+        { actionX, contentY + (actionBtnH + gap) * 1.0f, actionBtnW, actionBtnH });
 
     addButton("Use",
-        { actionX, contentY + (actionH + gap) * 3.0f, actionW, actionH });
+        { actionX + actionBtnW + gap, contentY + (actionBtnH + gap) * 1.0f, actionBtnW, actionBtnH });
+
+    addButton("Reserved",
+        { actionX, contentY + (actionBtnH + gap) * 2.0f, actionBtnW, actionBtnH });
+
+    addButton("Reserved",
+        { actionX + actionBtnW + gap, contentY + (actionBtnH + gap) * 2.0f, actionBtnW, actionBtnH });
 
     const float statusRowH = (contentH - gap) / 2.0f;
     const float statusBarW = (statusW - gap) / 2.0f;
@@ -182,9 +190,11 @@ void ButtonMgr::setAvailability(const MovementStruct& movement, const ActionStru
     buttons[3].setEnabled(movement.backward);
     buttons[4].setEnabled(actions.examine);
     buttons[5].setEnabled(actions.speak);
-    buttons[6].setEnabled(actions.hit);
+    buttons[6].setEnabled(actions.take);
     buttons[7].setEnabled(actions.use);
-    buttons[8].setEnabled(true);
+    buttons[8].setEnabled(false);
+    buttons[9].setEnabled(false);
+    buttons[10].setEnabled(true);
 }
 
 namespace
@@ -204,7 +214,7 @@ namespace
 int ButtonMgr::findEnabledButtonUnderMouse(Vector2 mousePos) const
 {
     const float clickPadding = 3.0f;
-    const int movementAndActionCount = 8;
+    const int movementAndActionCount = 10;
     for (int i = 0; i < movementAndActionCount; ++i)
     {
         if (buttons[i].isEnabled() &&
@@ -212,9 +222,9 @@ int ButtonMgr::findEnabledButtonUnderMouse(Vector2 mousePos) const
             return i;
     }
 
-    if (buttons[8].isEnabled() &&
-        isPointInClickableBounds(mousePos, buttons[8].getBounds(), clickPadding))
-        return 8;
+    if (buttons[10].isEnabled() &&
+        isPointInClickableBounds(mousePos, buttons[10].getBounds(), clickPadding))
+        return 10;
 
     return -1;
 }
@@ -242,9 +252,9 @@ void ButtonMgr::updatePressedFlags()
     backButtonPressed = buttons[3].isEnabled() && buttons[3].getState() == PRESSED;
     examineButtonPressed = buttons[4].isEnabled() && buttons[4].getState() == PRESSED;
     speakButtonPressed = buttons[5].isEnabled() && buttons[5].getState() == PRESSED;
-    hitButtonPressed = buttons[6].isEnabled() && buttons[6].getState() == PRESSED;
+    hitButtonPressed = false;
     useButtonPressed = buttons[7].isEnabled() && buttons[7].getState() == PRESSED;
-    inventoryButtonPressed = buttons[8].isEnabled() && buttons[8].getState() == PRESSED;
+    inventoryButtonPressed = buttons[10].isEnabled() && buttons[10].getState() == PRESSED;
 }
 
 void ButtonMgr::update()

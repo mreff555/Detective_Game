@@ -9,6 +9,7 @@ namespace testgame
         bool speak;
         bool hit;
         bool use;
+        bool take;
     };
 }
 
