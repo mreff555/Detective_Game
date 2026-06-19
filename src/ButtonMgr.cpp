@@ -90,7 +90,7 @@ ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
         { contentX, contentY + verticalBtnH + gap, moveColLeftW, verticalBtnH });
 
     addButton("Forward",
-        { moveRightX + movePadBtnW / 2.0f + gap / 2.0f, contentY, movePadBtnW, movePadBtnH });
+        { moveRightX, contentY, moveColRightW, movePadBtnH });
 
     addButton("Left",
         { moveRightX, contentY + movePadBtnH + gap, movePadBtnW, movePadBtnH });
@@ -98,8 +98,8 @@ ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
     addButton("Right",
         { moveRightX + movePadBtnW + gap, contentY + movePadBtnH + gap, movePadBtnW, movePadBtnH });
 
-    addButton("back",
-        { moveRightX + movePadBtnW / 2.0f + gap / 2.0f, contentY + (movePadBtnH + gap) * 2.0f, movePadBtnW, movePadBtnH });
+    addButton("Back",
+        { moveRightX, contentY + (movePadBtnH + gap) * 2.0f, moveColRightW, movePadBtnH });
 
     addButton("Examine",
         { actionX, contentY, actionBtnW, actionBtnH });
