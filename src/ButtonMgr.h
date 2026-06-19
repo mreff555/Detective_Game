@@ -2,6 +2,8 @@
 #define BUTTON_MGR_H
 
 #include "Button.h"
+#include <ActionStruct.h>
+#include <MovementStruct.h>
 #include <raylib.h>
 #include <vector>
 
@@ -15,6 +17,7 @@ namespace testgame
         virtual ~ButtonMgr();
         void update();
         void draw() const;
+        void setAvailability(const MovementStruct& movement, const ActionStruct& actions);
 
         bool isForwardButtonPressed() const { return forwardButtonPressed; }
         bool isBackButtonPressed() const { return backButtonPressed; }
@@ -29,6 +32,7 @@ namespace testgame
         private:
         void addButton(const char* label, Rectangle bounds);
         void drawSectionLabel(const char* label, float x, float y) const;
+        void updatePressedFlags();
 
         bool forwardButtonPressed = false;
         bool backButtonPressed = false;

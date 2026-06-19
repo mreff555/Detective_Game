@@ -16,7 +16,10 @@ struct ButtonStyle
     Color normalBg;
     Color hoverBg;
     Color pressedBg;
+    Color disabledBg;
     Color borderColor;
+    Color disabledBorderColor;
+    Color disabledTextColor;
     float roundness;
     float fontSize;
 };
@@ -32,6 +35,8 @@ class Button
     Rectangle getBounds() const;
     void setState(ButtonState state);
     ButtonState getState() const { return state; }
+    void setEnabled(bool enabled);
+    bool isEnabled() const { return enabled; }
 
     private:
     const char* text;
@@ -40,6 +45,7 @@ class Button
     Font font;
     ButtonStyle style;
     ButtonState state = NORMAL;
+    bool enabled = true;
 };
 
 #endif /* BUTTON_H */

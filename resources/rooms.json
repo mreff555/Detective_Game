@@ -1,0 +1,45 @@
+{
+  "font": "/System/Library/Fonts/Geneva.ttf",
+  "rooms": {
+    "cabin": {
+      "start": true,
+      "image": "resources/cabin.png",
+      "description": "In a dimly lit cabin, an old man sits by the fire surrounded by surprisingly lavish furnishings, given the condition of the cabin.",
+      "movement": {
+        "forward": false,
+        "backward": true,
+        "left": false,
+        "right": false
+      },
+      "actions": {
+        "examine": true,
+        "speak": true,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "backward": "hallway"
+      }
+    },
+    "hallway": {
+      "start": false,
+      "image": "resources/cabin.png",
+      "description": "A narrow hallway stretches ahead, its floorboards creaking underfoot.",
+      "movement": {
+        "forward": true,
+        "backward": false,
+        "left": false,
+        "right": false
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "forward": "cabin"
+      }
+    }
+  }
+}

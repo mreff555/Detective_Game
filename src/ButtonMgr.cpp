@@ -23,7 +23,10 @@ ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
           {54, 50, 64, 255},
           {78, 72, 92, 255},
           {40, 38, 50, 255},
+          {30, 28, 36, 255},
           {118, 96, 58, 255},
+          {62, 52, 34, 255},
+          {108, 102, 92, 255},
           0.18f,
           18.0f
       }
@@ -95,11 +98,43 @@ void ButtonMgr::drawSectionLabel(const char* label, float x, float y) const
     DrawTextEx(buttonFont, label, { x, y }, 14.0f, 1, kSectionLabel);
 }
 
+void ButtonMgr::setAvailability(const MovementStruct& movement, const ActionStruct& actions)
+{
+    buttons[0].setEnabled(movement.forward);
+    buttons[1].setEnabled(movement.left);
+    buttons[2].setEnabled(movement.right);
+    buttons[3].setEnabled(movement.backward);
+    buttons[4].setEnabled(actions.examine);
+    buttons[5].setEnabled(actions.speak);
+    buttons[6].setEnabled(actions.hit);
+    buttons[7].setEnabled(actions.use);
+    buttons[8].setEnabled(true);
+}
+
+void ButtonMgr::updatePressedFlags()
+{
+    forwardButtonPressed = buttons[0].isEnabled() && buttons[0].getState() == PRESSED;
+    leftButtonPressed = buttons[1].isEnabled() && buttons[1].getState() == PRESSED;
+    rightButtonPressed = buttons[2].isEnabled() && buttons[2].getState() == PRESSED;
+    backButtonPressed = buttons[3].isEnabled() && buttons[3].getState() == PRESSED;
+    examineButtonPressed = buttons[4].isEnabled() && buttons[4].getState() == PRESSED;
+    speakButtonPressed = buttons[5].isEnabled() && buttons[5].getState() == PRESSED;
+    hitButtonPressed = buttons[6].isEnabled() && buttons[6].getState() == PRESSED;
+    useButtonPressed = buttons[7].isEnabled() && buttons[7].getState() == PRESSED;
+    inventoryButtonPressed = buttons[8].isEnabled() && buttons[8].getState() == PRESSED;
+}
+
 void ButtonMgr::update()
 {
     Vector2 mousePos = GetMousePosition();
     for (auto& button : buttons)
     {
+        if (!button.isEnabled())
+        {
+            button.setState(NORMAL);
+            continue;
+        }
+
         if (CheckCollisionPointRec(mousePos, button.getBounds()))
         {
             if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
@@ -113,15 +148,7 @@ void ButtonMgr::update()
         }
     }
 
-    forwardButtonPressed = buttons[0].getState() == PRESSED;
-    backButtonPressed = buttons[3].getState() == PRESSED;
-    leftButtonPressed = buttons[1].getState() == PRESSED;
-    rightButtonPressed = buttons[2].getState() == PRESSED;
-    examineButtonPressed = buttons[4].getState() == PRESSED;
-    speakButtonPressed = buttons[5].getState() == PRESSED;
-    hitButtonPressed = buttons[6].getState() == PRESSED;
-    useButtonPressed = buttons[7].getState() == PRESSED;
-    inventoryButtonPressed = buttons[8].getState() == PRESSED;
+    updatePressedFlags();
 }
 
 void ButtonMgr::draw() const

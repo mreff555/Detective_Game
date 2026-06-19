@@ -17,7 +17,9 @@ namespace testgame
       buttonBox{screenWidth / 2.0f, screenHeight * 2.0f / 3.0f, screenWidth / 2.0f, screenHeight / 3.0f},
       buttonMgr(buttonBox, descriptionFont)
     {
-        
+        buttonMgr.setAvailability(
+            locationStruct.movementFilter,
+            locationStruct.actionFilter);
     }
 
     Location::~Location()
@@ -81,6 +83,9 @@ namespace testgame
         this->backward = locationStruct.movementFilter.backward;
         this->left = locationStruct.movementFilter.left;
         this->right = locationStruct.movementFilter.right;
+        buttonMgr.setAvailability(
+            locationStruct.movementFilter,
+            locationStruct.actionFilter);
     }
 
     void Location::DrawTextBoxed(const char *text) const

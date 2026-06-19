@@ -1,6 +1,7 @@
 #ifndef LOCATION_STRUCT_H
 #define LOCATION_STRUCT_H
 
+#include <ActionStruct.h>
 #include <MovementStruct.h>
 #include <raylib.h>
 #include <string>
@@ -14,10 +15,7 @@ struct LocationStruct
     std::string locationDescription;
     Font descriptionFont;
     MovementStruct movementFilter;
-    // bool forward;
-    // bool backward;
-    // bool left;
-    // bool right;
+    ActionStruct actionFilter;
 };
 
 }
