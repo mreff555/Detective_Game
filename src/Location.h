@@ -27,6 +27,7 @@ class Location
     void update();
     void draw() const;
     void appendExamineDetails();
+    void appendUseDetails();
 
     private:
     void applyLocationStruct(const LocationStruct& locationStruct);
@@ -36,10 +37,14 @@ class Location
     void handleNarrativeScrollInput();
     void drawNarrativeText() const;
     void drawNarrativeScrollbar() const;
+    void appendNarrativeSection(const char* header, const std::string& details);
+    void updateActionAvailability();
+    void scrollNarrativeToBottom();
     float getNarrativeVisibleHeight() const;
     float getNarrativeLineHeight() const;
     float getNarrativeWrapWidth() const;
     void layoutWrappedParagraph(const char* text, Font font, float paragraphFontSize, float& textOffsetY, bool draw, float scrollY) const;
+    bool isBoldNarrativeHeader(const std::string& line) const;
 
     static const int kMaxNarrativeLines = 500;
     static const float kScrollbarWidth;
@@ -54,13 +59,20 @@ class Location
     std::string baseDescription;
     std::string narrativeText;
     std::string examineDetails;
+    std::string useDetails;
     Font descriptionFont;
     Font boldFont;
+    ActionStruct baseActionFilter;
     
     bool forward;
     bool backward;
     bool left;
     bool right;
+    bool hasExaminedCurrentRoom = false;
+    bool hasUsedInCurrentRoom = false;
+
+    float health = 90.0f;
+    float energy = 20.0f;
 
     float fontSize = 20;
     const bool wordWrap = true;

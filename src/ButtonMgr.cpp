@@ -1,6 +1,8 @@
 #include "Button.h"
 #include "ButtonMgr.h"
 #include <raylib.h>
+#include <algorithm>
+#include <cstdio>
 #include <vector>
 
 namespace testgame
@@ -13,11 +15,16 @@ namespace
     const Color kPanelAccent = {96, 78, 48, 255};
     const Color kSectionLabel = {132, 122, 104, 255};
     const Color kDivider = {68, 62, 54, 255};
+    const Color kStatusTrack = {40, 38, 50, 255};
+    const Color kHealthFill = {168, 72, 72, 255};
+    const Color kEnergyFill = {168, 138, 72, 255};
 }
 
 ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
     : buttonBox(_buttonBox),
       buttonFont(_buttonFont),
+      healthBarBounds{},
+      energyBarBounds{},
       buttonStyle{
           {228, 220, 198, 255},
           {54, 50, 64, 255},
@@ -41,9 +48,11 @@ ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
     const float contentW = buttonBox.width - pad * 2.0f;
     const float contentH = buttonBox.height - pad * 2.0f - labelHeight - inventoryHeight - gap;
 
-    const float moveW = contentW * 0.34f;
-    const float actionW = contentW * 0.40f;
+    const float moveW = contentW * 0.30f;
+    const float actionW = contentW * 0.30f;
+    const float statusW = contentW - moveW - actionW - gap * 2.0f;
     const float actionX = contentX + moveW + gap;
+    const float statusX = actionX + actionW + gap;
     const float actionCount = 4.0f;
     const float actionH = (contentH - gap * (actionCount - 1.0f)) / actionCount;
 
@@ -74,6 +83,10 @@ ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
     addButton("Use",
         { actionX, contentY + (actionH + gap) * 3.0f, actionW, actionH });
 
+    const float statusBarH = (contentH - gap) / 2.0f;
+    healthBarBounds = { statusX, contentY, statusW, statusBarH };
+    energyBarBounds = { statusX, contentY + statusBarH + gap, statusW, statusBarH };
+
     const float inventoryY = buttonBox.y + buttonBox.height - pad - inventoryHeight;
     addButton("Inventory",
         { contentX, inventoryY, contentW, inventoryHeight });
@@ -81,6 +94,12 @@ ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
 
 ButtonMgr::~ButtonMgr()
 {
+}
+
+void ButtonMgr::setStatus(float health, float energy)
+{
+    healthPercent = std::max(0.0f, std::min(health, 100.0f));
+    energyPercent = std::max(0.0f, std::min(energy, 100.0f));
 }
 
 void ButtonMgr::addButton(const char* label, Rectangle bounds)
@@ -96,6 +115,43 @@ void ButtonMgr::addButton(const char* label, Rectangle bounds)
 void ButtonMgr::drawSectionLabel(const char* label, float x, float y) const
 {
     DrawTextEx(buttonFont, label, { x, y }, 14.0f, 1, kSectionLabel);
+}
+
+void ButtonMgr::drawStatusBar(const char* label, Rectangle bounds, float percent) const
+{
+    const bool isHealth = (label[0] == 'H');
+    const float labelHeight = 18.0f;
+    const float barTop = bounds.y + labelHeight;
+    const float barHeight = bounds.height - labelHeight - 4.0f;
+    const Rectangle track = { bounds.x, barTop, bounds.width, barHeight };
+    const float fillHeight = barHeight * (percent / 100.0f);
+    const Rectangle fill = {
+        bounds.x + 2.0f,
+        barTop + barHeight - fillHeight,
+        bounds.width - 4.0f,
+        fillHeight
+    };
+
+    DrawTextEx(buttonFont, label, { bounds.x, bounds.y }, 13.0f, 1, kSectionLabel);
+    DrawRectangleRounded(track, 0.18f, 8, kStatusTrack);
+    DrawRectangleRoundedLines(track, 0.18f, 8, 2.0f, kPanelBorder);
+
+    if (fillHeight > 0.0f)
+    {
+        const Color fillColor = isHealth ? kHealthFill : kEnergyFill;
+        DrawRectangleRounded(fill, 0.18f, 8, fillColor);
+    }
+
+    char percentText[8];
+    snprintf(percentText, sizeof(percentText), "%d%%", (int)percent);
+    const Vector2 textSize = MeasureTextEx(buttonFont, percentText, 12.0f, 1);
+    DrawTextEx(
+        buttonFont,
+        percentText,
+        { bounds.x + (bounds.width - textSize.x) / 2.0f, barTop + (barHeight - textSize.y) / 2.0f },
+        12.0f,
+        1,
+        {228, 220, 198, 220});
 }
 
 void ButtonMgr::setAvailability(const MovementStruct& movement, const ActionStruct& actions)
@@ -135,6 +191,7 @@ void ButtonMgr::registerButtonClick(int buttonIndex)
         case 2: rightButtonClicked = true; break;
         case 3: backwardButtonClicked = true; break;
         case 4: examineButtonClicked = true; break;
+        case 7: useButtonClicked = true; break;
         default: break;
     }
 }
@@ -159,6 +216,7 @@ void ButtonMgr::update()
     leftButtonClicked = false;
     rightButtonClicked = false;
     examineButtonClicked = false;
+    useButtonClicked = false;
 
     Vector2 mousePos = GetMousePosition();
 
@@ -197,6 +255,13 @@ bool ButtonMgr::consumeExamineButtonClick()
 {
     const bool clicked = examineButtonClicked;
     examineButtonClicked = false;
+    return clicked;
+}
+
+bool ButtonMgr::consumeUseButtonClick()
+{
+    const bool clicked = useButtonClicked;
+    useButtonClicked = false;
     return clicked;
 }
 
@@ -245,7 +310,8 @@ void ButtonMgr::draw() const
     DrawRectangleRounded(accentBar, 1.0f, 4, kPanelAccent);
 
     drawSectionLabel("MOVE", buttonBox.x + pad, buttonBox.y + pad);
-    drawSectionLabel("ACTIONS", buttonBox.x + pad + buttonBox.width * 0.36f, buttonBox.y + pad);
+    drawSectionLabel("ACTIONS", buttonBox.x + pad + buttonBox.width * 0.32f, buttonBox.y + pad);
+    drawSectionLabel("STATUS", healthBarBounds.x, buttonBox.y + pad);
 
     const float dividerY = buttonBox.y + buttonBox.height - pad - 52.0f - 8.0f;
     DrawLineEx(
@@ -255,6 +321,9 @@ void ButtonMgr::draw() const
         kDivider);
 
     drawSectionLabel("INVENTORY", buttonBox.x + pad, dividerY + 6.0f);
+
+    drawStatusBar("Health", healthBarBounds, healthPercent);
+    drawStatusBar("Energy", energyBarBounds, energyPercent);
 
     for (const auto& button : buttons)
         button.draw();

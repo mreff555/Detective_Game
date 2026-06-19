@@ -7,6 +7,7 @@
       "image": "resources/cabin.png",
       "description": "In a dimly lit cabin, an old man sits by the fire surrounded by surprisingly lavish furnishings, given the condition of the cabin.",
       "examineDetails": "The old man's eyes flick toward you, then back to the fire. The furnishings look out of place here — too fine for a cabin this worn. Something was brought here recently.",
+      "useDetails": "",
       "movement": {
         "forward": false,
         "backward": true,
@@ -27,7 +28,8 @@
       "start": false,
       "image": "resources/cabin_kitchen.png",
       "description": "The rest of the small cabin opens into a humble country kitchen with warm wood cabinetry and copper accents. A heavy wooden door leads outside. On the tiny counter sits an impressive espresso machine that looks far too sophisticated for this rustic retreat.",
-      "examineDetails": "The espresso machine is spotless and recently used — grounds still warm in the portafilter. The exit door is bolted from the inside. Whoever lives here takes their coffee seriously.",
+      "examineDetails": "You take your time and study the room properly. The exit door is built from thick, hand-planed planks fitted tight enough to hold out the mountain cold. Its lock is a heavy iron box latch with a blackened steel bolt and worn brass keyhole — quality hardware, recently oiled, not the sort of thing one expects on a backwoods cabin. The espresso machine dominates the counter: polished steel body, twin pressure gauges, two group heads, a chrome steam wand, and a warmed cup rail with two white saucers still holding heat. The portafilter carries the faint bitter scent of a fresh pull. Beneath open shelves, cast iron pans hang in a neat row — a deep skillet, a dutch oven, and a smaller sauce pan — all seasoned to a dark gloss and clearly used often. You open the lower cabinets carefully. Inside are ordinary dry goods: flour in a paper sack, sugar, salt, a tin of crackers, rice in a cloth bag, and canned goods lined along the back. Tucked behind the flour, you find a mason jar filled to the brim with dark roasted coffee beans, their oily surface catching the lamplight. Whoever lives here eats simply, but drinks like a connoisseur.",
+      "useDetails": "You measure the beans from the mason jar and grind them fine. The espresso machine wakes with a low hum. You lock the portafilter, draw a tight double shot into a warmed cup, and watch the crema rise in a slow amber ribbon. The first sip is sharp and dark, then opens into warmth that spreads through your chest and limbs. The cabin seems less cold afterward, and your thoughts sharpen as the fatigue lifts.",
       "movement": {
         "forward": true,
         "backward": true,
@@ -41,7 +43,30 @@
         "use": true
       },
       "exits": {
-        "forward": "cabin"
+        "backward": "cabin",
+        "forward": "cabin_exterior"
+      }
+    },
+    "cabin_exterior": {
+      "start": false,
+      "image": "resources/cabin_exterior.png",
+      "description": "You step out into the mountain air. A rough-hewn log cabin sits beneath dark pines, smoke curling from its chimney into a slate-gray sky. A narrow dirt path winds away through the trees.",
+      "examineDetails": "The cabin's exterior is built from thick, weathered logs darkened by years of mountain rain. The front door you just closed is reinforced with iron straps and a heavy latch. Frost still clings to the shaded north wall. Pine needles carpet the ground around the stoop, and boot prints — yours and older ones — mark the path leading into the woods. No other buildings are visible from here.",
+      "useDetails": "",
+      "movement": {
+        "forward": false,
+        "backward": true,
+        "left": false,
+        "right": false
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "backward": "cabin_kitchen"
       }
     }
   }

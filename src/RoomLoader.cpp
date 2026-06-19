@@ -58,6 +58,7 @@ bool parseRoom(const std::string& id, const nlohmann::json& room, RoomData& out)
     out.imagePath = room.value("image", "");
     out.description = room.value("description", "");
     out.examineDetails = room.value("examineDetails", "");
+    out.useDetails = room.value("useDetails", "");
 
     if (out.imagePath.empty() || out.description.empty())
         return false;
@@ -187,6 +188,7 @@ bool RoomDatabase::buildLocationStruct(const RoomData& room, LocationStruct& out
     outLocation.locationImage = texture;
     outLocation.locationDescription = room.description;
     outLocation.examineDetails = room.examineDetails;
+    outLocation.useDetails = room.useDetails;
     outLocation.descriptionFont = descriptionFont;
     outLocation.boldFont = boldFont;
     outLocation.movementFilter = room.movement;

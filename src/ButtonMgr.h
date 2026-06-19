@@ -18,6 +18,7 @@ namespace testgame
         void update();
         void draw() const;
         void setAvailability(const MovementStruct& movement, const ActionStruct& actions);
+        void setStatus(float healthPercent, float energyPercent);
 
         bool isForwardButtonPressed() const { return forwardButtonPressed; }
         bool isBackButtonPressed() const { return backButtonPressed; }
@@ -25,6 +26,7 @@ namespace testgame
         bool isRightButtonPressed() const { return rightButtonPressed; }
         bool isExamineButtonPressed() const { return examineButtonPressed; }
         bool consumeExamineButtonClick();
+        bool consumeUseButtonClick();
         bool consumeForwardButtonClick();
         bool consumeBackwardButtonClick();
         bool consumeLeftButtonClick();
@@ -37,6 +39,7 @@ namespace testgame
         private:
         void addButton(const char* label, Rectangle bounds);
         void drawSectionLabel(const char* label, float x, float y) const;
+        void drawStatusBar(const char* label, Rectangle bounds, float percent) const;
         void updatePressedFlags();
         void registerButtonClick(int buttonIndex);
         int findEnabledButtonUnderMouse(Vector2 mousePos) const;
@@ -47,6 +50,7 @@ namespace testgame
         bool rightButtonPressed = false;
         bool examineButtonPressed = false;
         bool examineButtonClicked = false;
+        bool useButtonClicked = false;
         bool forwardButtonClicked = false;
         bool backwardButtonClicked = false;
         bool leftButtonClicked = false;
@@ -56,7 +60,12 @@ namespace testgame
         bool hitButtonPressed = false;
         bool useButtonPressed = false;
 
+        float healthPercent = 90.0f;
+        float energyPercent = 20.0f;
+
         Rectangle buttonBox;
+        Rectangle healthBarBounds;
+        Rectangle energyBarBounds;
         Font buttonFont;
         ButtonStyle buttonStyle;
         std::vector<Button> buttons;

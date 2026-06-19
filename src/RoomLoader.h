@@ -14,6 +14,7 @@ struct RoomData
     std::string imagePath;
     std::string description;
     std::string examineDetails;
+    std::string useDetails;
     MovementStruct movement;
     ActionStruct actions;
     bool isStart;

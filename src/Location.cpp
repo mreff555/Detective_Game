@@ -24,6 +24,8 @@ namespace
       baseDescription(locationStruct.locationDescription),
       narrativeText(locationStruct.locationDescription),
       examineDetails(locationStruct.examineDetails),
+      useDetails(locationStruct.useDetails),
+      baseActionFilter(locationStruct.actionFilter),
       descriptionFont(locationStruct.descriptionFont),
       boldFont(locationStruct.boldFont),
       forward(locationStruct.movementFilter.forward),
@@ -35,9 +37,7 @@ namespace
       buttonMgr(buttonBox, descriptionFont)
     {
         trimNarrativeBuffer();
-        buttonMgr.setAvailability(
-            locationStruct.movementFilter,
-            locationStruct.actionFilter);
+        updateActionAvailability();
     }
 
     Location::~Location()
@@ -116,15 +116,70 @@ namespace
         narrativeLayoutDirty = true;
     }
 
+    bool Location::isBoldNarrativeHeader(const std::string& line) const
+    {
+        return line == "Examining:" || line == "Using:";
+    }
+
+    void Location::appendNarrativeSection(const char* header, const std::string& details)
+    {
+        if (details.empty())
+            return;
+
+        narrativeText += "\n\n";
+        narrativeText += header;
+        narrativeText += "\n";
+        narrativeText += details;
+        trimNarrativeBuffer();
+        narrativeLayoutDirty = true;
+    }
+
     void Location::appendExamineDetails()
     {
         if (examineDetails.empty())
             return;
 
-        narrativeText += "\n\nExamining:\n";
-        narrativeText += examineDetails;
-        trimNarrativeBuffer();
-        narrativeLayoutDirty = true;
+        appendNarrativeSection("Examining:", examineDetails);
+        hasExaminedCurrentRoom = true;
+        updateActionAvailability();
+    }
+
+    void Location::appendUseDetails()
+    {
+        if (useDetails.empty() || hasUsedInCurrentRoom)
+            return;
+
+        appendNarrativeSection("Using:", useDetails);
+        energy = std::min(100.0f, energy + 30.0f);
+        hasUsedInCurrentRoom = true;
+        updateActionAvailability();
+    }
+
+    void Location::updateActionAvailability()
+    {
+        MovementStruct movement;
+        movement.forward = forward;
+        movement.backward = backward;
+        movement.left = left;
+        movement.right = right;
+
+        ActionStruct actions = baseActionFilter;
+        if (!useDetails.empty())
+            actions.use = hasExaminedCurrentRoom && !hasUsedInCurrentRoom;
+        else
+            actions.use = false;
+
+        buttonMgr.setAvailability(movement, actions);
+        buttonMgr.setStatus(health, energy);
+    }
+
+    void Location::scrollNarrativeToBottom()
+    {
+        if (narrativeLayoutDirty)
+            rebuildNarrativeLayout();
+
+        const float maxScroll = std::max(0.0f, narrativeContentHeight - getNarrativeVisibleHeight());
+        narrativeScrollY = maxScroll;
     }
     
     void Location::tryMove(const std::string& direction)
@@ -154,18 +209,20 @@ namespace
         baseDescription = locationStruct.locationDescription;
         narrativeText = locationStruct.locationDescription;
         examineDetails = locationStruct.examineDetails;
+        useDetails = locationStruct.useDetails;
+        baseActionFilter = locationStruct.actionFilter;
         descriptionFont = locationStruct.descriptionFont;
         boldFont = locationStruct.boldFont;
         forward = locationStruct.movementFilter.forward;
         backward = locationStruct.movementFilter.backward;
         left = locationStruct.movementFilter.left;
         right = locationStruct.movementFilter.right;
+        hasExaminedCurrentRoom = false;
+        hasUsedInCurrentRoom = false;
         narrativeScrollY = 0.0f;
         narrativeLayoutDirty = true;
         trimNarrativeBuffer();
-        buttonMgr.setAvailability(
-            locationStruct.movementFilter,
-            locationStruct.actionFilter);
+        updateActionAvailability();
     }
 
     void Location::rebuildNarrativeLayout() const
@@ -184,8 +241,7 @@ namespace
                 continue;
             }
 
-            const bool isExaminingHeader = (line == "Examining:");
-            const Font lineFont = isExaminingHeader ? boldFont : descriptionFont;
+            const Font lineFont = isBoldNarrativeHeader(line) ? boldFont : descriptionFont;
             layoutWrappedParagraph(line.c_str(), lineFont, fontSize, textOffsetY, false, 0.0f);
         }
 
@@ -274,8 +330,13 @@ namespace
         if (buttonMgr.consumeExamineButtonClick())
         {
             appendExamineDetails();
-            const float maxScroll = std::max(0.0f, narrativeContentHeight - getNarrativeVisibleHeight());
-            narrativeScrollY = maxScroll;
+            scrollNarrativeToBottom();
+        }
+
+        if (buttonMgr.consumeUseButtonClick())
+        {
+            appendUseDetails();
+            scrollNarrativeToBottom();
         }
     }
 
@@ -356,8 +417,7 @@ namespace
                 continue;
             }
 
-            const bool isExaminingHeader = (line == "Examining:");
-            const Font lineFont = isExaminingHeader ? boldFont : descriptionFont;
+            const Font lineFont = isBoldNarrativeHeader(line) ? boldFont : descriptionFont;
             layoutWrappedParagraph(line.c_str(), lineFont, fontSize, textOffsetY, true, narrativeScrollY);
         }
 
