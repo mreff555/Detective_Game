@@ -236,4 +236,29 @@ SpeakResult ConversationManager::resolveChoice(const std::string& choiceId)
     return result;
 }
 
+SpeakResult ConversationManager::resolveChoiceFromConfig(
+    const RoomSpeakConfig& config,
+    const std::string& choiceId)
+{
+    for (const ConversationPhase& phase : config.phases)
+    {
+        if (phase.type != ConversationPhaseType::Scripted)
+            continue;
+
+        for (const ConversationChoiceDef& choice : phase.choices)
+        {
+            if (choice.id != choiceId)
+                continue;
+
+            awaitingChoice = false;
+            pendingChoices.clear();
+            activeScriptPhaseId.clear();
+            markPhaseComplete(phase.id);
+            return buildNarrativeResult(choice.response, choice.status);
+        }
+    }
+
+    return SpeakResult();
+}
+
 }

@@ -19,6 +19,7 @@ class ConversationManager
 
     SpeakResult handleSpeak(const std::string& roomId, const RoomSpeakConfig& config);
     SpeakResult resolveChoice(const std::string& choiceId);
+    SpeakResult resolveChoiceFromConfig(const RoomSpeakConfig& config, const std::string& choiceId);
 
     private:
     bool isPhaseComplete(const std::string& phaseId) const;

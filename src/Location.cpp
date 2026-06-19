@@ -560,11 +560,17 @@ namespace
         if (!conversationMgr.isAwaitingChoice() && !awaitingDialogChoice)
             return;
 
+        SpeakResult result = conversationMgr.resolveChoice(choiceId);
+        if (result.action == SpeakResult::Action::None)
+        {
+            const RoomSpeakConfig& speakConfig = roomDatabase.getSpeakConfig(currentRoomId);
+            result = conversationMgr.resolveChoiceFromConfig(speakConfig, choiceId);
+        }
+
         awaitingDialogChoice = false;
         pendingDialogChoices.clear();
         narrativeChoiceHitAreas.clear();
 
-        SpeakResult result = conversationMgr.resolveChoice(choiceId);
         processSpeakResult(result);
         updateActionAvailability();
     }
@@ -598,7 +604,10 @@ namespace
         currentRoomId = startRoomId;
         applyLocationStruct(cabinLocation);
 
-        narrativeText = std::string(kWakeOnFloorPrefix) + "\n\n" + baseDescription;
+        narrativeText += "\n\n";
+        narrativeText += kWakeOnFloorPrefix;
+        narrativeText += "\n\n";
+        narrativeText += baseDescription;
         health = 90.0f;
         energy = 20.0f;
         tenacity = 50.0f;
@@ -1291,11 +1300,14 @@ namespace
                     if (line != choice.lineText)
                         continue;
 
+                    float measureY = textOffsetY;
+                    layoutWrappedParagraph(line.c_str(), lineFont, fontSize, measureY, false, 0.0f, lineColor);
+                    const float choiceHeight = std::max(getNarrativeLineHeight(), measureY - textOffsetY);
                     const float drawY = dialog.y + yOffset + textOffsetY - narrativeScrollY;
-                    const Vector2 textSize = MeasureTextEx(lineFont, line.c_str(), fontSize, spacing);
+
                     narrativeChoiceHitAreas.push_back({
                         choice.id,
-                        { dialog.x + xOffset, drawY, textSize.x, getNarrativeLineHeight() }
+                        { dialog.x + xOffset, drawY, getNarrativeWrapWidth(), choiceHeight }
                     });
                     break;
                 }
