@@ -29,8 +29,32 @@ set(_raylib_ready FALSE)
 if(HIGHLINE_USE_SYSTEM_RAYLIB)
     find_package(raylib QUIET)
     if(raylib_FOUND)
+        if(raylib_INCLUDE_DIR)
+            file(READ "${raylib_INCLUDE_DIR}/raylib.h" _raylib_header)
+        elseif(raylib_INCLUDE_DIRS)
+            list(GET raylib_INCLUDE_DIRS 0 _raylib_include_path)
+            file(READ "${_raylib_include_path}/raylib.h" _raylib_header)
+        else()
+            set(_raylib_header "")
+        endif()
+
+        if(_raylib_header MATCHES "#define RAYLIB_VERSION_MAJOR ([0-9]+)")
+            set(_raylib_version_major "${CMAKE_MATCH_1}")
+        endif()
+        if(_raylib_header MATCHES "#define RAYLIB_VERSION_MINOR ([0-9]+)")
+            set(_raylib_version_minor "${CMAKE_MATCH_1}")
+        endif()
+
+        if(_raylib_version_major LESS 5 OR
+           (_raylib_version_major EQUAL 5 AND _raylib_version_minor LESS 5))
+            message(FATAL_ERROR
+                "System raylib ${_raylib_version_major}.${_raylib_version_minor} is too old; "
+                "Highline Ridge requires raylib 5.5+ for audio. "
+                "Reconfigure with -DHIGHLINE_USE_SYSTEM_RAYLIB=OFF (default) to use bundled raylib.")
+        endif()
+
         set(_raylib_ready TRUE)
-        message(STATUS "Using system raylib")
+        message(STATUS "Using system raylib ${_raylib_version_major}.${_raylib_version_minor}")
     endif()
 endif()
 

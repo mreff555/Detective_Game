@@ -1,5 +1,5 @@
 #include "Button.h"
-#include <raylib.h>
+#include <RaylibCompat.h>
 
 Button::Button(const char* text, Vector2 position, Vector2 size, Font font, const ButtonStyle& style)
     : text(text), position(position), size(size), font(font), style(style)
@@ -17,7 +17,7 @@ void Button::draw() const
     if (!enabled)
     {
         DrawRectangleRounded(bounds, style.roundness, 8, style.disabledBg);
-        DrawRectangleRoundedLinesEx(bounds, style.roundness, 8, 2.0f, style.disabledBorderColor);
+        DrawRoundedBorder(bounds, style.roundness, 8, 2.0f, style.disabledBorderColor);
 
         Vector2 textSize = MeasureTextEx(font, text, style.fontSize, 1);
         Vector2 textPosition = {
@@ -35,7 +35,7 @@ void Button::draw() const
         fillColor = style.pressedBg;
 
     DrawRectangleRounded(bounds, style.roundness, 8, fillColor);
-    DrawRectangleRoundedLinesEx(bounds, style.roundness, 8, 2.0f, style.borderColor);
+    DrawRoundedBorder(bounds, style.roundness, 8, 2.0f, style.borderColor);
 
     if (state == HOVERED)
     {

@@ -1,4 +1,5 @@
 #include <InventoryMgr.h>
+#include <RaylibCompat.h>
 #include <SceneLoader.h>
 #include <algorithm>
 
@@ -460,7 +461,7 @@ void InventoryMgr::drawItemGrid() const
             continue;
 
         const bool selected = items[i].id == selectedItemId;
-        DrawRectangleRoundedLinesEx(slot, 0.18f, 8, 2.0f, selected ? kPanelBorder : kPanelAccent);
+        DrawRoundedBorder(slot, 0.18f, 8, 2.0f, selected ? kPanelBorder : kPanelAccent);
     }
 }
 
@@ -505,7 +506,7 @@ void InventoryMgr::draw() const
         return;
 
     DrawRectangleRounded(panelBounds, 0.04f, 10, kPanelFill);
-    DrawRectangleRoundedLinesEx(panelBounds, 0.04f, 10, 3.0f, kPanelBorder);
+    DrawRoundedBorder(panelBounds, 0.04f, 10, 3.0f, kPanelBorder);
 
     Rectangle accentBar = {
         panelBounds.x + 8.0f,
