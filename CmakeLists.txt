@@ -21,12 +21,24 @@ set(SOURCES
 
 include(FetchContent)
 
-# 1. Look for raylib installed via brew/system
-find_package(raylib QUIET)
+# Bundle raylib 5.5 for reliable miniaudio/CoreAudio output.
+# Homebrew raylib 5.0-dev can initialize with backend "Null" (no audible output on macOS).
+option(HIGHLINE_USE_SYSTEM_RAYLIB "Use system raylib instead of bundled 5.5" OFF)
 
-# 2. If not found, download it via FetchContent
-if (NOT raylib_FOUND)
-    message(STATUS "raylib not found locally → downloading v5.5 with FetchContent...")
+set(_raylib_ready FALSE)
+if(HIGHLINE_USE_SYSTEM_RAYLIB)
+    find_package(raylib QUIET)
+    if(raylib_FOUND)
+        set(_raylib_ready TRUE)
+        message(STATUS "Using system raylib")
+    endif()
+endif()
+
+if(NOT _raylib_ready)
+    message(STATUS "Using bundled raylib 5.5 (FetchContent)")
+
+    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
 
     FetchContent_Declare(
         raylib
@@ -111,6 +123,9 @@ if (APPLE)
         "-framework OpenGL"
         "-framework IOKit"
         "-framework CoreVideo"
+        "-framework CoreAudio"
+        "-framework AudioToolbox"
+        "-framework CoreFoundation"
     )
 endif()
 

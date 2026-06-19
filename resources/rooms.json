@@ -80,7 +80,12 @@
           {
             "path": "resources/audio/sfx/door_creak.mp3",
             "trigger": "on_enter",
-            "volume": 0.9
+            "volume": 1.0
+          },
+          {
+            "path": "resources/audio/sfx/door_creak.mp3",
+            "trigger": "on_exit",
+            "volume": 1.0
           }
         ]
       }

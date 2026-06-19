@@ -460,7 +460,7 @@ void InventoryMgr::drawItemGrid() const
             continue;
 
         const bool selected = items[i].id == selectedItemId;
-        DrawRectangleRoundedLines(slot, 0.18f, 8, 2.0f, selected ? kPanelBorder : kPanelAccent);
+        DrawRectangleRoundedLinesEx(slot, 0.18f, 8, 2.0f, selected ? kPanelBorder : kPanelAccent);
     }
 }
 
@@ -505,7 +505,7 @@ void InventoryMgr::draw() const
         return;
 
     DrawRectangleRounded(panelBounds, 0.04f, 10, kPanelFill);
-    DrawRectangleRoundedLines(panelBounds, 0.04f, 10, 3.0f, kPanelBorder);
+    DrawRectangleRoundedLinesEx(panelBounds, 0.04f, 10, 3.0f, kPanelBorder);
 
     Rectangle accentBar = {
         panelBounds.x + 8.0f,

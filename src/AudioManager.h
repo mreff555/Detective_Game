@@ -23,6 +23,7 @@ class AudioManager
     void update(float deltaSeconds);
 
     void onRoomEnter(const RoomAudioConfig& roomAudio);
+    void onRoomExit(const RoomAudioConfig& roomAudio);
     void playSfx(const AudioClipDef& clip);
 
     private:
@@ -47,11 +48,12 @@ class AudioManager
         Sound sound{};
         bool loaded = false;
         float remainingSeconds = 0.0f;
+        std::string tempFilePath;
     };
 
     bool ensureDeviceReady();
     bool loadMusicClip(const std::string& path, Music& outMusic, std::string& outTempFile);
-    bool loadSoundClip(const std::string& path, Sound& outSound, float& outDurationSeconds) const;
+    bool loadSoundClip(const std::string& path, Sound& outSound, float& outDurationSeconds, std::string& outTempFile);
     bool resolveAssetBytes(const std::string& relativePath, std::vector<unsigned char>& outBytes) const;
     bool resolveMusicAssetFile(const std::string& relativePath, std::string& outPlayablePath, std::string& outTempFile) const;
     void removeTempFile(const std::string& path);
@@ -64,7 +66,8 @@ class AudioManager
     void unloadMusicTrack(FadingMusicTrack& track);
     void unloadAmbientTracks();
     void updateActiveSounds(float deltaSeconds);
-    void applyRoomAudio(const RoomAudioConfig& roomAudio);
+    void applyRoomStreams(const RoomAudioConfig& roomAudio);
+    void playRoomSfx(const RoomAudioConfig& roomAudio, const std::string& trigger);
     bool hasActiveStreamAudio() const;
 
     std::string assetRoot;

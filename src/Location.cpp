@@ -954,6 +954,7 @@ namespace
             if (ownsLocationImage && locationImage.id != 0)
                 UnloadTexture(locationImage);
 
+            audioManager.onRoomExit(roomDatabase.getRoomAudio(currentRoomId));
             const std::string returnRoomId = previousRoomId;
             previousRoomId.clear();
             currentRoomId = returnRoomId;
@@ -978,6 +979,7 @@ namespace
         if (ownsLocationImage && locationImage.id != 0)
             UnloadTexture(locationImage);
 
+        audioManager.onRoomExit(roomDatabase.getRoomAudio(currentRoomId));
         previousRoomId = currentRoomId;
         currentRoomId = nextRoomId;
         applyLocationStruct(nextLocation);

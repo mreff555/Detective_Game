@@ -67,6 +67,8 @@ int main(void)
     };
 
     InitWindow(screenSize.x, screenSize.y, "Highline Ridge");
+    if (!IsAudioDeviceReady())
+        InitAudioDevice();
 
     AudioManager audioManager;
     audioManager.initialize(".", gameConfig.audio);

@@ -62,6 +62,13 @@ bool AudioManager::initialize(const std::string& root, const AudioVolumeConfig& 
 {
     assetRoot = root;
     volumes = volumeConfig;
+
+    if (IsAudioDeviceReady())
+    {
+        deviceReady = true;
+        SetMasterVolume(volumes.master);
+    }
+
     return true;
 }
 
@@ -91,6 +98,7 @@ void AudioManager::shutdown()
     {
         if (activeSound.loaded)
             UnloadSound(activeSound.sound);
+        removeTempFile(activeSound.tempFilePath);
     }
     activeSounds.clear();
 
@@ -214,15 +222,15 @@ bool AudioManager::loadMusicClip(const std::string& path, Music& outMusic, std::
         return false;
 
     outMusic = LoadMusicStream(playablePath.c_str());
-    return IsMusicReady(outMusic);
+    return outMusic.stream.buffer != nullptr;
 }
 
-bool AudioManager::loadSoundClip(const std::string& path, Sound& outSound, float& outDurationSeconds) const
+bool AudioManager::loadSoundClip(
+    const std::string& path,
+    Sound& outSound,
+    float& outDurationSeconds,
+    std::string& outTempFile)
 {
-    std::vector<unsigned char> bytes;
-    if (!resolveAssetBytes(path, bytes) || bytes.empty())
-        return false;
-
     const std::string extension = fileExtensionFromPath(stripXzSuffix(path));
     if (extension != ".mp3")
     {
@@ -230,21 +238,23 @@ bool AudioManager::loadSoundClip(const std::string& path, Sound& outSound, float
         return false;
     }
 
-    Wave wave = LoadWaveFromMemory(
-        extension.c_str(),
-        bytes.data(),
-        static_cast<int>(bytes.size()));
-    if (wave.data == nullptr)
+    std::string playablePath;
+    if (!resolveMusicAssetFile(path, playablePath, outTempFile))
         return false;
 
-    outDurationSeconds = (wave.sampleRate > 0)
-        ? static_cast<float>(wave.frameCount) / static_cast<float>(wave.sampleRate)
-        : 0.0f;
+    outSound = LoadSound(playablePath.c_str());
+    if (outSound.stream.buffer == nullptr)
+        return false;
 
-    outSound = LoadSoundFromWave(wave);
-    const bool loaded = outSound.frameCount > 0;
-    UnloadWave(wave);
-    return loaded;
+    if (outSound.frameCount > 0 && outSound.stream.sampleRate > 0)
+    {
+        outDurationSeconds = static_cast<float>(outSound.frameCount)
+            / static_cast<float>(outSound.stream.sampleRate);
+    }
+    if (outDurationSeconds <= 0.0f)
+        outDurationSeconds = 0.2f;
+
+    return true;
 }
 
 void AudioManager::unloadMusicTrack(FadingMusicTrack& track)
@@ -322,6 +332,7 @@ void AudioManager::startMusicTrack(FadingMusicTrack& track, const AudioClipDef& 
     SetMusicVolume(track.music, track.currentVolume);
     PlayMusicStream(track.music);
     track.playing = true;
+    TraceLog(LOG_INFO, "Started music: %s", clip.path.c_str());
 }
 
 void AudioManager::startAmbientTrack(const AudioClipDef& clip)
@@ -354,6 +365,7 @@ void AudioManager::startAmbientTrack(const AudioClipDef& clip)
     PlayMusicStream(track.music);
     track.playing = true;
     ambientTracks.push_back(track);
+    TraceLog(LOG_INFO, "Started ambient: %s", clip.path.c_str());
 }
 
 void AudioManager::updateMusicTrack(FadingMusicTrack& track, float deltaSeconds, AudioCategory category)
@@ -432,6 +444,7 @@ void AudioManager::updateActiveSounds(float deltaSeconds)
         }
 
         UnloadSound(activeSound.sound);
+        removeTempFile(activeSound.tempFilePath);
     }
 
     activeSounds.swap(remainingSounds);
@@ -461,7 +474,7 @@ void AudioManager::update(float deltaSeconds)
 
     if (roomTransitionPending && !hasActiveStreamAudio())
     {
-        applyRoomAudio(pendingRoomAudio);
+        applyRoomStreams(pendingRoomAudio);
         roomTransitionPending = false;
     }
 }
@@ -473,7 +486,8 @@ void AudioManager::playSfx(const AudioClipDef& clip)
 
     Sound sound{};
     float durationSeconds = 0.0f;
-    if (!loadSoundClip(clip.path, sound, durationSeconds))
+    std::string tempFile;
+    if (!loadSoundClip(clip.path, sound, durationSeconds, tempFile))
     {
         TraceLog(LOG_WARNING, "Failed to load sfx clip: %s", clip.path.c_str());
         return;
@@ -482,12 +496,24 @@ void AudioManager::playSfx(const AudioClipDef& clip)
     const float volume = effectiveVolume(AudioCategory::Sfx, clip.volume);
     SetSoundVolume(sound, volume);
     PlaySound(sound);
+    TraceLog(LOG_INFO, "Playing sfx: %s (%.2fs at volume %.2f)", clip.path.c_str(), durationSeconds, volume);
 
     ActiveSound activeSound;
     activeSound.sound = sound;
     activeSound.loaded = true;
     activeSound.remainingSeconds = std::max(0.05f, durationSeconds);
+    activeSound.tempFilePath = tempFile;
     activeSounds.push_back(activeSound);
+}
+
+void AudioManager::playRoomSfx(const RoomAudioConfig& roomAudio, const std::string& trigger)
+{
+    for (const AudioClipDef& sfxClip : roomAudio.sfx)
+    {
+        const std::string clipTrigger = sfxClip.trigger.empty() ? "on_enter" : sfxClip.trigger;
+        if (clipTrigger == trigger)
+            playSfx(sfxClip);
+    }
 }
 
 bool AudioManager::hasActiveStreamAudio() const
@@ -504,7 +530,7 @@ bool AudioManager::hasActiveStreamAudio() const
     return false;
 }
 
-void AudioManager::applyRoomAudio(const RoomAudioConfig& roomAudio)
+void AudioManager::applyRoomStreams(const RoomAudioConfig& roomAudio)
 {
     if (!ensureDeviceReady())
         return;
@@ -517,17 +543,17 @@ void AudioManager::applyRoomAudio(const RoomAudioConfig& roomAudio)
     unloadAmbientTracks();
     for (const AudioClipDef& ambientClip : roomAudio.ambient)
         startAmbientTrack(ambientClip);
+}
 
-    for (const AudioClipDef& sfxClip : roomAudio.sfx)
-    {
-        const std::string trigger = sfxClip.trigger.empty() ? "on_enter" : sfxClip.trigger;
-        if (trigger == "on_enter")
-            playSfx(sfxClip);
-    }
+void AudioManager::onRoomExit(const RoomAudioConfig& roomAudio)
+{
+    playRoomSfx(roomAudio, "on_exit");
 }
 
 void AudioManager::onRoomEnter(const RoomAudioConfig& roomAudio)
 {
+    playRoomSfx(roomAudio, "on_enter");
+
     if (hasActiveStreamAudio())
     {
         fadeOutMusicTrack(musicTrack, musicTrack.fadeOutSeconds);
@@ -537,11 +563,12 @@ void AudioManager::onRoomEnter(const RoomAudioConfig& roomAudio)
         fadeOutAmbientTracks(ambientFadeOut);
 
         pendingRoomAudio = roomAudio;
+        pendingRoomAudio.sfx.clear();
         roomTransitionPending = true;
         return;
     }
 
-    applyRoomAudio(roomAudio);
+    applyRoomStreams(roomAudio);
 }
 
 }

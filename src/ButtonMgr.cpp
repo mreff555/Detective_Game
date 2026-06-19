@@ -175,7 +175,7 @@ void ButtonMgr::drawStatusBar(const char* label, Rectangle bounds, float percent
 
     DrawTextEx(buttonFont, label, { bounds.x, bounds.y }, 13.0f, 1, kSectionLabel);
     DrawRectangleRounded(track, 0.18f, 8, kStatusTrack);
-    DrawRectangleRoundedLines(track, 0.18f, 8, 2.0f, kPanelBorder);
+    DrawRectangleRoundedLinesEx(track, 0.18f, 8, 2.0f, kPanelBorder);
 
     if (fillWidth > 0.0f)
     {
@@ -430,7 +430,7 @@ void ButtonMgr::draw() const
     const float labelHeight = 22.0f;
 
     DrawRectangleRounded(buttonBox, 0.04f, 10, kPanelFill);
-    DrawRectangleRoundedLines(buttonBox, 0.04f, 10, 3.0f, kPanelBorder);
+    DrawRectangleRoundedLinesEx(buttonBox, 0.04f, 10, 3.0f, kPanelBorder);
 
     Rectangle accentBar = {
         buttonBox.x + 8.0f,
