@@ -1,4 +1,4 @@
-#include <Button.h>
+#include "Button.h"
 #include <raylib.h>
 
 Button::Button(const char* text, Vector2 position, Vector2 size, Font font, Color textColor, Color backgroundColor)
@@ -22,4 +22,14 @@ bool Button::isClicked() const
 {
     return IsMouseButtonPressed(MOUSE_LEFT_BUTTON) &&
            CheckCollisionPointRec(GetMousePosition(), { position.x, position.y, size.x, size.y });
+}
+
+Rectangle Button::getBounds() const
+{
+    return { position.x, position.y, size.x, size.y };
+}
+
+void Button::setState(ButtonState state)
+{
+    this->state = state;
 }

@@ -3,6 +3,13 @@
 
 #include <raylib.h>
 
+enum ButtonState
+{
+    NORMAL,
+    HOVERED,
+    PRESSED
+};
+
 class Button
 {
     public:
@@ -11,6 +18,8 @@ class Button
 
     void draw() const;
     bool isClicked() const;
+    Rectangle getBounds() const;
+    void setState(ButtonState state);
 
     private:
     const char* text;
@@ -19,6 +28,8 @@ class Button
     Font font;
     Color textColor;
     Color backgroundColor;
+    ButtonState state = NORMAL;
 };
 
 #endif /* BUTTON_H */
+

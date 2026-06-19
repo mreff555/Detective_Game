@@ -34,6 +34,7 @@ int main(void)
     {
         // Update
         //----------------------------------------------------------------------------------
+        location.update();
         // if (IsKeyDown(KEY_RIGHT)) ballPosition.x += 2.0f;
         // if (IsKeyDown(KEY_D)) ballPosition.x += 2.0f;
         // if (IsKeyDown(KEY_LEFT)) ballPosition.x -= 2.0f;

@@ -23,6 +23,7 @@ class Location
     bool isLeft() const;
     bool isRight() const;
 
+    void update();
     void draw() const;
     void update(const LocationStruct& locationStruct);
     void DrawTextBoxed(const char* text) const;

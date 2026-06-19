@@ -54,6 +54,11 @@ namespace testgame
         return right;
     }
     
+    void Location::update()
+    {
+        buttonMgr.update();
+    }
+
     void Location::draw() const
     {
         ClearBackground(BLACK);
@@ -65,9 +70,6 @@ namespace testgame
 
         // Button Box
         buttonMgr.draw();
-
-
-
     }
 
     void Location::update(const LocationStruct& locationStruct)
