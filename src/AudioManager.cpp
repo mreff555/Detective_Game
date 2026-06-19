@@ -49,6 +49,21 @@ float attributeOrDefault(const AudioClipDef& clip, const char* key, float fallba
     return fallback;
 }
 
+std::string stringAttributeOrEmpty(const AudioClipDef& clip, const char* key)
+{
+    std::map<std::string, std::string>::const_iterator it = clip.stringAttributes.find(key);
+    if (it != clip.stringAttributes.end())
+        return it->second;
+    return "";
+}
+
+bool matchesTransitionConstraint(
+    const std::string& requiredRoom,
+    const std::string& actualRoom)
+{
+    return requiredRoom.empty() || requiredRoom == actualRoom;
+}
+
 }
 
 AudioManager::AudioManager() = default;
@@ -328,6 +343,7 @@ void AudioManager::startMusicTrack(FadingMusicTrack& track, const AudioClipDef& 
     track.fadingIn = track.fadeInSeconds > 0.0f;
     track.fadingOut = false;
     track.currentVolume = track.fadingIn ? 0.0f : track.targetVolume;
+    track.loop = clip.loop;
 
     SetMusicVolume(track.music, track.currentVolume);
     PlayMusicStream(track.music);
@@ -360,6 +376,7 @@ void AudioManager::startAmbientTrack(const AudioClipDef& clip)
     track.fadingIn = track.fadeInSeconds > 0.0f;
     track.fadingOut = false;
     track.currentVolume = track.fadingIn ? 0.0f : track.targetVolume;
+    track.loop = clip.loop;
 
     SetMusicVolume(track.music, track.currentVolume);
     PlayMusicStream(track.music);
@@ -374,7 +391,11 @@ void AudioManager::updateMusicTrack(FadingMusicTrack& track, float deltaSeconds,
         return;
 
     if (track.playing)
+    {
         UpdateMusicStream(track.music);
+        if (track.loop && !IsMusicStreamPlaying(track.music))
+            PlayMusicStream(track.music);
+    }
 
     if (track.fadingIn)
     {
@@ -506,13 +527,26 @@ void AudioManager::playSfx(const AudioClipDef& clip)
     activeSounds.push_back(activeSound);
 }
 
-void AudioManager::playRoomSfx(const RoomAudioConfig& roomAudio, const std::string& trigger)
+void AudioManager::playRoomSfx(
+    const RoomAudioConfig& roomAudio,
+    const std::string& trigger,
+    const std::string& fromRoom,
+    const std::string& toRoom)
 {
     for (const AudioClipDef& sfxClip : roomAudio.sfx)
     {
         const std::string clipTrigger = sfxClip.trigger.empty() ? "on_enter" : sfxClip.trigger;
-        if (clipTrigger == trigger)
-            playSfx(sfxClip);
+        if (clipTrigger != trigger)
+            continue;
+
+        const std::string requiredFromRoom = stringAttributeOrEmpty(sfxClip, "from_room");
+        const std::string requiredToRoom = stringAttributeOrEmpty(sfxClip, "to_room");
+        if (!matchesTransitionConstraint(requiredFromRoom, fromRoom))
+            continue;
+        if (!matchesTransitionConstraint(requiredToRoom, toRoom))
+            continue;
+
+        playSfx(sfxClip);
     }
 }
 
@@ -545,14 +579,14 @@ void AudioManager::applyRoomStreams(const RoomAudioConfig& roomAudio)
         startAmbientTrack(ambientClip);
 }
 
-void AudioManager::onRoomExit(const RoomAudioConfig& roomAudio)
+void AudioManager::onRoomExit(const RoomAudioConfig& roomAudio, const std::string& toRoom)
 {
-    playRoomSfx(roomAudio, "on_exit");
+    playRoomSfx(roomAudio, "on_exit", "", toRoom);
 }
 
-void AudioManager::onRoomEnter(const RoomAudioConfig& roomAudio)
+void AudioManager::onRoomEnter(const RoomAudioConfig& roomAudio, const std::string& fromRoom)
 {
-    playRoomSfx(roomAudio, "on_enter");
+    playRoomSfx(roomAudio, "on_enter", fromRoom, "");
 
     if (hasActiveStreamAudio())
     {

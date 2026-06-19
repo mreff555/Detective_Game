@@ -27,17 +27,12 @@
         "backward": "cabin_kitchen"
       },
       "audio": {
-        "music": {
-          "path": "resources/audio/music/cabin_theme.mp3",
-          "volume": 0.8,
-          "fade_in": 2.0,
-          "fade_out": 1.5
-        },
         "ambient": [
           {
             "path": "resources/audio/ambient/fireplace.mp3",
-            "volume": 0.5,
-            "fade_in": 1.0,
+            "volume": 0.45,
+            "fade_in": 2.0,
+            "fade_out": 1.5,
             "loop": true
           }
         ]
@@ -78,14 +73,16 @@
         ],
         "sfx": [
           {
-            "path": "resources/audio/sfx/door_creak.mp3",
+            "path": "resources/audio/sfx/door_open.mp3",
             "trigger": "on_enter",
-            "volume": 1.0
+            "from_room": "mountain_road",
+            "volume": 0.85
           },
           {
-            "path": "resources/audio/sfx/door_creak.mp3",
+            "path": "resources/audio/sfx/door_close.mp3",
             "trigger": "on_exit",
-            "volume": 1.0
+            "to_room": "mountain_road",
+            "volume": 0.85
           }
         ]
       }
@@ -115,17 +112,19 @@
         "right": "saloon_front"
       },
       "audio": {
-        "music": {
-          "path": "resources/audio/music/mountain_wind.mp3",
-          "volume": 0.7,
-          "fade_in": 3.0,
-          "fade_out": 2.0
-        },
         "ambient": [
           {
-            "path": "resources/audio/ambient/wind.mp3",
-            "volume": 0.45,
-            "fade_in": 1.5,
+            "path": "resources/audio/ambient/town_ambient.mp3",
+            "volume": 0.35,
+            "fade_in": 3.0,
+            "fade_out": 2.0,
+            "loop": true
+          },
+          {
+            "path": "resources/audio/ambient/town_footsteps.mp3",
+            "volume": 0.25,
+            "fade_in": 2.0,
+            "fade_out": 1.5,
             "loop": true
           }
         ]

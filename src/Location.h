@@ -66,7 +66,7 @@ class Location
     void applyLucidityCollapseRestart();
     bool isDialogChoiceLine(const std::string& line) const;
     Color narrativeLineColor(const std::string& line) const;
-    void applyLocationStruct(const LocationStruct& locationStruct);
+    void applyLocationStruct(const LocationStruct& locationStruct, const std::string& fromRoom = "");
     void tryMove(const std::string& direction);
     void trimNarrativeBuffer();
     void rebuildNarrativeLayout() const;

@@ -22,8 +22,8 @@ class AudioManager
     void setVolumes(const AudioVolumeConfig& volumes);
     void update(float deltaSeconds);
 
-    void onRoomEnter(const RoomAudioConfig& roomAudio);
-    void onRoomExit(const RoomAudioConfig& roomAudio);
+    void onRoomEnter(const RoomAudioConfig& roomAudio, const std::string& fromRoom = "");
+    void onRoomExit(const RoomAudioConfig& roomAudio, const std::string& toRoom = "");
     void playSfx(const AudioClipDef& clip);
 
     private:
@@ -41,6 +41,7 @@ class AudioManager
         bool fadingOut = false;
         std::string path;
         std::string tempFilePath;
+        bool loop = true;
     };
 
     struct ActiveSound
@@ -67,7 +68,11 @@ class AudioManager
     void unloadAmbientTracks();
     void updateActiveSounds(float deltaSeconds);
     void applyRoomStreams(const RoomAudioConfig& roomAudio);
-    void playRoomSfx(const RoomAudioConfig& roomAudio, const std::string& trigger);
+    void playRoomSfx(
+        const RoomAudioConfig& roomAudio,
+        const std::string& trigger,
+        const std::string& fromRoom,
+        const std::string& toRoom);
     bool hasActiveStreamAudio() const;
 
     std::string assetRoot;

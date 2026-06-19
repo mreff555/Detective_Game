@@ -954,11 +954,12 @@ namespace
             if (ownsLocationImage && locationImage.id != 0)
                 UnloadTexture(locationImage);
 
-            audioManager.onRoomExit(roomDatabase.getRoomAudio(currentRoomId));
+            const std::string exitRoomId = currentRoomId;
             const std::string returnRoomId = previousRoomId;
+            audioManager.onRoomExit(roomDatabase.getRoomAudio(currentRoomId), returnRoomId);
             previousRoomId.clear();
             currentRoomId = returnRoomId;
-            applyLocationStruct(previousLocation);
+            applyLocationStruct(previousLocation, exitRoomId);
             return;
         }
 
@@ -979,16 +980,17 @@ namespace
         if (ownsLocationImage && locationImage.id != 0)
             UnloadTexture(locationImage);
 
-        audioManager.onRoomExit(roomDatabase.getRoomAudio(currentRoomId));
-        previousRoomId = currentRoomId;
+        const std::string fromRoomId = currentRoomId;
+        audioManager.onRoomExit(roomDatabase.getRoomAudio(currentRoomId), nextRoomId);
+        previousRoomId = fromRoomId;
         currentRoomId = nextRoomId;
-        applyLocationStruct(nextLocation);
+        applyLocationStruct(nextLocation, fromRoomId);
 
         if (!isUnderConstruction)
             previousRoomId.clear();
     }
 
-    void Location::applyLocationStruct(const LocationStruct& locationStruct)
+    void Location::applyLocationStruct(const LocationStruct& locationStruct, const std::string& fromRoom)
     {
         locationImage = locationStruct.locationImage;
         ownsLocationImage = locationStruct.ownsLocationImage;
@@ -1019,7 +1021,7 @@ namespace
         narrativeChoiceHitAreas.clear();
 
         conversationMgr.onEnterRoom(currentRoomId, roomDatabase.getSpeakConfig(currentRoomId));
-        audioManager.onRoomEnter(roomDatabase.getRoomAudio(currentRoomId));
+        audioManager.onRoomEnter(roomDatabase.getRoomAudio(currentRoomId), fromRoom);
 
         narrativeScrollY = 0.0f;
         narrativeLayoutDirty = true;
