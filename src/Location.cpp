@@ -512,6 +512,43 @@ namespace
             scrollNarrativeToLine(choices.front().lineText, false);
     }
 
+    void Location::stripDialogChoiceLinesFromNarrative(const std::vector<DialogChoice>& choices)
+    {
+        if (choices.empty())
+            return;
+
+        std::vector<std::string> lines;
+        std::istringstream stream(narrativeText);
+        std::string line;
+
+        while (std::getline(stream, line))
+        {
+            bool isChoiceLine = false;
+            for (const DialogChoice& choice : choices)
+            {
+                if (line == choice.lineText)
+                {
+                    isChoiceLine = true;
+                    break;
+                }
+            }
+
+            if (!isChoiceLine)
+                lines.push_back(line);
+        }
+
+        std::ostringstream rebuilt;
+        for (size_t i = 0; i < lines.size(); ++i)
+        {
+            if (i > 0)
+                rebuilt << '\n';
+            rebuilt << lines[i];
+        }
+
+        narrativeText = rebuilt.str();
+        narrativeLayoutDirty = true;
+    }
+
     void Location::applyStatusEffects(const std::vector<StatusEffect>& effects)
     {
         bool statsChanged = false;
@@ -582,11 +619,35 @@ namespace
         if (result.action == SpeakResult::Action::None && result.narrative.empty())
             return;
 
+        const std::string responseText = result.narrative;
+        const std::vector<StatusEffect> effects = result.statusEffects;
+        const std::vector<DialogChoice> choicesToStrip = pendingDialogChoices;
+
         awaitingDialogChoice = false;
         pendingDialogChoices.clear();
         narrativeChoiceHitAreas.clear();
 
-        processSpeakResult(result);
+        stripDialogChoiceLinesFromNarrative(choicesToStrip);
+
+        if (!responseText.empty())
+        {
+            narrativeText += "\n\n";
+            narrativeText += responseText;
+            trimNarrativeBuffer();
+            narrativeLayoutDirty = true;
+        }
+
+        applyStatusEffects(effects);
+
+        if (!responseText.empty())
+        {
+            rebuildNarrativeLayout();
+            std::istringstream responseStream(responseText);
+            std::string firstLine;
+            if (std::getline(responseStream, firstLine) && !firstLine.empty())
+                scrollNarrativeToLine(firstLine, true);
+        }
+
         updateActionAvailability();
     }
 
@@ -666,7 +727,6 @@ namespace
             if (CheckCollisionPointRec(mousePos, hitArea.bounds))
             {
                 resolveDialogChoice(hitArea.id);
-                scrollNarrativeToHeader("Speaking:");
                 return;
             }
         }

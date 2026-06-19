@@ -231,6 +231,8 @@ SpeakResult ConversationManager::resolveChoice(const std::string& choiceId)
     if (!chosen)
         return SpeakResult();
 
+    const ConversationChoiceDef resolved = *chosen;
+
     awaitingChoice = false;
     pendingChoices.clear();
 
@@ -239,8 +241,8 @@ SpeakResult ConversationManager::resolveChoice(const std::string& choiceId)
 
     activeScriptPhaseId.clear();
 
-    SpeakResult result = buildNarrativeResult(chosen->response, chosen->status);
-    if (!chosen->status.onZeroLucidity.empty())
+    SpeakResult result = buildNarrativeResult(resolved.response, resolved.status);
+    if (!resolved.status.onZeroLucidity.empty())
         result.action = SpeakResult::Action::ShowNarrative;
     return result;
 }

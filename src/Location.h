@@ -56,6 +56,7 @@ class Location
     void applyStatusEffects(const std::vector<StatusEffect>& effects);
     void handleNarrativeChoiceInput();
     void appendDialogChoices(const std::vector<DialogChoice>& choices);
+    void stripDialogChoiceLinesFromNarrative(const std::vector<DialogChoice>& choices);
     void applyLucidityCollapseRestart();
     bool isDialogChoiceLine(const std::string& line) const;
     Color narrativeLineColor(const std::string& line) const;
