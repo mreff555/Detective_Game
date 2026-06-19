@@ -38,6 +38,10 @@ namespace testgame
         void addButton(const char* label, Rectangle bounds);
         void drawSectionLabel(const char* label, float x, float y) const;
         void updatePressedFlags();
+        void registerButtonClick(int buttonIndex);
+        int findEnabledButtonUnderMouse(Vector2 mousePos) const;
+
+        int activePressButtonIndex = -1;
 
         bool forwardButtonPressed = false;
         bool backButtonPressed = false;

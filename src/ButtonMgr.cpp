@@ -111,6 +111,30 @@ void ButtonMgr::setAvailability(const MovementStruct& movement, const ActionStru
     buttons[8].setEnabled(true);
 }
 
+int ButtonMgr::findEnabledButtonUnderMouse(Vector2 mousePos) const
+{
+    for (size_t i = 0; i < buttons.size(); ++i)
+    {
+        if (buttons[i].isEnabled() && CheckCollisionPointRec(mousePos, buttons[i].getBounds()))
+            return (int)i;
+    }
+
+    return -1;
+}
+
+void ButtonMgr::registerButtonClick(int buttonIndex)
+{
+    switch (buttonIndex)
+    {
+        case 0: forwardButtonClicked = true; break;
+        case 1: leftButtonClicked = true; break;
+        case 2: rightButtonClicked = true; break;
+        case 3: backwardButtonClicked = true; break;
+        case 4: examineButtonClicked = true; break;
+        default: break;
+    }
+}
+
 void ButtonMgr::updatePressedFlags()
 {
     forwardButtonPressed = buttons[0].isEnabled() && buttons[0].getState() == PRESSED;
@@ -126,7 +150,23 @@ void ButtonMgr::updatePressedFlags()
 
 void ButtonMgr::update()
 {
+    forwardButtonClicked = false;
+    backwardButtonClicked = false;
+    leftButtonClicked = false;
+    rightButtonClicked = false;
+    examineButtonClicked = false;
+
     Vector2 mousePos = GetMousePosition();
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        activePressButtonIndex = findEnabledButtonUnderMouse(mousePos);
+
+    if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && activePressButtonIndex >= 0)
+    {
+        registerButtonClick(activePressButtonIndex);
+        activePressButtonIndex = -1;
+    }
+
     for (auto& button : buttons)
     {
         if (!button.isEnabled())
@@ -149,41 +189,6 @@ void ButtonMgr::update()
     }
 
     updatePressedFlags();
-
-    if (buttons[4].isEnabled() &&
-        IsMouseButtonReleased(MOUSE_BUTTON_LEFT) &&
-        CheckCollisionPointRec(mousePos, buttons[4].getBounds()))
-    {
-        examineButtonClicked = true;
-    }
-
-    if (buttons[0].isEnabled() &&
-        IsMouseButtonReleased(MOUSE_BUTTON_LEFT) &&
-        CheckCollisionPointRec(mousePos, buttons[0].getBounds()))
-    {
-        forwardButtonClicked = true;
-    }
-
-    if (buttons[3].isEnabled() &&
-        IsMouseButtonReleased(MOUSE_BUTTON_LEFT) &&
-        CheckCollisionPointRec(mousePos, buttons[3].getBounds()))
-    {
-        backwardButtonClicked = true;
-    }
-
-    if (buttons[1].isEnabled() &&
-        IsMouseButtonReleased(MOUSE_BUTTON_LEFT) &&
-        CheckCollisionPointRec(mousePos, buttons[1].getBounds()))
-    {
-        leftButtonClicked = true;
-    }
-
-    if (buttons[2].isEnabled() &&
-        IsMouseButtonReleased(MOUSE_BUTTON_LEFT) &&
-        CheckCollisionPointRec(mousePos, buttons[2].getBounds()))
-    {
-        rightButtonClicked = true;
-    }
 }
 
 bool ButtonMgr::consumeExamineButtonClick()
