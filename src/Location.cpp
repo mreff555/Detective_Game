@@ -78,8 +78,8 @@ namespace
         const std::string fallbackRoot = (assetRoot == ".") ? ".." : ".";
         inventoryMgr.setAssetRoots(assetRoot, fallbackRoot);
         takeMgr.setAssetRoots(assetRoot, fallbackRoot);
-        if (!inventoryMgr.ensureAssetsLoaded())
-            TraceLog(LOG_WARNING, "Some inventory images failed to load at startup");
+        if (!inventoryMgr.ensureIconAssetsLoaded())
+            TraceLog(LOG_WARNING, "Some inventory icons failed to load at startup");
         trimNarrativeBuffer();
         conversationMgr.onEnterScene(currentSceneId, sceneDatabase.getSpeakConfig(currentSceneId));
         pauseMenu.setAudioManager(&audioManager);
@@ -119,6 +119,7 @@ namespace
         }
 
         narrativeLayoutDirty = true;
+        inventoryMgr.reloadItemIconsIfNeeded();
         updateInventoryLayout();
     }
 
@@ -391,7 +392,7 @@ namespace
         if (inventoryMgr.isOpen() && inventoryMgr.isExaminingItem())
         {
             const InventoryItem* item = inventoryMgr.getSelectedItem();
-            if (item != nullptr && item->examineImage.id != 0)
+            if (item != nullptr && item->examineImage.id != 0 && IsTextureValid(item->examineImage))
             {
                 DrawTexturePro(
                     item->examineImage,

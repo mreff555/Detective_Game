@@ -519,6 +519,14 @@ bool loadResourceTexture(
 
     for (const std::string& path : paths)
     {
+        const std::string compressedPath = compressedAssetPath(path);
+        if (FileExists(compressedPath.c_str()) &&
+            loadTextureFromAssetFile(compressedPath, outTexture))
+        {
+            TraceLog(LOG_INFO, "Loaded compressed resource texture: %s", compressedPath.c_str());
+            return true;
+        }
+
         if (FileExists(path.c_str()))
         {
             Texture2D texture = LoadTexture(path.c_str());
@@ -534,14 +542,6 @@ bool loadResourceTexture(
                 TraceLog(LOG_INFO, "Loaded resource texture: %s", path.c_str());
                 return true;
             }
-        }
-
-        const std::string compressedPath = compressedAssetPath(path);
-        if (FileExists(compressedPath.c_str()) &&
-            loadTextureFromAssetFile(compressedPath, outTexture))
-        {
-            TraceLog(LOG_INFO, "Loaded compressed resource texture: %s", compressedPath.c_str());
-            return true;
         }
     }
 

@@ -26,6 +26,8 @@ class InventoryMgr
     void setFont(Font font);
     void setAssetRoots(const std::string& primaryAssetRoot, const std::string& fallbackAssetRoot);
     bool ensureAssetsLoaded();
+    bool ensureIconAssetsLoaded();
+    void reloadItemIconsIfNeeded();
 
     bool isOpen() const { return viewState != InventoryViewState::Closed; }
     bool isExaminingItem() const { return viewState == InventoryViewState::ExaminingItem; }
@@ -52,15 +54,20 @@ class InventoryMgr
     void createDefaultItems();
     void loadItemTextures();
     void loadItemAssets(InventoryItem& item);
+    void loadItemIcon(InventoryItem& item);
+    void loadItemExamineImage(InventoryItem& item);
+    void ensureItemIconLoaded(InventoryItem& item);
+    void ensureItemExamineImageLoaded(InventoryItem& item);
     bool loadItemTexture(const char* filename, Texture2D& outTexture) const;
     bool hasLoadedAssets() const;
+    bool isItemIconReady(const InventoryItem& item) const;
     void drawCloseButton() const;
     void drawItemGrid() const;
     void handleItemGridInput();
     void handleCloseButtonInput();
     void handleInventoryScrollInput();
     void drawInventoryScrollbar() const;
-    void layoutItemSlots();
+    void layoutItemSlots() const;
     Rectangle getCloseButtonBounds() const;
     float getInventoryVisibleHeight() const;
     const InventoryItem* findItem(const std::string& id) const;
@@ -81,7 +88,7 @@ class InventoryMgr
     std::string fallbackAssetRoot;
 
     float inventoryScrollY = 0.0f;
-    float inventoryContentHeight = 0.0f;
+    mutable float inventoryContentHeight = 0.0f;
     bool inventoryScrollbarDragging = false;
     float inventoryScrollbarDragOffsetY = 0.0f;
 };

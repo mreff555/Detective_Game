@@ -81,14 +81,16 @@ void InventoryMgr::setAssetRoots(
     fallbackAssetRoot = fallbackRoot;
 }
 
+bool InventoryMgr::isItemIconReady(const InventoryItem& item) const
+{
+    return item.icon.id != 0 && IsTextureValid(item.icon);
+}
+
 bool InventoryMgr::hasLoadedAssets() const
 {
     for (const InventoryItem& item : items)
     {
-        if (item.icon.id == 0)
-            return false;
-
-        if (itemNeedsExamineImage(item) && item.examineImage.id == 0)
+        if (!isItemIconReady(item))
             return false;
     }
 
@@ -112,19 +114,8 @@ bool InventoryMgr::loadItemTexture(const char* filename, Texture2D& outTexture) 
     return false;
 }
 
-void InventoryMgr::loadItemAssets(InventoryItem& item)
+void InventoryMgr::loadItemIcon(InventoryItem& item)
 {
-    if (item.icon.id != 0)
-    {
-        UnloadTexture(item.icon);
-        item.icon = Texture2D{};
-    }
-    if (item.examineImage.id != 0)
-    {
-        UnloadTexture(item.examineImage);
-        item.examineImage = Texture2D{};
-    }
-
     if (item.id == "wallet")
     {
         for (const char* filename : kWalletIconFiles)
@@ -132,15 +123,6 @@ void InventoryMgr::loadItemAssets(InventoryItem& item)
             if (loadItemTexture(filename, item.icon))
             {
                 SetTextureFilter(item.icon, TEXTURE_FILTER_BILINEAR);
-                break;
-            }
-        }
-
-        for (const char* filename : kWalletExamineFiles)
-        {
-            if (loadItemTexture(filename, item.examineImage))
-            {
-                SetTextureFilter(item.examineImage, TEXTURE_FILTER_BILINEAR);
                 break;
             }
         }
@@ -157,7 +139,39 @@ void InventoryMgr::loadItemAssets(InventoryItem& item)
                 break;
             }
         }
+        return;
+    }
 
+    if (item.iconPath.empty())
+        return;
+
+    const std::string path = item.iconPath.find("resources/") == 0
+        ? item.iconPath.substr(10)
+        : item.iconPath;
+    if (loadItemTexture(path.c_str(), item.icon))
+        SetTextureFilter(item.icon, TEXTURE_FILTER_BILINEAR);
+}
+
+void InventoryMgr::loadItemExamineImage(InventoryItem& item)
+{
+    if (!itemNeedsExamineImage(item))
+        return;
+
+    if (item.id == "wallet")
+    {
+        for (const char* filename : kWalletExamineFiles)
+        {
+            if (loadItemTexture(filename, item.examineImage))
+            {
+                SetTextureFilter(item.examineImage, TEXTURE_FILTER_BILINEAR);
+                break;
+            }
+        }
+        return;
+    }
+
+    if (item.id == "lard")
+    {
         for (const char* filename : kLardExamineFiles)
         {
             if (loadItemTexture(filename, item.examineImage))
@@ -169,29 +183,81 @@ void InventoryMgr::loadItemAssets(InventoryItem& item)
         return;
     }
 
-    if (!item.iconPath.empty())
+    if (item.examineImagePath.empty())
+        return;
+
+    const std::string path = item.examineImagePath.find("resources/") == 0
+        ? item.examineImagePath.substr(10)
+        : item.examineImagePath;
+    if (loadItemTexture(path.c_str(), item.examineImage))
+        SetTextureFilter(item.examineImage, TEXTURE_FILTER_BILINEAR);
+}
+
+void InventoryMgr::loadItemAssets(InventoryItem& item)
+{
+    if (item.icon.id != 0)
     {
-        const std::string path = item.iconPath.find("resources/") == 0
-            ? item.iconPath.substr(10)
-            : item.iconPath;
-        if (loadItemTexture(path.c_str(), item.icon))
-            SetTextureFilter(item.icon, TEXTURE_FILTER_BILINEAR);
+        UnloadTexture(item.icon);
+        item.icon = Texture2D{};
+    }
+    if (item.examineImage.id != 0)
+    {
+        UnloadTexture(item.examineImage);
+        item.examineImage = Texture2D{};
     }
 
-    if (!item.examineImagePath.empty())
+    loadItemIcon(item);
+    loadItemExamineImage(item);
+}
+
+void InventoryMgr::ensureItemIconLoaded(InventoryItem& item)
+{
+    if (isItemIconReady(item))
+        return;
+
+    if (item.icon.id != 0)
     {
-        const std::string path = item.examineImagePath.find("resources/") == 0
-            ? item.examineImagePath.substr(10)
-            : item.examineImagePath;
-        if (loadItemTexture(path.c_str(), item.examineImage))
-            SetTextureFilter(item.examineImage, TEXTURE_FILTER_BILINEAR);
+        UnloadTexture(item.icon);
+        item.icon = Texture2D{};
     }
+
+    loadItemIcon(item);
+}
+
+void InventoryMgr::ensureItemExamineImageLoaded(InventoryItem& item)
+{
+    if (!itemNeedsExamineImage(item))
+        return;
+
+    if (item.examineImage.id != 0 && IsTextureValid(item.examineImage))
+        return;
+
+    if (item.examineImage.id != 0)
+    {
+        UnloadTexture(item.examineImage);
+        item.examineImage = Texture2D{};
+    }
+
+    loadItemExamineImage(item);
 }
 
 void InventoryMgr::loadItemTextures()
 {
     for (InventoryItem& item : items)
         loadItemAssets(item);
+}
+
+bool InventoryMgr::ensureIconAssetsLoaded()
+{
+    for (InventoryItem& item : items)
+        ensureItemIconLoaded(item);
+
+    return hasLoadedAssets();
+}
+
+void InventoryMgr::reloadItemIconsIfNeeded()
+{
+    ensureIconAssetsLoaded();
 }
 
 bool InventoryMgr::ensureAssetsLoaded()
@@ -214,8 +280,8 @@ void InventoryMgr::createDefaultItems()
 
 void InventoryMgr::open()
 {
-    if (!ensureAssetsLoaded())
-        TraceLog(LOG_WARNING, "Inventory images are not loaded; wallet art may be missing");
+    if (!ensureIconAssetsLoaded())
+        TraceLog(LOG_WARNING, "Some inventory icons failed to load");
 
     viewState = InventoryViewState::ItemList;
     selectedItemId.clear();
@@ -249,7 +315,10 @@ void InventoryMgr::examineSelectedItem()
     if (!canExamineSelectedItem())
         return;
 
-    ensureAssetsLoaded();
+    const int itemIndex = findItemIndex(selectedItemId);
+    if (itemIndex >= 0)
+        ensureItemExamineImageLoaded(items[(size_t)itemIndex]);
+
     viewState = InventoryViewState::ExaminingItem;
 }
 
@@ -391,7 +460,7 @@ void InventoryMgr::handleInventoryScrollInput()
     inventoryScrollY = std::max(0.0f, std::min(inventoryScrollY, maxScroll));
 }
 
-void InventoryMgr::layoutItemSlots()
+void InventoryMgr::layoutItemSlots() const
 {
     const float pad = 14.0f;
     const float headerHeight = 28.0f;
@@ -452,6 +521,9 @@ void InventoryMgr::drawCloseButton() const
 
 void InventoryMgr::drawItemGrid() const
 {
+    if (itemSlotBounds.size() != items.size())
+        layoutItemSlots();
+
     const float pad = 14.0f;
     const float headerHeight = 28.0f;
     const float contentX = panelBounds.x + pad;
@@ -480,7 +552,7 @@ void InventoryMgr::drawItemGrid() const
 
         DrawRectangleRounded(slot, 0.18f, 8, fill);
 
-        if (items[i].icon.id != 0)
+        if (isItemIconReady(items[i]))
         {
             const float iconPad = 10.0f;
             const Rectangle iconArea = {
@@ -589,7 +661,7 @@ void InventoryMgr::addItem(const InventoryItem& item)
         return;
 
     items.push_back(item);
-    loadItemAssets(items.back());
+    ensureItemIconLoaded(items.back());
 }
 
 std::vector<InventoryItem> InventoryMgr::exportItemSnapshots() const
@@ -635,6 +707,8 @@ void InventoryMgr::restoreFromSnapshots(const std::vector<InventoryItem>& savedI
 
         addItem(savedItem);
     }
+
+    ensureIconAssetsLoaded();
 }
 
 }
