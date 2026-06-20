@@ -109,11 +109,11 @@ Texture2D TakeMgr::createPlaceholderIcon(const std::string& label) const
     const int size = 96;
     RenderTexture2D target = LoadRenderTexture(size, size);
     BeginTextureMode(target);
-    ClearBackground((Color){48, 44, 56, 255});
+    ClearBackground(Color{48, 44, 56, 255});
 
-    DrawRectangleRounded({ 18.0f, 10.0f, 60.0f, 72.0f }, 0.2f, 8, (Color){176, 168, 152, 255});
-    DrawRectangleRounded({ 24.0f, 18.0f, 48.0f, 46.0f }, 0.15f, 6, (Color){228, 220, 198, 255});
-    DrawRectangleRounded({ 30.0f, 6.0f, 36.0f, 12.0f }, 0.4f, 4, (Color){118, 96, 58, 255});
+    DrawRectangleRounded({ 18.0f, 10.0f, 60.0f, 72.0f }, 0.2f, 8, Color{176, 168, 152, 255});
+    DrawRectangleRounded({ 24.0f, 18.0f, 48.0f, 46.0f }, 0.15f, 6, Color{228, 220, 198, 255});
+    DrawRectangleRounded({ 30.0f, 6.0f, 36.0f, 12.0f }, 0.4f, 4, Color{118, 96, 58, 255});
 
     const char* text = label.empty() ? "?" : label.c_str();
     const float fontSize = 16.0f;
@@ -124,7 +124,7 @@ Texture2D TakeMgr::createPlaceholderIcon(const std::string& label) const
         { (size - textSize.x) * 0.5f, size - textSize.y - 8.0f },
         fontSize,
         1.0f,
-        (Color){62, 52, 34, 255});
+        Color{62, 52, 34, 255});
 
     EndTextureMode();
 
@@ -412,7 +412,7 @@ void TakeMgr::drawTakeAllButton() const
         buttonBounds,
         0.18f,
         8,
-        enabled ? (hovered ? kActionHover : kActionFill) : (Color){40, 38, 50, 255});
+        enabled ? (hovered ? kActionHover : kActionFill) : Color{40, 38, 50, 255});
     DrawRoundedBorder(
         buttonBounds,
         0.18f,

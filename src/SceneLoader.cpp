@@ -660,7 +660,7 @@ void SceneDatabase::ensureUnderConstructionImage() const
     RenderTexture2D renderTarget = LoadRenderTexture(width, height);
 
     BeginTextureMode(renderTarget);
-    ClearBackground((Color){34, 32, 40, 255});
+    ClearBackground(Color{34, 32, 40, 255});
 
     const Color accent = {186, 150, 72, 255};
     const Color stripe = {168, 132, 48, 255};
@@ -691,7 +691,7 @@ void SceneDatabase::ensureUnderConstructionImage() const
         { (width - subtitleMeasure.x) * 0.5f, height * 0.36f + titleMeasure.y + 18.0f },
         subtitleSize,
         1.0f,
-        (Color){176, 168, 152, 255});
+        Color{176, 168, 152, 255});
 
     EndTextureMode();
 

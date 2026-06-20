@@ -58,9 +58,9 @@ namespace
       useHealthDelta(locationStruct.useHealthDelta),
       useEnergyDelta(locationStruct.useEnergyDelta),
       useRepeatStatus(locationStruct.useRepeatStatus),
-      baseActionFilter(locationStruct.actionFilter),
       descriptionFont(locationStruct.descriptionFont),
       boldFont(locationStruct.boldFont),
+      baseActionFilter(locationStruct.actionFilter),
       up(locationStruct.movementFilter.up),
       down(locationStruct.movementFilter.down),
       forward(locationStruct.movementFilter.forward),
@@ -416,7 +416,7 @@ namespace
         }
         else
         {
-            DrawRectangleRec(mainBounds, (Color){48, 44, 56, 255});
+            DrawRectangleRec(mainBounds, Color{48, 44, 56, 255});
             const char* fallback = "UNDER CONSTRUCTION";
             const float fontSize = 42.0f;
             const Vector2 size = MeasureTextEx(descriptionFont, fallback, fontSize, 2.0f);
@@ -429,7 +429,7 @@ namespace
                 },
                 fontSize,
                 2.0f,
-                (Color){186, 150, 72, 255});
+                Color{186, 150, 72, 255});
         }
     }
 
@@ -2021,7 +2021,7 @@ namespace
                         DrawTextCodepoint(
                             font,
                             codepoint,
-                            (Vector2){ dialog.x + xOffset + textOffsetX, drawY },
+                            Vector2{ dialog.x + xOffset + textOffsetX, drawY },
                             paragraphFontSize,
                             lineColor);
                     }

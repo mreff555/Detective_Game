@@ -84,7 +84,6 @@ class InventoryMgr
     float inventoryContentHeight = 0.0f;
     bool inventoryScrollbarDragging = false;
     float inventoryScrollbarDragOffsetY = 0.0f;
-    bool mouseWasDownLastFrame = false;
 };
 
 }

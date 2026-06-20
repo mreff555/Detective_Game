@@ -74,6 +74,10 @@ if(NOT _raylib_ready)
     )
 
     FetchContent_MakeAvailable(raylib)
+
+    if(TARGET raylib)
+        target_compile_options(raylib PRIVATE -Wno-tautological-compare)
+    endif()
 endif()
 
 FetchContent_Declare(

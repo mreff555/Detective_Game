@@ -14,7 +14,6 @@ namespace
     const Color kPanelBorder = {168, 138, 72, 255};
     const Color kPanelAccent = {96, 78, 48, 255};
     const Color kSectionLabel = {132, 122, 104, 255};
-    const Color kDivider = {68, 62, 54, 255};
     const Color kStatusTrack = {40, 38, 50, 255};
     const Color kHealthFill = {168, 72, 72, 255};
     const Color kEnergyFill = {168, 138, 72, 255};
@@ -39,14 +38,14 @@ namespace
 
 ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont, Font _boldButtonFont)
     : buttonBox(_buttonBox),
-      buttonFont(_buttonFont),
-      boldButtonFont(_boldButtonFont.texture.id != 0 ? _boldButtonFont : _buttonFont),
       healthBarBounds{},
       energyBarBounds{},
       resolveBarBounds{},
       lucidityBarBounds{},
       charismaBarBounds{},
       reservedBarBounds{},
+      buttonFont(_buttonFont),
+      boldButtonFont(_boldButtonFont.texture.id != 0 ? _boldButtonFont : _buttonFont),
       buttonStyle{
           {228, 220, 198, 255},
           {54, 50, 64, 255},
@@ -472,7 +471,6 @@ bool ButtonMgr::consumeHitButtonClick()
 void ButtonMgr::draw() const
 {
     const float pad = 18.0f;
-    const float labelHeight = 22.0f;
 
     DrawRectangleRounded(buttonBox, 0.04f, 10, kPanelFill);
     DrawRoundedBorder(buttonBox, 0.04f, 10, 3.0f, kPanelBorder);
