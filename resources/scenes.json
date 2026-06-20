@@ -316,9 +316,16 @@
       "audio": {
         "ambient": [
           {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.95,
+            "fade_in": 2.5,
+            "fade_out": 2.5,
+            "loop": true
+          },
+          {
             "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
-            "volume": 0.85,
-            "fade_in": 1.0,
+            "volume": 0.28,
+            "fade_in": 2.0,
             "fade_out": 2.0,
             "loop": true
           }
@@ -445,6 +452,20 @@
             "fade_in": 1.5,
             "fade_out": 1.0,
             "loop": true
+          }
+        ],
+        "sfx": [
+          {
+            "path": "resources/audio/sfx/door_open.mp3",
+            "trigger": "on_enter",
+            "from_room": "saloon_front",
+            "volume": 0.9
+          },
+          {
+            "path": "resources/audio/sfx/door_close.mp3",
+            "trigger": "on_exit",
+            "to_room": "saloon_front",
+            "volume": 0.9
           }
         ]
       }
