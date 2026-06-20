@@ -103,13 +103,13 @@ void ButtonMgr::buildButtonLayout()
         { moveRightX, contentY, moveColRightW, movePadBtnH });
 
     addButton("Left",
-        { moveRightX, contentY + movePadBtnH + gap, moveColRightW, movePadBtnH });
+        { moveRightX, contentY + movePadBtnH + gap, movePadBtnW, movePadBtnH });
 
     addButton("Right",
-        { moveRightX + movePadBtnW + gap, contentY + (movePadBtnH + gap) * 2.0f, movePadBtnW, movePadBtnH });
+        { moveRightX + movePadBtnW + gap, contentY + movePadBtnH + gap, movePadBtnW, movePadBtnH });
 
     addButton("Back",
-        { moveRightX, contentY + (movePadBtnH + gap) * 2.0f, movePadBtnW, movePadBtnH });
+        { moveRightX, contentY + (movePadBtnH + gap) * 2.0f, moveColRightW, movePadBtnH });
 
     addButton("Examine",
         { actionX, contentY, actionBtnW, actionBtnH });
@@ -492,7 +492,6 @@ void ButtonMgr::draw() const
     drawStatusBar("Resolve", resolveBarBounds, resolvePercent);
     drawStatusBar("Lucidity", lucidityBarBounds, lucidityPercent);
     drawStatusBar("Charisma", charismaBarBounds, charismaPercent);
-    drawStatusBar("Reserved", reservedBarBounds, 0.0f);
 
     for (const auto& button : buttons)
         button.draw();
