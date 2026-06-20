@@ -34,6 +34,7 @@ namespace
         const LocationStruct& locationStruct,
         Vector2 screenSize,
         SceneDatabase& sceneDatabase,
+        const MilestoneDatabase& milestoneDatabase,
         AudioManager& audioManager,
         GameConfig& gameConfig,
         const std::string& sceneId,
@@ -41,6 +42,7 @@ namespace
     : screenWidth((int)screenSize.x),
       screenHeight((int)screenSize.y),
       sceneDatabase(sceneDatabase),
+      milestoneMgr(milestoneDatabase),
       audioManager(audioManager),
       gameConfig(gameConfig),
       pauseMenu((int)screenSize.x, (int)screenSize.y, locationStruct.uiFont),
@@ -82,6 +84,7 @@ namespace
             TraceLog(LOG_WARNING, "Some inventory icons failed to load at startup");
         trimNarrativeBuffer();
         conversationMgr.onEnterScene(currentSceneId, sceneDatabase.getSpeakConfig(currentSceneId));
+        evaluateMilestones();
         pauseMenu.setAudioManager(&audioManager);
         pauseMenu.setGameConfig(&gameConfig);
         pauseMenu.setConfigPath(gameConfigPath);
@@ -647,6 +650,27 @@ namespace
         narrativeLayoutDirty = true;
     }
 
+    void Location::evaluateMilestones()
+    {
+        ConversationPersistState conversationSnapshot;
+        conversationMgr.exportPersistState(conversationSnapshot);
+
+        MilestoneEventContext context;
+        context.storyFlags = storyFlags;
+        context.conversation = &conversationSnapshot;
+        context.sceneId = currentSceneId;
+        context.hasItem = [this](const std::string& itemId)
+        {
+            return inventoryMgr.hasItem(itemId);
+        };
+        context.getMilestoneStatus = [this](const std::string& milestoneId)
+        {
+            return milestoneMgr.getStatus(milestoneId);
+        };
+
+        milestoneMgr.evaluate(context);
+    }
+
     void Location::appendExamineDetails()
     {
         if (examineDetails.empty())
@@ -656,6 +680,7 @@ namespace
         if (!examineFlag.empty())
             storyFlags.insert(examineFlag);
         examinedSceneIds.insert(currentSceneId);
+        evaluateMilestones();
         updateActionAvailability();
     }
 
@@ -779,6 +804,7 @@ namespace
         item.examineImagePath = granted.examineImagePath;
         item.examineText = granted.examineText;
         inventoryMgr.addItem(item);
+        evaluateMilestones();
     }
 
     void Location::playDialogAudio(const SpeakResult& result)
@@ -801,12 +827,14 @@ namespace
             playDialogAudio(result);
             const std::vector<ConversationChoiceDef>& pending = conversationMgr.getPendingChoices();
             appendChoiceLinesToNarrative(!pending.empty() ? pending : result.choices);
+            evaluateMilestones();
             return;
         }
 
         applyStatusEffects(result.statusEffects);
         grantConversationItem(result.grantItem);
         playDialogAudio(result);
+        evaluateMilestones();
     }
 
     void Location::resolveDialogChoice(const std::string& choiceId)
@@ -859,6 +887,7 @@ namespace
             const std::vector<ConversationChoiceDef>& pending = conversationMgr.getPendingChoices();
             appendChoiceLinesToNarrative(!pending.empty() ? pending : result.choices);
             updateActionAvailability();
+            evaluateMilestones();
             return;
         }
 
@@ -876,6 +905,7 @@ namespace
         }
 
         updateActionAvailability();
+        evaluateMilestones();
     }
 
     void Location::resolveCombatEncounter(const std::string& encounterId)
@@ -1364,6 +1394,7 @@ namespace
         narrativeScrollY = 0.0f;
         narrativeLayoutDirty = true;
         trimNarrativeBuffer();
+        evaluateMilestones();
         updateActionAvailability();
     }
 
@@ -1478,6 +1509,7 @@ namespace
         state.committedPlayerDialogLines = committedPlayerDialogLines;
         state.inventoryItems = inventoryMgr.exportItemSnapshots();
         conversationMgr.exportPersistState(state.conversation);
+        milestoneMgr.exportPersistState(state.milestones);
         return state;
     }
 
@@ -1517,8 +1549,17 @@ namespace
 
         inventoryMgr.restoreFromSnapshots(state.inventoryItems);
         conversationMgr.importPersistState(state.conversation);
+        milestoneMgr.importPersistState(state.milestones);
         takeMgr.close();
         narrativeChoiceHitAreas.clear();
+
+        ConversationPersistState conversationSnapshot;
+        conversationMgr.exportPersistState(conversationSnapshot);
+        milestoneMgr.syncFromLegacyState(
+            storyFlags,
+            conversationSnapshot,
+            [this](const std::string& itemId) { return inventoryMgr.hasItem(itemId); });
+        evaluateMilestones();
 
         audioManager.onRoomEnter(sceneDatabase.getSceneAudio(currentSceneId), fromSceneId);
         trimNarrativeBuffer();

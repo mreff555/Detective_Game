@@ -4,6 +4,7 @@
 #include <AudioManager.h>
 #include <ConversationManager.h>
 #include <ConversationStruct.h>
+#include <MilestoneManager.h>
 #include <GameConfig.h>
 #include <InventoryMgr.h>
 #include <PauseMenuMgr.h>
@@ -33,6 +34,7 @@ class Location
         const LocationStruct& locationStruct,
         Vector2 screenSize,
         SceneDatabase& sceneDatabase,
+        const MilestoneDatabase& milestoneDatabase,
         AudioManager& audioManager,
         GameConfig& gameConfig,
         const std::string& sceneId,
@@ -82,6 +84,7 @@ class Location
         const std::vector<ConversationChoiceDef>& choices,
         const std::string& keepLineText = "");
     void applyLucidityCollapseRestart();
+    void evaluateMilestones();
     bool isDialogChoiceLine(const std::string& line) const;
     Color narrativeLineColor(const std::string& line) const;
     void applyLocationStruct(const LocationStruct& locationStruct, const std::string& fromRoom = "");
@@ -131,6 +134,7 @@ class Location
     int screenHeight;
 
     SceneDatabase& sceneDatabase;
+    MilestoneManager milestoneMgr;
     AudioManager& audioManager;
     GameConfig& gameConfig;
     PauseMenuMgr pauseMenu;
