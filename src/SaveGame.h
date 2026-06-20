@@ -13,6 +13,7 @@ struct ConversationPersistState
 {
     std::set<std::string> completedPhaseIds;
     std::set<std::string> completedRandomLineIds;
+    std::set<std::string> consumedScriptedChoiceIds;
 };
 
 struct SavedGameState

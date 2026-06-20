@@ -72,6 +72,7 @@ class Location
     void resolveDialogChoice(const std::string& choiceId);
     void resolveCombatEncounter(const std::string& encounterId);
     void processSpeakResult(const SpeakResult& result);
+    void grantConversationItem(const GrantedInventoryItemDef& granted);
     void applyStatusEffects(const std::vector<StatusEffect>& effects);
     void handleNarrativeChoiceInput();
     void appendChoiceLinesToNarrative(const std::vector<ConversationChoiceDef>& choices);

@@ -130,7 +130,8 @@ bool writeSaveFile(const std::string& path, const SavedGameState& state)
     root["inventoryItems"] = inventoryToJson(state.inventoryItems);
     root["conversation"] = {
         {"completedPhaseIds", setToJsonArray(state.conversation.completedPhaseIds)},
-        {"completedRandomLineIds", setToJsonArray(state.conversation.completedRandomLineIds)}
+        {"completedRandomLineIds", setToJsonArray(state.conversation.completedRandomLineIds)},
+        {"consumedScriptedChoiceIds", setToJsonArray(state.conversation.consumedScriptedChoiceIds)}
     };
 
     std::ofstream file(path.c_str());
@@ -187,6 +188,9 @@ bool readSaveFile(const std::string& path, SavedGameState& state)
     jsonArrayToSet(
         conversation.value("completedRandomLineIds", nlohmann::json::array()),
         state.conversation.completedRandomLineIds);
+    jsonArrayToSet(
+        conversation.value("consumedScriptedChoiceIds", nlohmann::json::array()),
+        state.conversation.consumedScriptedChoiceIds);
 
     return !state.sceneId.empty();
 }

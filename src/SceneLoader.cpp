@@ -170,6 +170,19 @@ bool parseRandomLine(const nlohmann::json& line, RandomConversationLine& out)
     return !out.text.empty();
 }
 
+bool parseGrantedInventoryItem(const nlohmann::json& item, GrantedInventoryItemDef& out)
+{
+    if (!item.is_object())
+        return true;
+
+    out.id = item.value("id", "");
+    out.name = item.value("name", "");
+    out.iconPath = item.value("icon", "");
+    out.examineImagePath = item.value("examineImage", "");
+    out.examineText = item.value("examineText", "");
+    return true;
+}
+
 bool parseConversationPhase(const nlohmann::json& phase, ConversationPhase& out)
 {
     if (!phase.is_object())
@@ -182,10 +195,14 @@ bool parseConversationPhase(const nlohmann::json& phase, ConversationPhase& out)
     out.resetOnSceneEnter = phase.value("resetOnSceneEnter", true);
     out.text = phase.value("text", "");
     out.intro = phase.value("intro", "");
+    out.resumeIntro = phase.value("resumeIntro", "");
     out.poolId = phase.value("poolId", "");
     out.avoidRepeat = phase.value("avoidRepeat", true);
 
     if (!parseStatusEffect(phase.value("status", nlohmann::json::object()), out.status))
+        return false;
+
+    if (!parseGrantedInventoryItem(phase.value("grantItem", nlohmann::json::object()), out.grantItem))
         return false;
 
     out.choices.clear();

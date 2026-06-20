@@ -54,6 +54,17 @@ enum class ConversationPhaseType
     Random
 };
 
+struct GrantedInventoryItemDef
+{
+    std::string id;
+    std::string name;
+    std::string iconPath;
+    std::string examineImagePath;
+    std::string examineText;
+
+    bool isValid() const { return !id.empty(); }
+};
+
 struct ConversationPhase
 {
     std::string id;
@@ -64,8 +75,10 @@ struct ConversationPhase
 
     std::string text;
     StatusEffect status;
+    GrantedInventoryItemDef grantItem;
 
     std::string intro;
+    std::string resumeIntro;
     std::vector<ConversationChoiceDef> choices;
 
     std::string poolId;
@@ -94,6 +107,7 @@ struct SpeakResult
     std::string narrative;
     std::vector<ConversationChoiceDef> choices;
     std::vector<StatusEffect> statusEffects;
+    GrantedInventoryItemDef grantItem;
 };
 
 }

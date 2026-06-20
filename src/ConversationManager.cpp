@@ -13,6 +13,7 @@ void ConversationManager::onEnterScene(const std::string& sceneId, const SceneSp
         if (phase.resetOnSceneEnter)
         {
             completedPhaseIds.erase(phase.id);
+            clearConsumedScriptedChoices(phase.id);
             lastRandomLineIndex.erase(randomPoolKey(sceneId, phase));
         }
     }
@@ -21,6 +22,7 @@ void ConversationManager::onEnterScene(const std::string& sceneId, const SceneSp
     combatAttackAllowed = false;
     combatEncounterId.clear();
     activeScriptPhaseId.clear();
+    activeParentChoiceId.clear();
     pendingChoices.clear();
 }
 
@@ -33,6 +35,7 @@ void ConversationManager::clearPendingEncounter()
     combatAttackAllowed = false;
     combatEncounterId.clear();
     activeScriptPhaseId.clear();
+    activeParentChoiceId.clear();
     pendingChoices.clear();
 }
 
@@ -110,17 +113,135 @@ bool ConversationManager::canSpeak(
 
 SpeakResult ConversationManager::buildNarrativeResult(
     const std::string& text,
-    const StatusEffect& status) const
+    const StatusEffect& status,
+    const GrantedInventoryItemDef& grantItem) const
 {
     SpeakResult result;
-    if (text.empty())
+    if (text.empty() && !grantItem.isValid())
         return result;
 
     result.action = SpeakResult::Action::ShowNarrative;
     result.narrative = text;
     if (status.hasDelta())
         result.statusEffects.push_back(status);
+    if (grantItem.isValid())
+        result.grantItem = grantItem;
     return result;
+}
+
+std::string ConversationManager::scriptedChoiceKey(
+    const std::string& phaseId,
+    const std::string& choiceId) const
+{
+    return phaseId + ":" + choiceId;
+}
+
+bool ConversationManager::isScriptedChoiceConsumed(
+    const std::string& phaseId,
+    const std::string& choiceId) const
+{
+    return consumedScriptedChoiceIds.count(scriptedChoiceKey(phaseId, choiceId)) > 0;
+}
+
+void ConversationManager::markScriptedChoiceConsumed(
+    const std::string& phaseId,
+    const std::string& choiceId)
+{
+    consumedScriptedChoiceIds.insert(scriptedChoiceKey(phaseId, choiceId));
+}
+
+void ConversationManager::clearConsumedScriptedChoices(const std::string& phaseId)
+{
+    const std::string prefix = phaseId + ":";
+    for (auto it = consumedScriptedChoiceIds.begin(); it != consumedScriptedChoiceIds.end();)
+    {
+        if (it->compare(0, prefix.size(), prefix) == 0)
+            it = consumedScriptedChoiceIds.erase(it);
+        else
+            ++it;
+    }
+}
+
+std::vector<ConversationChoiceDef> ConversationManager::remainingTopLevelChoices(
+    const ConversationPhase& phase) const
+{
+    std::vector<ConversationChoiceDef> remaining;
+    remaining.reserve(phase.choices.size());
+
+    for (const ConversationChoiceDef& choice : phase.choices)
+    {
+        if (!isScriptedChoiceConsumed(phase.id, choice.id))
+            remaining.push_back(choice);
+    }
+
+    return remaining;
+}
+
+bool ConversationManager::allTopLevelChoicesConsumed(const ConversationPhase& phase) const
+{
+    for (const ConversationChoiceDef& choice : phase.choices)
+    {
+        if (!isScriptedChoiceConsumed(phase.id, choice.id))
+            return false;
+    }
+
+    return true;
+}
+
+SpeakResult ConversationManager::resumeScriptedPhase(
+    const ConversationPhase& phase,
+    const std::string& responseText,
+    const StatusEffect& status) const
+{
+    const std::vector<ConversationChoiceDef> remaining = remainingTopLevelChoices(phase);
+    if (remaining.empty())
+        return buildNarrativeResult(responseText, status);
+
+    SpeakResult result;
+    result.action = SpeakResult::Action::ShowChoices;
+    result.narrative = responseText;
+    if (status.hasDelta())
+        result.statusEffects.push_back(status);
+
+    const std::string& resumeText = !phase.resumeIntro.empty() ? phase.resumeIntro : phase.intro;
+    if (!resumeText.empty())
+    {
+        if (!result.narrative.empty())
+            result.narrative += "\n\n";
+        result.narrative += resumeText;
+    }
+
+    result.choices = remaining;
+    return result;
+}
+
+const ConversationChoiceDef* ConversationManager::findChoiceInList(
+    const std::vector<ConversationChoiceDef>& choices,
+    const std::string& choiceId) const
+{
+    for (const ConversationChoiceDef& choice : choices)
+    {
+        if (choice.id == choiceId)
+            return &choice;
+    }
+
+    return nullptr;
+}
+
+const ConversationChoiceDef* ConversationManager::findTopLevelChoiceForId(
+    const ConversationPhase& phase,
+    const std::string& choiceId) const
+{
+    if (const ConversationChoiceDef* topLevel = findChoiceInList(phase.choices, choiceId))
+        return topLevel;
+
+    for (const ConversationChoiceDef& topLevel : phase.choices)
+    {
+        if (findChoiceInList(topLevel.followUpChoices, choiceId))
+            return &topLevel;
+    }
+
+    return nullptr;
 }
 
 std::string ConversationManager::randomPoolKey(
@@ -240,7 +361,7 @@ SpeakResult ConversationManager::handleSpeak(
     if (phase->type == ConversationPhaseType::Once)
     {
         markPhaseComplete(phase->id);
-        return buildNarrativeResult(phase->text, phase->status);
+        return buildNarrativeResult(phase->text, phase->status, phase->grantItem);
     }
 
     if (phase->type == ConversationPhaseType::Scripted)
@@ -261,51 +382,73 @@ SpeakResult ConversationManager::handleSpeak(
     return SpeakResult();
 }
 
-SpeakResult ConversationManager::resolveChoice(const std::string& choiceId)
+SpeakResult ConversationManager::resolveScriptedChoice(
+    const SceneSpeakConfig& /*config*/,
+    const ConversationPhase& phase,
+    const ConversationChoiceDef& choice,
+    bool fromTopLevel)
 {
-    if (!awaitingChoice)
-        return SpeakResult();
-
-    const ConversationChoiceDef* chosen = nullptr;
-    for (const ConversationChoiceDef& choice : pendingChoices)
+    if (!choice.followUpChoices.empty())
     {
-        if (choice.id == choiceId)
-        {
-            chosen = &choice;
-            break;
-        }
-    }
+        if (fromTopLevel)
+            activeParentChoiceId = choice.id;
 
-    if (!chosen)
-        return SpeakResult();
-
-    const ConversationChoiceDef resolved = *chosen;
-
-    if (!resolved.followUpChoices.empty())
-    {
         SpeakResult result;
         result.action = SpeakResult::Action::ShowChoices;
-        result.narrative = resolved.response;
-        result.choices = resolved.followUpChoices;
+        result.narrative = choice.response;
+        result.choices = choice.followUpChoices;
         awaitingChoice = true;
-        pendingChoices = resolved.followUpChoices;
+        activeScriptPhaseId = phase.id;
+        pendingChoices = choice.followUpChoices;
         return result;
     }
 
-    awaitingChoice = false;
+    const std::string parentChoiceId = fromTopLevel ? choice.id : activeParentChoiceId;
+    if (!parentChoiceId.empty())
+        markScriptedChoiceConsumed(phase.id, parentChoiceId);
+
+    activeParentChoiceId.clear();
     pendingChoices.clear();
     combatAttackAllowed = false;
     combatEncounterId.clear();
 
-    if (!activeScriptPhaseId.empty())
-        markPhaseComplete(activeScriptPhaseId);
+    if (allTopLevelChoicesConsumed(phase))
+    {
+        awaitingChoice = false;
+        activeScriptPhaseId.clear();
+        markPhaseComplete(phase.id);
+        SpeakResult result = buildNarrativeResult(choice.response, choice.status);
+        if (!choice.status.onZeroLucidity.empty())
+            result.action = SpeakResult::Action::ShowNarrative;
+        return result;
+    }
 
-    activeScriptPhaseId.clear();
-
-    SpeakResult result = buildNarrativeResult(resolved.response, resolved.status);
-    if (!resolved.status.onZeroLucidity.empty())
+    SpeakResult result = resumeScriptedPhase(phase, choice.response, choice.status);
+    awaitingChoice = true;
+    activeScriptPhaseId = phase.id;
+    pendingChoices = result.choices;
+    if (!choice.status.onZeroLucidity.empty())
         result.action = SpeakResult::Action::ShowNarrative;
     return result;
+}
+
+SpeakResult ConversationManager::resolveChoice(
+    const SceneSpeakConfig& config,
+    const std::string& choiceId)
+{
+    if (!awaitingChoice || activeScriptPhaseId.empty())
+        return SpeakResult();
+
+    const ConversationPhase* phase = findPhase(config, activeScriptPhaseId);
+    if (!phase || phase->type != ConversationPhaseType::Scripted)
+        return SpeakResult();
+
+    const ConversationChoiceDef* chosen = findChoiceInList(pendingChoices, choiceId);
+    if (!chosen)
+        return SpeakResult();
+
+    const bool fromTopLevel = activeParentChoiceId.empty();
+    return resolveScriptedChoice(config, *phase, *chosen, fromTopLevel);
 }
 
 SpeakResult ConversationManager::resolveChoiceFromConfig(
@@ -317,34 +460,18 @@ SpeakResult ConversationManager::resolveChoiceFromConfig(
         if (phase.type != ConversationPhaseType::Scripted)
             continue;
 
-        for (const ConversationChoiceDef& choice : phase.choices)
-        {
-            if (choice.id != choiceId)
-                continue;
+        const ConversationChoiceDef* topLevel = findTopLevelChoiceForId(phase, choiceId);
+        if (!topLevel)
+            continue;
 
-            if (!choice.followUpChoices.empty())
-            {
-                SpeakResult result;
-                result.action = SpeakResult::Action::ShowChoices;
-                result.narrative = choice.response;
-                result.choices = choice.followUpChoices;
-                awaitingChoice = true;
-                pendingChoices = choice.followUpChoices;
-                activeScriptPhaseId = phase.id;
-                return result;
-            }
+        const bool fromTopLevel = topLevel->id == choiceId;
+        const ConversationChoiceDef* chosen = fromTopLevel
+            ? topLevel
+            : findChoiceInList(topLevel->followUpChoices, choiceId);
+        if (!chosen)
+            continue;
 
-            awaitingChoice = false;
-            pendingChoices.clear();
-            combatAttackAllowed = false;
-            combatEncounterId.clear();
-            activeScriptPhaseId.clear();
-            markPhaseComplete(phase.id);
-            SpeakResult result = buildNarrativeResult(choice.response, choice.status);
-            if (!choice.status.onZeroLucidity.empty())
-                result.action = SpeakResult::Action::ShowNarrative;
-            return result;
-        }
+        return resolveScriptedChoice(config, phase, *chosen, fromTopLevel);
     }
 
     return SpeakResult();
@@ -354,16 +481,19 @@ void ConversationManager::exportPersistState(ConversationPersistState& out) cons
 {
     out.completedPhaseIds = completedPhaseIds;
     out.completedRandomLineIds = completedRandomLineIds;
+    out.consumedScriptedChoiceIds = consumedScriptedChoiceIds;
 }
 
 void ConversationManager::importPersistState(const ConversationPersistState& state)
 {
     completedPhaseIds = state.completedPhaseIds;
     completedRandomLineIds = state.completedRandomLineIds;
+    consumedScriptedChoiceIds = state.consumedScriptedChoiceIds;
     awaitingChoice = false;
     combatAttackAllowed = false;
     combatEncounterId.clear();
     activeScriptPhaseId.clear();
+    activeParentChoiceId.clear();
     pendingChoices.clear();
 }
 

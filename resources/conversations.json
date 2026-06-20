@@ -133,6 +133,7 @@
         "type": "scripted",
         "resetOnSceneEnter": true,
         "intro": "The woman in blue does not startle when you approach. She finishes her thought with the two at the rail, lets them laugh without her, and turns as though you were expected.\n\nShe takes a slow drag from her cigarette, exhales through the side of her mouth, and studies you with that same focused calm.\n\n\"You disappeared this morning,\" she says. Not accusation. Inventory.",
+        "resumeIntro": "The woman in blue waits without impatience, cigarette held loose between two fingers. When you meet her eyes again, she inclines her head as though the earlier thread were still hanging.",
         "choices": [
           {
             "id": "stay_last_night",
@@ -180,6 +181,19 @@
             }
           }
         ]
+      },
+      {
+        "id": "blue_woman_fedora",
+        "type": "once",
+        "resetOnSceneEnter": false,
+        "requiresPhase": "blue_woman",
+        "text": "The woman in blue catches your sleeve as you start to turn away.\n\n\"Oh, by the way,\" she says, mild as an afterthought. \"You left this in my room this morning.\"\n\nShe draws a weathered felt fedora from behind her back - dark, brim-softened, ribbon stained where rain and smoke have worked the same habit. She turns it once in her hands and holds it out to you.\n\n\"It looks better on you than me,\" she says. \"You might as well keep it.\"\n\nThe hat settles into your grip with the weight of something that has already been yours.",
+        "grantItem": {
+          "id": "fedora",
+          "name": "Fedora",
+          "icon": "resources/icons/fedora_icon.png",
+          "examineText": "A weathered felt fedora, dark charcoal gone dusty at the brim. The grosgrain ribbon is stained where smoke and rain have worked the same habit. The crown is dented from carry and sleep. It smells faintly of cigarettes and another room."
+        }
       },
       {
         "id": "burgundy_path",

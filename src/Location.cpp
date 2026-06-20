@@ -756,6 +756,20 @@ namespace
             updateActionAvailability();
     }
 
+    void Location::grantConversationItem(const GrantedInventoryItemDef& granted)
+    {
+        if (!granted.isValid() || inventoryMgr.hasItem(granted.id))
+            return;
+
+        InventoryItem item;
+        item.id = granted.id;
+        item.name = granted.name;
+        item.iconPath = granted.iconPath;
+        item.examineImagePath = granted.examineImagePath;
+        item.examineText = granted.examineText;
+        inventoryMgr.addItem(item);
+    }
+
     void Location::processSpeakResult(const SpeakResult& result)
     {
         if (result.action == SpeakResult::Action::None && result.narrative.empty())
@@ -766,11 +780,13 @@ namespace
 
         if (result.action == SpeakResult::Action::ShowChoices)
         {
+            applyStatusEffects(result.statusEffects);
             appendChoiceLinesToNarrative(conversationMgr.getPendingChoices());
             return;
         }
 
         applyStatusEffects(result.statusEffects);
+        grantConversationItem(result.grantItem);
     }
 
     void Location::resolveDialogChoice(const std::string& choiceId)
@@ -790,12 +806,10 @@ namespace
             }
         }
 
-        SpeakResult result = conversationMgr.resolveChoice(choiceId);
+        const SceneSpeakConfig& speakConfig = sceneDatabase.getSpeakConfig(currentSceneId);
+        SpeakResult result = conversationMgr.resolveChoice(speakConfig, choiceId);
         if (result.action == SpeakResult::Action::None && result.narrative.empty())
-        {
-            const SceneSpeakConfig& speakConfig = sceneDatabase.getSpeakConfig(currentSceneId);
             result = conversationMgr.resolveChoiceFromConfig(speakConfig, choiceId);
-        }
 
         if (result.action == SpeakResult::Action::None && result.narrative.empty())
             return;
@@ -820,6 +834,7 @@ namespace
 
         if (result.action == SpeakResult::Action::ShowChoices)
         {
+            applyStatusEffects(effects);
             appendChoiceLinesToNarrative(conversationMgr.getPendingChoices());
             if (!responseText.empty())
             {
@@ -834,6 +849,7 @@ namespace
         }
 
         applyStatusEffects(effects);
+        grantConversationItem(result.grantItem);
 
         if (!responseText.empty())
         {
