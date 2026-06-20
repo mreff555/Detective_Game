@@ -1,49 +1,6 @@
 #include "Button.h"
 #include <RaylibCompat.h>
 
-namespace
-{
-    void drawClippedLabel(
-        Rectangle bounds,
-        Font font,
-        const char* text,
-        float baseFontSize,
-        Color textColor)
-    {
-        const float horizontalPad = 4.0f;
-        const float minFontSize = 12.0f;
-        float fontSize = baseFontSize;
-        Vector2 textSize = MeasureTextEx(font, text, fontSize, 1);
-
-        while (fontSize > minFontSize &&
-               textSize.x > bounds.width - horizontalPad)
-        {
-            fontSize -= 1.0f;
-            textSize = MeasureTextEx(font, text, fontSize, 1);
-        }
-
-        Vector2 textPosition = {
-            bounds.x + (bounds.width - textSize.x) / 2.0f,
-            bounds.y + (bounds.height - textSize.y) / 2.0f
-        };
-
-        if (textSize.x > bounds.width - horizontalPad)
-            textPosition.x = bounds.x + horizontalPad * 0.5f;
-
-        const int clipX = (int)bounds.x;
-        const int clipY = (int)bounds.y;
-        const int clipW = (int)(bounds.width + 0.5f);
-        const int clipH = (int)(bounds.height + 0.5f);
-
-        if (clipW <= 0 || clipH <= 0)
-            return;
-
-        BeginScissorMode(clipX, clipY, clipW, clipH);
-        DrawTextEx(font, text, textPosition, fontSize, 1, textColor);
-        EndScissorMode();
-    }
-}
-
 Button::Button(const char* text, Vector2 position, Vector2 size, Font font, const ButtonStyle& style)
     : text(text), position(position), size(size), font(font), style(style)
 {
@@ -61,7 +18,6 @@ void Button::draw() const
     {
         DrawRectangleRounded(bounds, style.roundness, 8, style.disabledBg);
         DrawRoundedBorder(bounds, style.roundness, 8, 2.0f, style.disabledBorderColor);
-        drawClippedLabel(bounds, font, text, style.fontSize, style.disabledTextColor);
         return;
     }
 
@@ -80,7 +36,19 @@ void Button::draw() const
         DrawRectangleRounded(highlight, style.roundness, 8, Fade(WHITE, 0.08f));
     }
 
-    drawClippedLabel(bounds, font, text, style.fontSize, style.textColor);
+    Vector2 textSize = MeasureTextEx(font, text, style.fontSize, 1);
+    Vector2 textPosition = {
+        position.x + (size.x - textSize.x) / 2.0f,
+        position.y + (size.y - textSize.y) / 2.0f
+    };
+
+    BeginScissorMode(
+        (int)bounds.x,
+        (int)bounds.y,
+        (int)bounds.width,
+        (int)bounds.height);
+    DrawTextEx(font, text, textPosition, style.fontSize, 1, style.textColor);
+    EndScissorMode();
 }
 
 bool Button::isClicked() const
