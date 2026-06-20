@@ -47,7 +47,9 @@ class ConversationManager
     SpeakResult buildNarrativeResult(
         const std::string& text,
         const StatusEffect& status,
-        const GrantedInventoryItemDef& grantItem = {}) const;
+        const GrantedInventoryItemDef& grantItem = {},
+        const std::vector<std::string>& dialogAudioTracks = {}) const;
+    void appendDialogAudioTrack(SpeakResult& result, const std::string& path) const;
     SpeakResult pickRandomLine(const std::string& sceneId, const ConversationPhase& phase);
     std::string randomPoolKey(const std::string& sceneId, const ConversationPhase& phase) const;
     std::string scriptedChoiceKey(const std::string& phaseId, const std::string& choiceId) const;
@@ -59,7 +61,8 @@ class ConversationManager
     SpeakResult resumeScriptedPhase(
         const ConversationPhase& phase,
         const std::string& responseText,
-        const StatusEffect& status) const;
+        const StatusEffect& status,
+        const std::string& responseAudio = "") const;
     const ConversationChoiceDef* findChoiceInList(
         const std::vector<ConversationChoiceDef>& choices,
         const std::string& choiceId) const;

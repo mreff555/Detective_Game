@@ -28,6 +28,9 @@ class AudioManager
     void onRoomEnter(const RoomAudioConfig& roomAudio, const std::string& fromRoom = "");
     void onRoomExit(const RoomAudioConfig& roomAudio, const std::string& toRoom = "");
     void playSfx(const AudioClipDef& clip);
+    void playDialog(const std::string& relativePath, float volume = 1.0f);
+    void playDialogSequence(const std::vector<std::string>& relativePaths, float volume = 1.0f);
+    void stopDialog();
 
     private:
     struct FadingMusicTrack
@@ -83,6 +86,7 @@ class AudioManager
     bool ensureDeviceReady();
     bool loadMusicClip(const std::string& path, Music& outMusic, std::string& outTempFile);
     bool loadSoundClip(const std::string& path, Sound& outSound, float& outDurationSeconds, std::string& outTempFile);
+    bool loadDialogClip(const std::string& path, Sound& outSound, float& outDurationSeconds);
     bool acquireAmbientSound(const std::string& path, Sound& outSound, bool& outUsesAlias);
     void releaseAmbientSound(const std::string& path, Sound& sound, bool usesAlias);
     bool resolveAssetBytes(const std::string& relativePath, std::vector<unsigned char>& outBytes) const;
@@ -99,6 +103,8 @@ class AudioManager
     void unloadAmbientTrack(FadingAmbientTrack& track);
     void unloadAmbientTracks();
     void updateActiveSounds(float deltaSeconds);
+    void updateDialogQueue(float deltaSeconds);
+    void startNextQueuedDialogClip();
     void syncRoomStreams(const RoomAudioConfig& roomAudio);
     void retainMusicTrack(FadingMusicTrack& track, const AudioClipDef& clip);
     void retainAmbientTrack(FadingAmbientTrack& track, const AudioClipDef& clip);
@@ -126,6 +132,9 @@ class AudioManager
     FadingMusicTrack musicTrack;
     std::vector<FadingAmbientTrack> ambientTracks;
     std::vector<ActiveSound> activeSounds;
+    std::vector<ActiveSound> dialogQueue;
+    size_t dialogQueueIndex = 0;
+    float dialogClipVolume = 1.0f;
     bool pendingMusicStart = false;
     AudioClipDef pendingMusicClip;
     bool gameplayPaused = false;

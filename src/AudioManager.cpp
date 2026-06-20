@@ -1,5 +1,6 @@
 #include "AudioManager.h"
 #include "ImageCompression.h"
+#include "OpusAudio.h"
 
 #include <algorithm>
 #include <cctype>
@@ -105,6 +106,7 @@ bool AudioManager::ensureDeviceReady()
 
 void AudioManager::shutdown()
 {
+    stopDialog();
     unloadMusicTrack(musicTrack);
     unloadAmbientTracks();
 
@@ -311,6 +313,45 @@ bool AudioManager::loadSoundClip(
         return false;
 
     outSound = LoadSound(playablePath.c_str());
+    if (outSound.stream.buffer == nullptr)
+        return false;
+
+    if (outSound.frameCount > 0 && outSound.stream.sampleRate > 0)
+    {
+        outDurationSeconds = static_cast<float>(outSound.frameCount)
+            / static_cast<float>(outSound.stream.sampleRate);
+    }
+    if (outDurationSeconds <= 0.0f)
+        outDurationSeconds = 0.2f;
+
+    return true;
+}
+
+bool AudioManager::loadDialogClip(
+    const std::string& path,
+    Sound& outSound,
+    float& outDurationSeconds)
+{
+    outSound = Sound{};
+    outDurationSeconds = 0.0f;
+
+    const std::string extension = fileExtensionFromPath(stripXzSuffix(path));
+    if (extension != ".opus")
+    {
+        TraceLog(LOG_WARNING, "Unsupported dialog format for '%s' (expected .opus)", path.c_str());
+        return false;
+    }
+
+    std::vector<unsigned char> bytes;
+    if (!resolveAssetBytes(path, bytes) || bytes.empty())
+        return false;
+
+    Wave wave = {};
+    if (!decodeOpusBytesToWave(bytes.data(), static_cast<int>(bytes.size()), wave))
+        return false;
+
+    outSound = LoadSoundFromWave(wave);
+    unloadDecodedWave(wave);
     if (outSound.stream.buffer == nullptr)
         return false;
 
@@ -617,6 +658,105 @@ void AudioManager::updateAmbientTrack(FadingAmbientTrack& track, float deltaSeco
         SetSoundVolume(track.sound, appliedVolume(track.currentVolume));
 }
 
+void AudioManager::stopDialog()
+{
+    for (ActiveSound& queuedClip : dialogQueue)
+    {
+        if (queuedClip.loaded)
+            UnloadSound(queuedClip.sound);
+    }
+
+    dialogQueue.clear();
+    dialogQueueIndex = 0;
+}
+
+void AudioManager::startNextQueuedDialogClip()
+{
+    while (dialogQueueIndex < dialogQueue.size())
+    {
+        ActiveSound& queuedClip = dialogQueue[dialogQueueIndex];
+        if (!queuedClip.loaded)
+        {
+            ++dialogQueueIndex;
+            continue;
+        }
+
+        const float volume = effectiveVolume(AudioCategory::Sfx, dialogClipVolume);
+        queuedClip.baseVolume = volume;
+        SetSoundVolume(queuedClip.sound, appliedVolume(volume));
+        PlaySound(queuedClip.sound);
+        return;
+    }
+}
+
+void AudioManager::updateDialogQueue(float deltaSeconds)
+{
+    if (dialogQueue.empty() || dialogQueueIndex >= dialogQueue.size())
+        return;
+
+    ActiveSound& currentClip = dialogQueue[dialogQueueIndex];
+    if (!currentClip.loaded)
+    {
+        ++dialogQueueIndex;
+        startNextQueuedDialogClip();
+        return;
+    }
+
+    currentClip.remainingSeconds -= deltaSeconds;
+    if (currentClip.remainingSeconds > 0.0f)
+    {
+        SetSoundVolume(currentClip.sound, appliedVolume(currentClip.baseVolume));
+        return;
+    }
+
+    UnloadSound(currentClip.sound);
+    currentClip.loaded = false;
+    ++dialogQueueIndex;
+    startNextQueuedDialogClip();
+}
+
+void AudioManager::playDialog(const std::string& relativePath, float volume)
+{
+    if (relativePath.empty())
+        return;
+
+    playDialogSequence({ relativePath }, volume);
+}
+
+void AudioManager::playDialogSequence(const std::vector<std::string>& relativePaths, float volume)
+{
+    if (!ensureDeviceReady())
+        return;
+
+    stopDialog();
+    dialogClipVolume = volume;
+
+    for (const std::string& relativePath : relativePaths)
+    {
+        if (relativePath.empty())
+            continue;
+
+        Sound sound{};
+        float durationSeconds = 0.0f;
+        if (!loadDialogClip(relativePath, sound, durationSeconds))
+        {
+            TraceLog(LOG_WARNING, "Failed to load dialog clip: %s", relativePath.c_str());
+            continue;
+        }
+
+        ActiveSound queuedClip;
+        queuedClip.sound = sound;
+        queuedClip.loaded = true;
+        queuedClip.baseVolume = effectiveVolume(AudioCategory::Sfx, volume);
+        queuedClip.remainingSeconds = std::max(0.05f, durationSeconds);
+        dialogQueue.push_back(queuedClip);
+        TraceLog(LOG_INFO, "Queued dialog: %s (%.2fs)", relativePath.c_str(), durationSeconds);
+    }
+
+    dialogQueueIndex = 0;
+    startNextQueuedDialogClip();
+}
+
 void AudioManager::updateActiveSounds(float deltaSeconds)
 {
     std::vector<ActiveSound> remainingSounds;
@@ -649,6 +789,7 @@ void AudioManager::update(float deltaSeconds)
 
     updateGameplayMix(deltaSeconds);
     updateActiveSounds(deltaSeconds);
+    updateDialogQueue(deltaSeconds);
     updateMusicTrack(musicTrack, deltaSeconds);
 
     std::vector<FadingAmbientTrack> remainingAmbient;

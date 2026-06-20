@@ -111,10 +111,17 @@ bool ConversationManager::canSpeak(
     return findActivePhase(currentSceneId, config, storyFlags) != nullptr;
 }
 
+void ConversationManager::appendDialogAudioTrack(SpeakResult& result, const std::string& path) const
+{
+    if (!path.empty())
+        result.dialogAudioTracks.push_back(path);
+}
+
 SpeakResult ConversationManager::buildNarrativeResult(
     const std::string& text,
     const StatusEffect& status,
-    const GrantedInventoryItemDef& grantItem) const
+    const GrantedInventoryItemDef& grantItem,
+    const std::vector<std::string>& dialogAudioTracks) const
 {
     SpeakResult result;
     if (text.empty() && !grantItem.isValid())
@@ -126,6 +133,7 @@ SpeakResult ConversationManager::buildNarrativeResult(
         result.statusEffects.push_back(status);
     if (grantItem.isValid())
         result.grantItem = grantItem;
+    result.dialogAudioTracks = dialogAudioTracks;
     return result;
 }
 
@@ -191,17 +199,25 @@ bool ConversationManager::allTopLevelChoicesConsumed(const ConversationPhase& ph
 SpeakResult ConversationManager::resumeScriptedPhase(
     const ConversationPhase& phase,
     const std::string& responseText,
-    const StatusEffect& status) const
+    const StatusEffect& status,
+    const std::string& responseAudio) const
 {
     const std::vector<ConversationChoiceDef> remaining = remainingTopLevelChoices(phase);
     if (remaining.empty())
-        return buildNarrativeResult(responseText, status);
+    {
+        std::vector<std::string> audioTracks;
+        if (!responseAudio.empty())
+            audioTracks.push_back(responseAudio);
+        return buildNarrativeResult(responseText, status, {}, audioTracks);
+    }
 
     SpeakResult result;
     result.action = SpeakResult::Action::ShowChoices;
     result.narrative = responseText;
     if (status.hasDelta())
         result.statusEffects.push_back(status);
+
+    appendDialogAudioTrack(result, responseAudio);
 
     const std::string& resumeText = !phase.resumeIntro.empty() ? phase.resumeIntro : phase.intro;
     if (!resumeText.empty())
@@ -210,6 +226,8 @@ SpeakResult ConversationManager::resumeScriptedPhase(
             result.narrative += "\n\n";
         result.narrative += resumeText;
     }
+
+    appendDialogAudioTrack(result, phase.resumeIntroAudio);
 
     result.choices = remaining;
     return result;
@@ -335,6 +353,7 @@ SpeakResult ConversationManager::pickRandomLine(
         result.action = SpeakResult::Action::ShowChoices;
         result.narrative = line.text;
         result.choices = line.choices;
+        appendDialogAudioTrack(result, line.audio);
         awaitingChoice = true;
         activeScriptPhaseId = phase.id;
         pendingChoices = line.choices;
@@ -343,7 +362,10 @@ SpeakResult ConversationManager::pickRandomLine(
         return result;
     }
 
-    return buildNarrativeResult(line.text, line.status);
+    std::vector<std::string> audioTracks;
+    if (!line.audio.empty())
+        audioTracks.push_back(line.audio);
+    return buildNarrativeResult(line.text, line.status, {}, audioTracks);
 }
 
 SpeakResult ConversationManager::handleSpeak(
@@ -361,7 +383,10 @@ SpeakResult ConversationManager::handleSpeak(
     if (phase->type == ConversationPhaseType::Once)
     {
         markPhaseComplete(phase->id);
-        return buildNarrativeResult(phase->text, phase->status, phase->grantItem);
+        std::vector<std::string> audioTracks;
+        if (!phase->audio.empty())
+            audioTracks.push_back(phase->audio);
+        return buildNarrativeResult(phase->text, phase->status, phase->grantItem, audioTracks);
     }
 
     if (phase->type == ConversationPhaseType::Scripted)
@@ -370,6 +395,7 @@ SpeakResult ConversationManager::handleSpeak(
         result.action = SpeakResult::Action::ShowChoices;
         result.narrative = phase->intro;
         result.choices = phase->choices;
+        appendDialogAudioTrack(result, phase->introAudio);
         awaitingChoice = true;
         activeScriptPhaseId = phase->id;
         pendingChoices = phase->choices;
@@ -397,6 +423,7 @@ SpeakResult ConversationManager::resolveScriptedChoice(
         result.action = SpeakResult::Action::ShowChoices;
         result.narrative = choice.response;
         result.choices = choice.followUpChoices;
+        appendDialogAudioTrack(result, choice.responseAudio);
         awaitingChoice = true;
         activeScriptPhaseId = phase.id;
         pendingChoices = choice.followUpChoices;
@@ -417,13 +444,20 @@ SpeakResult ConversationManager::resolveScriptedChoice(
         awaitingChoice = false;
         activeScriptPhaseId.clear();
         markPhaseComplete(phase.id);
-        SpeakResult result = buildNarrativeResult(choice.response, choice.status);
+        std::vector<std::string> audioTracks;
+        if (!choice.responseAudio.empty())
+            audioTracks.push_back(choice.responseAudio);
+        SpeakResult result = buildNarrativeResult(choice.response, choice.status, {}, audioTracks);
         if (!choice.status.onZeroLucidity.empty())
             result.action = SpeakResult::Action::ShowNarrative;
         return result;
     }
 
-    SpeakResult result = resumeScriptedPhase(phase, choice.response, choice.status);
+    SpeakResult result = resumeScriptedPhase(
+        phase,
+        choice.response,
+        choice.status,
+        choice.responseAudio);
     awaitingChoice = true;
     activeScriptPhaseId = phase.id;
     pendingChoices = result.choices;

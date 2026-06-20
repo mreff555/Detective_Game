@@ -113,6 +113,14 @@ std::string formatChoiceLabel(const std::string& label)
     return "> " + label;
 }
 
+std::string parseOptionalAudioField(const nlohmann::json& object, const char* key)
+{
+    if (!object.contains(key) || !object[key].is_string())
+        return "";
+
+    return object.value(key, "");
+}
+
 bool parseConversationChoice(const nlohmann::json& choice, ConversationChoiceDef& out)
 {
     if (!choice.is_object())
@@ -121,6 +129,7 @@ bool parseConversationChoice(const nlohmann::json& choice, ConversationChoiceDef
     out.id = choice.value("id", "");
     out.label = formatChoiceLabel(choice.value("label", ""));
     out.response = choice.value("response", "");
+    out.responseAudio = parseOptionalAudioField(choice, "responseAudio");
     if (!parseStatusEffect(choice.value("status", nlohmann::json::object()), out.status))
         return false;
 
@@ -147,6 +156,7 @@ bool parseRandomLine(const nlohmann::json& line, RandomConversationLine& out)
 
     out.id = line.value("id", "");
     out.text = line.value("text", "");
+    out.audio = parseOptionalAudioField(line, "audio");
     out.weight = line.value("weight", 1);
     out.once = line.value("once", false);
     out.allowAttack = line.value("allowAttack", false);
@@ -194,8 +204,11 @@ bool parseConversationPhase(const nlohmann::json& phase, ConversationPhase& out)
     out.requiresFlag = phase.value("requiresFlag", "");
     out.resetOnSceneEnter = phase.value("resetOnSceneEnter", true);
     out.text = phase.value("text", "");
+    out.audio = parseOptionalAudioField(phase, "audio");
     out.intro = phase.value("intro", "");
+    out.introAudio = parseOptionalAudioField(phase, "introAudio");
     out.resumeIntro = phase.value("resumeIntro", "");
+    out.resumeIntroAudio = parseOptionalAudioField(phase, "resumeIntroAudio");
     out.poolId = phase.value("poolId", "");
     out.avoidRepeat = phase.value("avoidRepeat", true);
 

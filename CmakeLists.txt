@@ -18,6 +18,7 @@ set(SOURCES
     src/ImageCompression.cpp
     src/GameConfig.cpp
     src/AudioManager.cpp
+    src/OpusAudio.cpp
     src/PauseMenuMgr.cpp
     src/SaveGame.cpp
 )
@@ -91,6 +92,7 @@ find_package(PkgConfig QUIET)
 if(PkgConfig_FOUND)
     pkg_check_modules(LIBLZMA IMPORTED_TARGET liblzma)
     pkg_check_modules(LIBJPEG IMPORTED_TARGET libjpeg)
+    pkg_check_modules(OPUSFILE IMPORTED_TARGET opusfile)
 endif()
 
 if(NOT LIBLZMA_FOUND)
@@ -125,6 +127,23 @@ if(NOT LIBJPEG_FOUND)
     endif()
 endif()
 
+if(NOT OPUSFILE_FOUND)
+    find_library(OPUSFILE_LIBRARY NAMES opusfile)
+    find_library(OPUS_LIBRARY NAMES opus)
+    find_path(OPUSFILE_INCLUDE_DIR opusfile.h)
+    if(OPUSFILE_LIBRARY AND OPUS_LIBRARY AND OPUSFILE_INCLUDE_DIR)
+        add_library(OPUSFILE::OPUSFILE UNKNOWN IMPORTED)
+        set_target_properties(OPUSFILE::OPUSFILE PROPERTIES
+            IMPORTED_LOCATION "${OPUSFILE_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${OPUSFILE_INCLUDE_DIR}"
+            INTERFACE_LINK_LIBRARIES "${OPUS_LIBRARY}"
+        )
+        set(OPUSFILE OPUSFILE::OPUSFILE)
+    else()
+        message(FATAL_ERROR "libopusfile and libopus are required for dialog .opus audio")
+    endif()
+endif()
+
 # 3. Create the executable (use ${PROJECT_NAME} so everything stays consistent)
 add_executable(${PROJECT_NAME} ${SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "Highline Ridge")
@@ -145,7 +164,14 @@ else()
     list(APPEND _image_deps ${LIBJPEG})
 endif()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE raylib ${_image_deps})
+set(_audio_deps)
+if(TARGET PkgConfig::OPUSFILE)
+    list(APPEND _audio_deps PkgConfig::OPUSFILE)
+else()
+    list(APPEND _audio_deps ${OPUSFILE})
+endif()
+
+target_link_libraries(${PROJECT_NAME} PRIVATE raylib ${_image_deps} ${_audio_deps})
 
 # 6. macOS frameworks (required by raylib on Apple platforms)
 if (APPLE)

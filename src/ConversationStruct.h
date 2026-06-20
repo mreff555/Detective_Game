@@ -31,6 +31,7 @@ struct ConversationChoiceDef
     std::string id;
     std::string label;
     std::string response;
+    std::string responseAudio;
     StatusEffect status;
     std::vector<ConversationChoiceDef> followUpChoices;
 };
@@ -39,6 +40,7 @@ struct RandomConversationLine
 {
     std::string id;
     std::string text;
+    std::string audio;
     StatusEffect status;
     int weight = 1;
     bool once = false;
@@ -74,11 +76,14 @@ struct ConversationPhase
     bool resetOnSceneEnter = true;
 
     std::string text;
+    std::string audio;
     StatusEffect status;
     GrantedInventoryItemDef grantItem;
 
     std::string intro;
+    std::string introAudio;
     std::string resumeIntro;
+    std::string resumeIntroAudio;
     std::vector<ConversationChoiceDef> choices;
 
     std::string poolId;
@@ -108,6 +113,7 @@ struct SpeakResult
     std::vector<ConversationChoiceDef> choices;
     std::vector<StatusEffect> statusEffects;
     GrantedInventoryItemDef grantItem;
+    std::vector<std::string> dialogAudioTracks;
 };
 
 }
