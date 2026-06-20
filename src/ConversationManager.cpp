@@ -416,17 +416,21 @@ SpeakResult ConversationManager::resolveScriptedChoice(
 {
     if (!choice.followUpChoices.empty())
     {
+        const std::vector<ConversationChoiceDef> nextChoices = choice.followUpChoices;
+        const std::string responseText = choice.response;
+        const std::string responseAudio = choice.responseAudio;
+
         if (fromTopLevel)
             activeParentChoiceId = choice.id;
 
         SpeakResult result;
         result.action = SpeakResult::Action::ShowChoices;
-        result.narrative = choice.response;
-        result.choices = choice.followUpChoices;
-        appendDialogAudioTrack(result, choice.responseAudio);
+        result.narrative = responseText;
+        result.choices = nextChoices;
+        appendDialogAudioTrack(result, responseAudio);
         awaitingChoice = true;
         activeScriptPhaseId = phase.id;
-        pendingChoices = choice.followUpChoices;
+        pendingChoices = nextChoices;
         return result;
     }
 
@@ -482,7 +486,8 @@ SpeakResult ConversationManager::resolveChoice(
         return SpeakResult();
 
     const bool fromTopLevel = activeParentChoiceId.empty();
-    return resolveScriptedChoice(config, *phase, *chosen, fromTopLevel);
+    const ConversationChoiceDef chosenCopy = *chosen;
+    return resolveScriptedChoice(config, *phase, chosenCopy, fromTopLevel);
 }
 
 SpeakResult ConversationManager::resolveChoiceFromConfig(
@@ -505,7 +510,8 @@ SpeakResult ConversationManager::resolveChoiceFromConfig(
         if (!chosen)
             continue;
 
-        return resolveScriptedChoice(config, phase, *chosen, fromTopLevel);
+        const ConversationChoiceDef chosenCopy = *chosen;
+        return resolveScriptedChoice(config, phase, chosenCopy, fromTopLevel);
     }
 
     return SpeakResult();

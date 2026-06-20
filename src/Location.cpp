@@ -799,7 +799,8 @@ namespace
         {
             applyStatusEffects(result.statusEffects);
             playDialogAudio(result);
-            appendChoiceLinesToNarrative(conversationMgr.getPendingChoices());
+            const std::vector<ConversationChoiceDef>& pending = conversationMgr.getPendingChoices();
+            appendChoiceLinesToNarrative(!pending.empty() ? pending : result.choices);
             return;
         }
 
@@ -855,7 +856,8 @@ namespace
         {
             applyStatusEffects(effects);
             playDialogAudio(result);
-            appendChoiceLinesToNarrative(conversationMgr.getPendingChoices());
+            const std::vector<ConversationChoiceDef>& pending = conversationMgr.getPendingChoices();
+            appendChoiceLinesToNarrative(!pending.empty() ? pending : result.choices);
             updateActionAvailability();
             return;
         }
