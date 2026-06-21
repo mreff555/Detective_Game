@@ -27,11 +27,19 @@ struct InputConfig
     bool skipDropConfirmation = false;
 };
 
+struct TtsConfig
+{
+    bool enabled = true;
+    std::string voiceId = "leo";
+    std::string bundleDir = "resources/audio/tts";
+};
+
 struct GameConfig
 {
     DisplayConfig display;
     AudioVolumeConfig audio;
     InputConfig input;
+    TtsConfig tts;
 };
 
 bool loadGameConfig(const std::string& configPath, GameConfig& outConfig);

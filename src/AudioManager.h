@@ -30,6 +30,13 @@ class AudioManager
     void playSfx(const AudioClipDef& clip);
     void playDialog(const std::string& relativePath, float volume = 1.0f);
     void playDialogSequence(const std::vector<std::string>& relativePaths, float volume = 1.0f);
+    void playDialogMp3File(
+        const std::string& filePath,
+        float volume = 1.0f,
+        const std::string& tempFilePath = "");
+    bool hasDialogAsset(const std::string& relativePath) const;
+    bool playDialogAsset(const std::string& relativePath, float volume = 1.0f);
+    bool playDialogAssetSequence(const std::vector<std::string>& relativePaths, float volume = 1.0f);
     void stopDialog();
 
     private:

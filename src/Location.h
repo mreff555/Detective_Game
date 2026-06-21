@@ -12,6 +12,7 @@
 #include <SaveGame.h>
 #include <TakeMgr.h>
 #include <TakeableItemDef.h>
+
 #include <LocationStruct.h>
 #include <ButtonMgr.h>
 #include <SceneLoader.h>
@@ -27,6 +28,14 @@ struct NarrativeChoiceHitArea
 {
     std::string id;
     Rectangle bounds;
+};
+
+struct NarrativeSketchPlacement
+{
+    std::string path;
+    float yOffset = 0.0f;
+    float width = 0.0f;
+    float height = 0.0f;
 };
 
 enum class NotebookPage
@@ -87,6 +96,15 @@ class Location
     void applyStatusEffects(const std::vector<StatusEffect>& effects);
     void handleNarrativeChoiceInput();
     void appendChoiceLinesToNarrative(const std::vector<ConversationChoiceDef>& choices);
+    void appendNarrativeSketch(const std::string& sketchPath);
+    bool isNarrativeSketchLine(const std::string& line) const;
+    std::string narrativeSketchPathFromLine(const std::string& line) const;
+    float getNarrativeSketchHeight(const std::string& sketchPath) const;
+    float getNarrativeSketchDisplaySize(const Texture2D& texture, float& outWidth, float& outHeight) const;
+    Texture2D getOrLoadNarrativeSketchTexture(const std::string& sketchPath) const;
+    void layoutNarrativeSketch(const std::string& sketchPath, float& textOffsetY) const;
+    void drawNarrativeSketches() const;
+    std::string normalizeNarrativeLine(std::string line) const;
     void scrollToPendingDialogChoices();
     void stripDialogChoiceLinesFromNarrative(
         const std::vector<ConversationChoiceDef>& choices,
@@ -243,6 +261,8 @@ class Location
 
     mutable Texture2D notebookPaperTexture{};
     mutable bool notebookPaperTextureReady = false;
+    mutable std::map<std::string, Texture2D> narrativeSketchTextures;
+    mutable std::vector<NarrativeSketchPlacement> narrativeSketchPlacements;
 
     bool deferInitialRoomAudio = true;
     bool initialFrameComplete = false;

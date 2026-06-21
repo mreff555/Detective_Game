@@ -1,4 +1,5 @@
 #include <Location.h>
+#include <ImageCompression.h>
 #include <raylib.h>
 #include <sstream>
 #include <algorithm>
@@ -23,6 +24,7 @@ namespace
     const Color kScrollThumbHover = {148, 118, 78, 255};
     const Color kChoiceText = {92, 52, 22, 255};
     const Color kChoiceHover = {148, 88, 28, 255};
+    const char kNarrativeSketchPrefix[] = "@sketch:";
     const Color kNotebookHeader = {78, 54, 34, 255};
     const Color kNotebookNavEnabled = {78, 54, 34, 255};
     const Color kNotebookNavDisabled = {148, 132, 112, 255};
@@ -1104,9 +1106,163 @@ namespace
         return usedSceneIds.count(currentSceneId) == 0;
     }
 
+    std::string Location::normalizeNarrativeLine(std::string line) const
+    {
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
+        return line;
+    }
+
     bool Location::isDialogChoiceLine(const std::string& line) const
     {
         return line.size() > 2 && line.compare(0, 2, "> ") == 0;
+    }
+
+    bool Location::isNarrativeSketchLine(const std::string& line) const
+    {
+        const size_t prefixLen = sizeof(kNarrativeSketchPrefix) - 1;
+        return line.size() > prefixLen && line.compare(0, prefixLen, kNarrativeSketchPrefix) == 0;
+    }
+
+    std::string Location::narrativeSketchPathFromLine(const std::string& line) const
+    {
+        if (!isNarrativeSketchLine(line))
+            return "";
+
+        const size_t prefixLen = sizeof(kNarrativeSketchPrefix) - 1;
+        return line.substr(prefixLen);
+    }
+
+    float Location::getNarrativeSketchDisplaySize(
+        const Texture2D& texture,
+        float& outWidth,
+        float& outHeight) const
+    {
+        if (texture.id == 0 || texture.width <= 0 || texture.height <= 0)
+        {
+            outWidth = 0.0f;
+            outHeight = 0.0f;
+            return 0.0f;
+        }
+
+        const float maxWidth = getNarrativeWrapWidth();
+        const float maxHeight = std::max(getNarrativeLineHeight() * 5.0f, 220.0f);
+        const float widthScale = maxWidth / (float)texture.width;
+        const float heightScale = maxHeight / (float)texture.height;
+        const float scale = std::min(widthScale, heightScale);
+
+        outWidth = (float)texture.width * scale;
+        outHeight = (float)texture.height * scale;
+        return outHeight + getNarrativeLineHeight() * 0.5f;
+    }
+
+    Texture2D Location::getOrLoadNarrativeSketchTexture(const std::string& sketchPath) const
+    {
+        if (sketchPath.empty())
+            return {};
+
+        const auto cached = narrativeSketchTextures.find(sketchPath);
+        if (cached != narrativeSketchTextures.end())
+            return cached->second;
+
+        Texture2D texture{};
+        if (!loadResourceTexture(sceneDatabase.getAssetRoot(), sketchPath, texture))
+        {
+            const std::vector<std::string> paths = buildAssetSearchPaths(
+                sceneDatabase.getAssetRoot(),
+                sketchPath);
+            for (const std::string& path : paths)
+            {
+                if (!FileExists(path.c_str()))
+                    continue;
+
+                texture = LoadTexture(path.c_str());
+                if (texture.id != 0)
+                    break;
+
+                if (loadTextureFromAssetFile(path, texture))
+                    break;
+            }
+        }
+
+        if (texture.id != 0)
+        {
+            SetTextureFilter(texture, TEXTURE_FILTER_BILINEAR);
+            narrativeSketchTextures[sketchPath] = texture;
+            TraceLog(LOG_INFO, "Loaded narrative sketch: %s (%dx%d)", sketchPath.c_str(), texture.width, texture.height);
+            return texture;
+        }
+
+        TraceLog(LOG_WARNING, "Failed to load narrative sketch: %s", sketchPath.c_str());
+        return {};
+    }
+
+    float Location::getNarrativeSketchHeight(const std::string& sketchPath) const
+    {
+        const Texture2D texture = getOrLoadNarrativeSketchTexture(sketchPath);
+        float drawWidth = 0.0f;
+        float drawHeight = 0.0f;
+        return getNarrativeSketchDisplaySize(texture, drawWidth, drawHeight);
+    }
+
+    void Location::layoutNarrativeSketch(const std::string& sketchPath, float& textOffsetY) const
+    {
+        const Texture2D texture = getOrLoadNarrativeSketchTexture(sketchPath);
+        float drawWidth = 0.0f;
+        float drawHeight = 0.0f;
+        const float blockHeight = getNarrativeSketchDisplaySize(texture, drawWidth, drawHeight);
+        if (texture.id == 0 || blockHeight <= 0.0f)
+            return;
+
+        NarrativeSketchPlacement placement;
+        placement.path = sketchPath;
+        placement.yOffset = textOffsetY;
+        placement.width = drawWidth;
+        placement.height = drawHeight;
+        narrativeSketchPlacements.push_back(placement);
+        textOffsetY += blockHeight;
+    }
+
+    void Location::drawNarrativeSketches() const
+    {
+        const Rectangle content = getNotebookContentBounds();
+        const Rectangle dialog = getDialogBounds();
+        const float visibleHeight = content.height;
+
+        for (const NarrativeSketchPlacement& placement : narrativeSketchPlacements)
+        {
+            const Texture2D texture = getOrLoadNarrativeSketchTexture(placement.path);
+            if (texture.id == 0)
+                continue;
+
+            const float drawY = content.y + placement.yOffset - narrativeScrollY;
+            const bool visible = (placement.yOffset + placement.height > narrativeScrollY) &&
+                                 (placement.yOffset < narrativeScrollY + visibleHeight);
+            if (!visible)
+                continue;
+
+            const Rectangle source = { 0.0f, 0.0f, (float)texture.width, (float)texture.height };
+            const Rectangle dest = {
+                dialog.x + xOffset,
+                drawY,
+                placement.width,
+                placement.height
+            };
+            DrawTexturePro(texture, source, dest, { 0.0f, 0.0f }, 0.0f, WHITE);
+        }
+    }
+
+    void Location::appendNarrativeSketch(const std::string& sketchPath)
+    {
+        if (sketchPath.empty())
+            return;
+
+        getOrLoadNarrativeSketchTexture(sketchPath);
+        narrativeText += "\n";
+        narrativeText += kNarrativeSketchPrefix;
+        narrativeText += sketchPath;
+        trimNarrativeBuffer();
+        narrativeLayoutDirty = true;
     }
 
     Color Location::narrativeLineColor(const std::string& line) const
@@ -1212,6 +1368,15 @@ namespace
             return;
 
         rebuildNarrativeLayout();
+
+        if (!narrativeSketchPlacements.empty())
+        {
+            const NarrativeSketchPlacement& placement = narrativeSketchPlacements.back();
+            const float maxScroll = std::max(0.0f, narrativeContentHeight - getNarrativeVisibleHeight());
+            narrativeScrollY = std::max(0.0f, std::min(placement.yOffset, maxScroll));
+            return;
+        }
+
         scrollNarrativeToLine(choices.front().label, true);
     }
 
@@ -1304,14 +1469,33 @@ namespace
 
     void Location::playDialogAudio(const SpeakResult& result)
     {
+        if (result.useTts && !result.ttsAudioPaths.empty())
+        {
+            if (!gameConfig.tts.enabled)
+                return;
+
+            if (audioManager.playDialogAssetSequence(result.ttsAudioPaths))
+                return;
+
+            TraceLog(
+                LOG_WARNING,
+                "Missing bundled TTS audio (run with --refresh-voices=API_KEY)");
+            return;
+        }
+
         if (!result.dialogAudioTracks.empty())
             audioManager.playDialogSequence(result.dialogAudioTracks);
     }
 
     void Location::processSpeakResult(const SpeakResult& result)
     {
-        if (result.action == SpeakResult::Action::None && result.narrative.empty())
+        if (result.action == SpeakResult::Action::None
+            && result.narrative.empty()
+            && result.sketchPath.empty())
             return;
+
+        if (!result.sketchPath.empty())
+            appendNarrativeSketch(result.sketchPath);
 
         if (!result.narrative.empty())
             appendNarrativeSection("Speaking:", result.narrative);
@@ -1340,11 +1524,13 @@ namespace
         const std::vector<ConversationChoiceDef> choicesToStrip = conversationMgr.getPendingChoices();
 
         std::string selectedLineText;
+        std::string selectedSketchPath;
         for (const ConversationChoiceDef& choice : choicesToStrip)
         {
             if (choice.id == choiceId)
             {
                 selectedLineText = choice.label;
+                selectedSketchPath = choice.sketchPath;
                 break;
             }
         }
@@ -1366,6 +1552,9 @@ namespace
             committedPlayerDialogLines.insert(selectedLineText);
 
         stripDialogChoiceLinesFromNarrative(choicesToStrip, selectedLineText);
+
+        if (!selectedSketchPath.empty())
+            appendNarrativeSketch(selectedSketchPath);
 
         if (!responseText.empty())
         {
@@ -1718,6 +1907,7 @@ namespace
 
         while (std::getline(stream, line))
         {
+            line = normalizeNarrativeLine(line);
             if (line.empty())
             {
                 textOffsetY += getNarrativeLineHeight() * 0.5f;
@@ -1731,6 +1921,12 @@ namespace
                 narrativeContentHeight = textOffsetY;
                 narrativeLayoutDirty = false;
                 return foundOffset;
+            }
+
+            if (isNarrativeSketchLine(line))
+            {
+                textOffsetY += getNarrativeSketchHeight(narrativeSketchPathFromLine(line));
+                continue;
             }
 
             const Font lineFont = isBoldNarrativeLine(line) ? boldFont : descriptionFont;
@@ -1772,9 +1968,16 @@ namespace
 
         while (std::getline(stream, line))
         {
+            line = normalizeNarrativeLine(line);
             if (line.empty())
             {
                 textOffsetY += getNarrativeLineHeight() * 0.5f;
+                continue;
+            }
+
+            if (isNarrativeSketchLine(line))
+            {
+                textOffsetY += getNarrativeSketchHeight(narrativeSketchPathFromLine(line));
                 continue;
             }
 
@@ -1898,6 +2101,7 @@ namespace
     void Location::rebuildNarrativeLayout() const
     {
         narrativeContentHeight = 0.0f;
+        narrativeSketchPlacements.clear();
 
         float textOffsetY = 0.0f;
         std::istringstream stream(narrativeText);
@@ -1905,9 +2109,16 @@ namespace
 
         while (std::getline(stream, line))
         {
+            line = normalizeNarrativeLine(line);
             if (line.empty())
             {
                 textOffsetY += getNarrativeLineHeight() * 0.5f;
+                continue;
+            }
+
+            if (isNarrativeSketchLine(line))
+            {
+                layoutNarrativeSketch(narrativeSketchPathFromLine(line), textOffsetY);
                 continue;
             }
 
@@ -2134,6 +2345,7 @@ namespace
         }
 
         audioManager.update(GetFrameTime());
+
         handlePauseMenuInput();
 
         if (pauseMenu.isOpen())
@@ -2517,9 +2729,16 @@ namespace
 
         while (std::getline(stream, line))
         {
+            line = normalizeNarrativeLine(line);
             if (line.empty())
             {
                 textOffsetY += getNarrativeLineHeight() * 0.5f;
+                continue;
+            }
+
+            if (isNarrativeSketchLine(line))
+            {
+                textOffsetY += getNarrativeSketchHeight(narrativeSketchPathFromLine(line));
                 continue;
             }
 
@@ -2527,6 +2746,8 @@ namespace
             const Color lineColor = narrativeLineColor(line);
             layoutWrappedParagraph(line.c_str(), lineFont, fontSize, textOffsetY, true, narrativeScrollY, lineColor);
         }
+
+        drawNarrativeSketches();
 
         EndScissorMode();
     }

@@ -12,5 +12,10 @@
   },
   "input": {
     "clickHoldSeconds": 0.1
+  },
+  "tts": {
+    "enabled": true,
+    "voice": "leo",
+    "bundleDir": "resources/audio/tts"
   }
 }

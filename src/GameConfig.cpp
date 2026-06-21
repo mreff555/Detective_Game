@@ -74,6 +74,14 @@ bool loadGameConfig(const std::string& configPath, GameConfig& outConfig)
             "skipDropConfirmation", outConfig.input.skipDropConfirmation);
     }
 
+    if (config.contains("tts") && config["tts"].is_object())
+    {
+        const nlohmann::json& tts = config["tts"];
+        outConfig.tts.enabled = tts.value("enabled", outConfig.tts.enabled);
+        outConfig.tts.voiceId = tts.value("voice", outConfig.tts.voiceId);
+        outConfig.tts.bundleDir = tts.value("bundleDir", outConfig.tts.bundleDir);
+    }
+
     return outConfig.display.width > 0 && outConfig.display.height > 0;
 }
 

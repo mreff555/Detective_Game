@@ -130,6 +130,15 @@ bool parseConversationChoice(const nlohmann::json& choice, ConversationChoiceDef
     out.label = formatChoiceLabel(choice.value("label", ""));
     out.response = choice.value("response", "");
     out.responseAudio = parseOptionalAudioField(choice, "responseAudio");
+    out.sketchPath = choice.value("sketch", "");
+    out.tts = choice.value("tts", false);
+    out.ttsVoice = choice.value("ttsVoice", "");
+    out.ttsText = choice.value("ttsText", "");
+    out.ttsAudio = choice.value("ttsAudio", "");
+    out.ttsAfter = choice.value("ttsAfter", false);
+    out.ttsAfterVoice = choice.value("ttsAfterVoice", "");
+    out.ttsAfterText = choice.value("ttsAfterText", "");
+    out.ttsAfterAudio = choice.value("ttsAfterAudio", "");
     if (!parseStatusEffect(choice.value("status", nlohmann::json::object()), out.status))
         return false;
 
@@ -156,6 +165,7 @@ bool parseRandomLine(const nlohmann::json& line, RandomConversationLine& out)
 
     out.id = line.value("id", "");
     out.text = line.value("text", "");
+    out.sketchPath = line.value("sketch", "");
     out.audio = parseOptionalAudioField(line, "audio");
     out.weight = line.value("weight", 1);
     out.once = line.value("once", false);
@@ -207,6 +217,19 @@ bool parseConversationPhase(const nlohmann::json& phase, ConversationPhase& out)
     out.audio = parseOptionalAudioField(phase, "audio");
     out.intro = phase.value("intro", "");
     out.introAudio = parseOptionalAudioField(phase, "introAudio");
+    out.sketchPath = phase.value("sketch", "");
+    out.tts = phase.value("tts", false);
+    out.ttsVoice = phase.value("ttsVoice", "");
+    out.ttsText = phase.value("ttsText", "");
+    out.ttsAudio = phase.value("ttsAudio", "");
+    out.ttsAfter = phase.value("ttsAfter", false);
+    out.ttsAfterVoice = phase.value("ttsAfterVoice", "");
+    out.ttsAfterText = phase.value("ttsAfterText", "");
+    out.ttsAfterAudio = phase.value("ttsAfterAudio", "");
+    out.resumeTts = phase.value("resumeTts", false);
+    out.resumeTtsVoice = phase.value("resumeTtsVoice", "");
+    out.resumeTtsText = phase.value("resumeTtsText", "");
+    out.resumeTtsAudio = phase.value("resumeTtsAudio", "");
     out.resumeIntro = phase.value("resumeIntro", "");
     out.resumeIntroAudio = parseOptionalAudioField(phase, "resumeIntroAudio");
     out.poolId = phase.value("poolId", "");

@@ -664,6 +664,7 @@ void AudioManager::stopDialog()
     {
         if (queuedClip.loaded)
             UnloadSound(queuedClip.sound);
+        removeTempFile(queuedClip.tempFilePath);
     }
 
     dialogQueue.clear();
@@ -709,6 +710,7 @@ void AudioManager::updateDialogQueue(float deltaSeconds)
         return;
     }
 
+    removeTempFile(currentClip.tempFilePath);
     UnloadSound(currentClip.sound);
     currentClip.loaded = false;
     ++dialogQueueIndex;
@@ -721,6 +723,116 @@ void AudioManager::playDialog(const std::string& relativePath, float volume)
         return;
 
     playDialogSequence({ relativePath }, volume);
+}
+
+bool AudioManager::hasDialogAsset(const std::string& relativePath) const
+{
+    if (relativePath.empty())
+        return false;
+
+    std::string playablePath;
+    std::string tempFile;
+    return resolveMusicAssetFile(relativePath, playablePath, tempFile);
+}
+
+bool AudioManager::playDialogAsset(const std::string& relativePath, float volume)
+{
+    return playDialogAssetSequence({ relativePath }, volume);
+}
+
+bool AudioManager::playDialogAssetSequence(
+    const std::vector<std::string>& relativePaths,
+    float volume)
+{
+    if (!ensureDeviceReady())
+        return false;
+
+    stopDialog();
+    dialogClipVolume = volume;
+
+    bool queuedAny = false;
+    for (const std::string& relativePath : relativePaths)
+    {
+        if (relativePath.empty())
+            continue;
+
+        std::string playablePath;
+        std::string tempFile;
+        if (!resolveMusicAssetFile(relativePath, playablePath, tempFile))
+        {
+            TraceLog(LOG_WARNING, "Failed to load bundled TTS clip: %s", relativePath.c_str());
+            continue;
+        }
+
+        Sound sound = LoadSound(playablePath.c_str());
+        if (sound.stream.buffer == nullptr)
+        {
+            TraceLog(LOG_WARNING, "Failed to decode bundled TTS clip: %s", playablePath.c_str());
+            removeTempFile(tempFile);
+            continue;
+        }
+
+        float durationSeconds = 0.2f;
+        if (sound.frameCount > 0 && sound.stream.sampleRate > 0)
+        {
+            durationSeconds = static_cast<float>(sound.frameCount)
+                / static_cast<float>(sound.stream.sampleRate);
+        }
+
+        ActiveSound queuedClip;
+        queuedClip.sound = sound;
+        queuedClip.loaded = true;
+        queuedClip.baseVolume = effectiveVolume(AudioCategory::Sfx, volume);
+        queuedClip.remainingSeconds = std::max(0.05f, durationSeconds);
+        queuedClip.tempFilePath = tempFile;
+        dialogQueue.push_back(queuedClip);
+        TraceLog(LOG_INFO, "Queued bundled TTS: %s (%.2fs)", relativePath.c_str(), durationSeconds);
+        queuedAny = true;
+    }
+
+    if (!queuedAny)
+        return false;
+
+    dialogQueueIndex = 0;
+    startNextQueuedDialogClip();
+    return true;
+}
+
+void AudioManager::playDialogMp3File(
+    const std::string& filePath,
+    float volume,
+    const std::string& tempFilePath)
+{
+    if (filePath.empty() || !ensureDeviceReady() || !FileExists(filePath.c_str()))
+        return;
+
+    stopDialog();
+    dialogClipVolume = volume;
+
+    Sound sound = LoadSound(filePath.c_str());
+    if (sound.stream.buffer == nullptr)
+    {
+        TraceLog(LOG_WARNING, "Failed to load TTS dialog clip: %s", filePath.c_str());
+        return;
+    }
+
+    float durationSeconds = 0.2f;
+    if (sound.frameCount > 0 && sound.stream.sampleRate > 0)
+    {
+        durationSeconds = static_cast<float>(sound.frameCount)
+            / static_cast<float>(sound.stream.sampleRate);
+    }
+
+    ActiveSound queuedClip;
+    queuedClip.sound = sound;
+    queuedClip.loaded = true;
+    queuedClip.baseVolume = effectiveVolume(AudioCategory::Sfx, 1.0f);
+    queuedClip.remainingSeconds = std::max(0.05f, durationSeconds);
+    queuedClip.tempFilePath = tempFilePath;
+    dialogQueue.push_back(queuedClip);
+    dialogQueueIndex = 0;
+    startNextQueuedDialogClip();
+    TraceLog(LOG_INFO, "Playing TTS dialog: %s (%.2fs)", filePath.c_str(), durationSeconds);
 }
 
 void AudioManager::playDialogSequence(const std::vector<std::string>& relativePaths, float volume)
@@ -790,6 +902,19 @@ void AudioManager::update(float deltaSeconds)
     updateGameplayMix(deltaSeconds);
     updateActiveSounds(deltaSeconds);
     updateDialogQueue(deltaSeconds);
+
+    const bool duckRoomAudio = !dialogQueue.empty()
+        && dialogQueueIndex < dialogQueue.size()
+        && dialogQueue[dialogQueueIndex].loaded;
+    const float roomAudioDuck = duckRoomAudio ? 0.15f : 1.0f;
+    if (musicTrack.loaded && musicTrack.playing)
+        musicTrack.targetVolume = effectiveVolume(AudioCategory::Music, musicTrack.sourceClipVolume) * roomAudioDuck;
+    for (FadingAmbientTrack& track : ambientTracks)
+    {
+        if (track.playing)
+            track.targetVolume = effectiveVolume(AudioCategory::Ambient, track.sourceClipVolume) * roomAudioDuck;
+    }
+
     updateMusicTrack(musicTrack, deltaSeconds);
 
     std::vector<FadingAmbientTrack> remainingAmbient;

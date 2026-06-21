@@ -32,6 +32,15 @@ struct ConversationChoiceDef
     std::string label;
     std::string response;
     std::string responseAudio;
+    std::string sketchPath;
+    bool tts = false;
+    std::string ttsVoice;
+    std::string ttsText;
+    std::string ttsAudio;
+    bool ttsAfter = false;
+    std::string ttsAfterVoice;
+    std::string ttsAfterText;
+    std::string ttsAfterAudio;
     StatusEffect status;
     std::vector<ConversationChoiceDef> followUpChoices;
 };
@@ -40,6 +49,7 @@ struct RandomConversationLine
 {
     std::string id;
     std::string text;
+    std::string sketchPath;
     std::string audio;
     StatusEffect status;
     int weight = 1;
@@ -82,6 +92,19 @@ struct ConversationPhase
 
     std::string intro;
     std::string introAudio;
+    std::string sketchPath;
+    bool tts = false;
+    std::string ttsVoice;
+    std::string ttsText;
+    std::string ttsAudio;
+    bool ttsAfter = false;
+    std::string ttsAfterVoice;
+    std::string ttsAfterText;
+    std::string ttsAfterAudio;
+    bool resumeTts = false;
+    std::string resumeTtsVoice;
+    std::string resumeTtsText;
+    std::string resumeTtsAudio;
     std::string resumeIntro;
     std::string resumeIntroAudio;
     std::vector<ConversationChoiceDef> choices;
@@ -110,10 +133,15 @@ struct SpeakResult
 
     Action action = Action::None;
     std::string narrative;
+    std::string sketchPath;
     std::vector<ConversationChoiceDef> choices;
     std::vector<StatusEffect> statusEffects;
     GrantedInventoryItemDef grantItem;
     std::vector<std::string> dialogAudioTracks;
+    bool useTts = false;
+    std::string ttsText;
+    std::string ttsVoice;
+    std::vector<std::string> ttsAudioPaths;
 };
 
 }
