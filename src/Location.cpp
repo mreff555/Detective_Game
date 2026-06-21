@@ -1460,9 +1460,25 @@ namespace
         updateActionAvailability();
     }
 
+    std::vector<ConversationChoiceDef> Location::filterAvailableChoices(
+        const std::vector<ConversationChoiceDef>& choices) const
+    {
+        std::vector<ConversationChoiceDef> available;
+        available.reserve(choices.size());
+
+        for (const ConversationChoiceDef& choice : choices)
+        {
+            if (choice.isAvailable(walletCash))
+                available.push_back(choice);
+        }
+
+        return available;
+    }
+
     void Location::appendChoiceLinesToNarrative(const std::vector<ConversationChoiceDef>& choices)
     {
-        for (const ConversationChoiceDef& choice : choices)
+        const std::vector<ConversationChoiceDef> available = filterAvailableChoices(choices);
+        for (const ConversationChoiceDef& choice : available)
         {
             narrativeText += "\n";
             narrativeText += choice.label;
@@ -1472,7 +1488,7 @@ namespace
         narrativeLayoutDirty = true;
         updateActionAvailability();
 
-        if (!choices.empty())
+        if (!available.empty())
             scrollToPendingDialogChoices();
     }
 
@@ -1640,15 +1656,20 @@ namespace
 
         std::string selectedLineText;
         std::string selectedSketchPath;
+        const ConversationChoiceDef* selectedChoice = nullptr;
         for (const ConversationChoiceDef& choice : choicesToStrip)
         {
             if (choice.id == choiceId)
             {
+                selectedChoice = &choice;
                 selectedLineText = choice.label;
                 selectedSketchPath = choice.sketchPath;
                 break;
             }
         }
+
+        if (selectedChoice != nullptr && !selectedChoice->isAvailable(walletCash))
+            return;
 
         const SceneSpeakConfig& speakConfig = sceneDatabase.getSpeakConfig(currentSceneId);
         SpeakResult result = conversationMgr.resolveChoice(speakConfig, choiceId);
@@ -2200,7 +2221,8 @@ namespace
 
             if (isDialogChoiceLine(line))
             {
-                for (const ConversationChoiceDef& choice : conversationMgr.getPendingChoices())
+                for (const ConversationChoiceDef& choice :
+                    filterAvailableChoices(conversationMgr.getPendingChoices()))
                 {
                     if (line != choice.label)
                         continue;

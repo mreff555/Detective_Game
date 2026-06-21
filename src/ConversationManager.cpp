@@ -532,12 +532,13 @@ SpeakResult ConversationManager::resolveScriptedChoice(
     combatEncounterId.clear();
     awaitingChoice = false;
     activeScriptPhaseId.clear();
-    markPhaseComplete(phase.id);
+    if (choice.closePhase)
+        markPhaseComplete(phase.id);
 
     std::vector<std::string> audioTracks;
     if (!choice.responseAudio.empty())
         audioTracks.push_back(choice.responseAudio);
-    SpeakResult result = buildNarrativeResult(choice.response, choice.status, {}, audioTracks);
+    SpeakResult result = buildNarrativeResult(choice.response, choice.status, choice.grantItem, audioTracks);
     applyTtsFields(
         result,
         choice.tts,

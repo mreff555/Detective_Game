@@ -26,6 +26,17 @@ struct StatusEffect
     }
 };
 
+struct GrantedInventoryItemDef
+{
+    std::string id;
+    std::string name;
+    std::string iconPath;
+    std::string examineImagePath;
+    std::string examineText;
+
+    bool isValid() const { return !id.empty(); }
+};
+
 struct ConversationChoiceDef
 {
     std::string id;
@@ -42,7 +53,15 @@ struct ConversationChoiceDef
     std::string ttsAfterText;
     std::string ttsAfterAudio;
     StatusEffect status;
+    GrantedInventoryItemDef grantItem;
+    float requiresMoney = 0.0f;
+    bool closePhase = true;
     std::vector<ConversationChoiceDef> followUpChoices;
+
+    bool isAvailable(float walletCash) const
+    {
+        return requiresMoney <= 0.0f || walletCash >= requiresMoney;
+    }
 };
 
 struct RandomConversationLine
@@ -64,17 +83,6 @@ enum class ConversationPhaseType
     Once,
     Scripted,
     Random
-};
-
-struct GrantedInventoryItemDef
-{
-    std::string id;
-    std::string name;
-    std::string iconPath;
-    std::string examineImagePath;
-    std::string examineText;
-
-    bool isValid() const { return !id.empty(); }
 };
 
 struct ConversationPhase

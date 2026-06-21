@@ -121,6 +121,19 @@ std::string parseOptionalAudioField(const nlohmann::json& object, const char* ke
     return object.value(key, "");
 }
 
+bool parseGrantedInventoryItem(const nlohmann::json& item, GrantedInventoryItemDef& out)
+{
+    if (!item.is_object())
+        return true;
+
+    out.id = item.value("id", "");
+    out.name = item.value("name", "");
+    out.iconPath = item.value("icon", "");
+    out.examineImagePath = item.value("examineImage", "");
+    out.examineText = item.value("examineText", "");
+    return true;
+}
+
 bool parseConversationChoice(const nlohmann::json& choice, ConversationChoiceDef& out)
 {
     if (!choice.is_object())
@@ -141,6 +154,12 @@ bool parseConversationChoice(const nlohmann::json& choice, ConversationChoiceDef
     out.ttsAfterAudio = choice.value("ttsAfterAudio", "");
     if (!parseStatusEffect(choice.value("status", nlohmann::json::object()), out.status))
         return false;
+
+    if (!parseGrantedInventoryItem(choice.value("grantItem", nlohmann::json::object()), out.grantItem))
+        return false;
+
+    out.requiresMoney = choice.value("requiresMoney", 0.0f);
+    out.closePhase = choice.value("closePhase", true);
 
     out.followUpChoices.clear();
     const nlohmann::json& followUps = choice.value("choices", nlohmann::json::array());
@@ -188,19 +207,6 @@ bool parseRandomLine(const nlohmann::json& line, RandomConversationLine& out)
     }
 
     return !out.text.empty();
-}
-
-bool parseGrantedInventoryItem(const nlohmann::json& item, GrantedInventoryItemDef& out)
-{
-    if (!item.is_object())
-        return true;
-
-    out.id = item.value("id", "");
-    out.name = item.value("name", "");
-    out.iconPath = item.value("icon", "");
-    out.examineImagePath = item.value("examineImage", "");
-    out.examineText = item.value("examineText", "");
-    return true;
 }
 
 bool parseConversationPhase(const nlohmann::json& phase, ConversationPhase& out)

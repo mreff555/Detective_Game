@@ -107,6 +107,8 @@ class Location
     void applyStatusEffects(const std::vector<StatusEffect>& effects);
     void handleNarrativeChoiceInput();
     void appendChoiceLinesToNarrative(const std::vector<ConversationChoiceDef>& choices);
+    std::vector<ConversationChoiceDef> filterAvailableChoices(
+        const std::vector<ConversationChoiceDef>& choices) const;
     void appendNarrativeSketch(const std::string& sketchPath);
     bool isNarrativeSketchLine(const std::string& line) const;
     std::string narrativeSketchPathFromLine(const std::string& line) const;
