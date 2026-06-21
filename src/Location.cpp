@@ -2224,6 +2224,44 @@ namespace
         }
     }
     
+    bool Location::hasLightSourceInInventory() const
+    {
+        for (const InventoryItem& item : inventoryMgr.exportItemSnapshots())
+        {
+            const ItemDef* def = itemDatabase.getDef(item.id);
+            if (def != nullptr && def->lightSource)
+                return true;
+        }
+
+        return false;
+    }
+
+    bool Location::canUseExit(const std::string& direction, std::string& outBlockedDetails) const
+    {
+        ExitRequirementDef requirement;
+        if (!sceneDatabase.getExitRequirement(currentSceneId, direction, requirement))
+            return true;
+
+        if (requirement.requiresLightSource && !hasLightSourceInInventory())
+        {
+            outBlockedDetails = requirement.blockedDetails;
+            return false;
+        }
+
+        return true;
+    }
+
+    void Location::appendBlockedMovementMessage(const std::string& details)
+    {
+        if (details.empty())
+            return;
+
+        narrativeText += "\n\n";
+        narrativeText += details;
+        trimNarrativeBuffer();
+        narrativeLayoutDirty = true;
+    }
+
     void Location::tryMove(const std::string& direction)
     {
         if (isUnderConstruction)
@@ -2254,6 +2292,14 @@ namespace
         if (nextSceneId.empty())
         {
             TraceLog(LOG_WARNING, "No exit '%s' from scene '%s'", direction.c_str(), currentSceneId.c_str());
+            return;
+        }
+
+        std::string blockedDetails;
+        if (!canUseExit(direction, blockedDetails))
+        {
+            appendBlockedMovementMessage(blockedDetails);
+            scrollNarrativeToLine(blockedDetails, true);
             return;
         }
 

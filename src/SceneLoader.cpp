@@ -458,6 +458,39 @@ bool parseExits(const nlohmann::json& exits, std::map<std::string, std::string>&
     return true;
 }
 
+bool parseExitRequirement(const nlohmann::json& requirement, ExitRequirementDef& out)
+{
+    if (!requirement.is_object())
+        return false;
+
+    out.requiresLightSource = requirement.value(
+        "requiresLightSource",
+        requirement.value("requires_light_source", false));
+    out.blockedDetails = requirement.value(
+        "blockedDetails",
+        requirement.value("blocked_details", ""));
+    return out.requiresLightSource || !out.blockedDetails.empty();
+}
+
+bool parseExitRequirements(
+    const nlohmann::json& requirements,
+    std::map<std::string, ExitRequirementDef>& out)
+{
+    out.clear();
+    if (!requirements.is_object())
+        return true;
+
+    for (auto it = requirements.begin(); it != requirements.end(); ++it)
+    {
+        ExitRequirementDef parsed;
+        if (!parseExitRequirement(it.value(), parsed))
+            return false;
+        out[it.key()] = parsed;
+    }
+
+    return true;
+}
+
 bool parseTakeableItem(const nlohmann::json& item, TakeableItemDef& out)
 {
     if (!item.is_object())
@@ -554,6 +587,13 @@ bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneDat
 
     if (!parseExits(sceneJson.value("exits", nlohmann::json::object()), out.exits))
         return false;
+
+    if (!parseExitRequirements(
+            sceneJson.value("exitRequirements", sceneJson.value("exit_requirements", nlohmann::json::object())),
+            out.exitRequirements))
+    {
+        return false;
+    }
 
     if (!parseSpeakConfig(sceneJson, out.speakConfig))
         return false;
@@ -932,6 +972,24 @@ std::string SceneDatabase::getExitSceneId(const std::string& sceneId, const std:
         return "";
 
     return exitIt->second;
+}
+
+bool SceneDatabase::getExitRequirement(
+    const std::string& sceneId,
+    const std::string& direction,
+    ExitRequirementDef& outRequirement) const
+{
+    std::map<std::string, SceneData>::const_iterator it = scenes.find(sceneId);
+    if (it == scenes.end())
+        return false;
+
+    std::map<std::string, ExitRequirementDef>::const_iterator requirementIt =
+        it->second.exitRequirements.find(direction);
+    if (requirementIt == it->second.exitRequirements.end())
+        return false;
+
+    outRequirement = requirementIt->second;
+    return true;
 }
 
 bool loadStartLocation(

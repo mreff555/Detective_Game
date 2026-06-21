@@ -126,6 +126,9 @@ class Location
     Color narrativeLineColor(const std::string& line) const;
     void applyLocationStruct(const LocationStruct& locationStruct, const std::string& fromRoom = "");
     void tryMove(const std::string& direction);
+    bool hasLightSourceInInventory() const;
+    bool canUseExit(const std::string& direction, std::string& outBlockedDetails) const;
+    void appendBlockedMovementMessage(const std::string& details);
     void trimNarrativeBuffer();
     void rebuildNarrativeLayout() const;
     void handleNarrativeScrollInput();

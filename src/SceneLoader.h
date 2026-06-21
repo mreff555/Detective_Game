@@ -4,6 +4,7 @@
 #include <AudioTypes.h>
 #include <ConversationStruct.h>
 #include <LocationStruct.h>
+#include <ExitRequirementDef.h>
 #include <SceneInteractionDef.h>
 #include <TakeableItemDef.h>
 #include <raylib.h>
@@ -33,6 +34,7 @@ struct SceneData
     ActionStruct actions;
     bool isStart;
     std::map<std::string, std::string> exits;
+    std::map<std::string, ExitRequirementDef> exitRequirements;
     SceneSpeakConfig speakConfig;
     RoomAudioConfig audio;
     std::vector<TakeableItemDef> takeables;
@@ -49,6 +51,10 @@ class SceneDatabase
     bool loadStartScene(LocationStruct& outLocation, std::string& outSceneId) const;
     bool loadScene(const std::string& sceneId, LocationStruct& outLocation) const;
     std::string getExitSceneId(const std::string& sceneId, const std::string& direction) const;
+    bool getExitRequirement(
+        const std::string& sceneId,
+        const std::string& direction,
+        ExitRequirementDef& outRequirement) const;
     const SceneSpeakConfig& getSpeakConfig(const std::string& sceneId) const;
     const RoomAudioConfig& getSceneAudio(const std::string& sceneId) const;
     const std::vector<TakeableItemDef>& getTakeables(const std::string& sceneId) const;

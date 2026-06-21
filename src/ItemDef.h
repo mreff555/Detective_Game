@@ -85,6 +85,7 @@ struct ItemDef
     ItemAudioOverlayDef examineAudio;
     ItemContainerDef container;
     ItemQuantityDef quantity;
+    bool lightSource = false;
 };
 
 float roundItemWeightLb(float weightLb);

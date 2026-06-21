@@ -192,6 +192,7 @@ bool parseItemDef(const std::string& id, const nlohmann::json& json, ItemDef& ou
     parseItemAudioOverlay(json.value("examineAudio", json.value("examine_audio", nlohmann::json::object())), out.examineAudio);
     parseItemContainer(json.value("container", nlohmann::json::object()), out.container);
     parseItemQuantity(json.value("quantity", nlohmann::json::object()), out.quantity);
+    out.lightSource = json.value("lightSource", json.value("light_source", false));
 
     return !out.id.empty() && !out.name.empty();
 }
