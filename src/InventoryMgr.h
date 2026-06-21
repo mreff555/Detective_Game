@@ -45,10 +45,14 @@ class InventoryMgr
 
     void examineSelectedItem();
     const InventoryItem* getSelectedItem() const;
+    const InventoryItem* getItemById(const std::string& id) const;
     bool hasItem(const std::string& id) const;
     void addItem(const InventoryItem& item);
+    bool removeItem(const std::string& id);
     std::vector<InventoryItem> exportItemSnapshots() const;
     void restoreFromSnapshots(const std::vector<InventoryItem>& savedItems);
+
+    std::string consumePendingDropItemId();
 
     private:
     void createDefaultItems();
@@ -82,6 +86,7 @@ class InventoryMgr
     Rectangle panelBounds{};
     InventoryViewState viewState = InventoryViewState::Closed;
     std::string selectedItemId;
+    std::string pendingDropItemId;
     std::vector<InventoryItem> items;
     mutable std::vector<Rectangle> itemSlotBounds;
     std::string primaryAssetRoot;

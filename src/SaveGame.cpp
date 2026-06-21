@@ -1,5 +1,6 @@
 #include "SaveGame.h"
 
+#include <TakeableItemDef.h>
 #include <nlohmann/json.hpp>
 #include <map>
 #include <fstream>
@@ -149,6 +150,71 @@ void milestonesFromJson(const nlohmann::json& root, MilestonePersistState& outMi
     }
 }
 
+nlohmann::json takeableToJson(const TakeableItemDef& item)
+{
+    return {
+        {"id", item.id},
+        {"name", item.name},
+        {"iconPath", item.iconPath},
+        {"examineImagePath", item.examineImagePath},
+        {"examineText", item.examineText},
+        {"requiresExamine", item.requiresExamine}
+    };
+}
+
+void takeableFromJson(const nlohmann::json& entry, TakeableItemDef& outItem)
+{
+    outItem.id = entry.value("id", "");
+    outItem.name = entry.value("name", "");
+    outItem.iconPath = entry.value("iconPath", "");
+    outItem.examineImagePath = entry.value("examineImagePath", "");
+    outItem.examineText = entry.value("examineText", "");
+    outItem.requiresExamine = entry.value("requiresExamine", true);
+}
+
+nlohmann::json droppedItemsToJson(const std::map<std::string, std::vector<TakeableItemDef>>& droppedItems)
+{
+    nlohmann::json root = nlohmann::json::object();
+    for (const std::pair<const std::string, std::vector<TakeableItemDef>>& pair : droppedItems)
+    {
+        nlohmann::json items = nlohmann::json::array();
+        for (const TakeableItemDef& item : pair.second)
+            items.push_back(takeableToJson(item));
+        root[pair.first] = items;
+    }
+    return root;
+}
+
+void droppedItemsFromJson(
+    const nlohmann::json& root,
+    std::map<std::string, std::vector<TakeableItemDef>>& outDroppedItems)
+{
+    outDroppedItems.clear();
+    if (!root.is_object())
+        return;
+
+    for (auto it = root.begin(); it != root.end(); ++it)
+    {
+        if (!it.value().is_array())
+            continue;
+
+        std::vector<TakeableItemDef> items;
+        for (const nlohmann::json& entry : it.value())
+        {
+            if (!entry.is_object())
+                continue;
+
+            TakeableItemDef item;
+            takeableFromJson(entry, item);
+            if (!item.id.empty())
+                items.push_back(item);
+        }
+
+        if (!items.empty())
+            outDroppedItems[it.key()] = items;
+    }
+}
+
 void inventoryFromJson(const nlohmann::json& array, std::vector<InventoryItem>& outItems)
 {
     outItems.clear();
@@ -208,6 +274,7 @@ bool writeSaveFile(const std::string& path, const SavedGameState& state)
     root["consumedStatusActions"] = setToJsonArray(state.consumedStatusActions);
     root["committedPlayerDialogLines"] = setToJsonArray(state.committedPlayerDialogLines);
     root["inventoryItems"] = inventoryToJson(state.inventoryItems);
+    root["droppedItems"] = droppedItemsToJson(state.droppedItemsByScene);
     root["conversation"] = {
         {"completedPhaseIds", setToJsonArray(state.conversation.completedPhaseIds)},
         {"completedRandomLineIds", setToJsonArray(state.conversation.completedRandomLineIds)},
@@ -261,6 +328,7 @@ bool readSaveFile(const std::string& path, SavedGameState& state)
     jsonArrayToSet(root.value("consumedStatusActions", nlohmann::json::array()), state.consumedStatusActions);
     jsonArrayToSet(root.value("committedPlayerDialogLines", nlohmann::json::array()), state.committedPlayerDialogLines);
     inventoryFromJson(root.value("inventoryItems", nlohmann::json::array()), state.inventoryItems);
+    droppedItemsFromJson(root.value("droppedItems", nlohmann::json::object()), state.droppedItemsByScene);
 
     const nlohmann::json& conversation = root.value("conversation", nlohmann::json::object());
     jsonArrayToSet(

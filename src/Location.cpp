@@ -101,6 +101,7 @@ namespace
       audioManager(audioManager),
       gameConfig(gameConfig),
       pauseMenu((int)screenSize.x, (int)screenSize.y, locationStruct.uiFont),
+      dropConfirmMgr((int)screenSize.x, (int)screenSize.y, locationStruct.uiFont),
       gameConfigPath(configPath),
       currentSceneId(sceneId),
       locationImage(locationStruct.locationImage),
@@ -169,6 +170,7 @@ namespace
         fullDialogHeight = screenHeight * 2.0f / 3.0f;
         buttonMgr.relayout(buttonBox);
         pauseMenu.setScreenSize(screenWidth, screenHeight);
+        dropConfirmMgr.setScreenSize(screenWidth, screenHeight);
 
         if (notebookPaperTextureReady)
         {
@@ -484,7 +486,7 @@ namespace
 
     bool Location::canUseNotebookNav() const
     {
-        if (pauseMenu.isOpen())
+        if (pauseMenu.isOpen() || dropConfirmMgr.isOpen())
             return false;
         if (takeMgr.isOpen())
             return false;
@@ -786,6 +788,112 @@ namespace
         return currentSceneId + ":" + itemId;
     }
 
+    std::vector<TakeableItemDef> Location::getDroppedItemsInCurrentScene() const
+    {
+        const std::map<std::string, std::vector<TakeableItemDef>>::const_iterator it =
+            droppedItemsByScene.find(currentSceneId);
+        if (it == droppedItemsByScene.end())
+            return std::vector<TakeableItemDef>();
+
+        return it->second;
+    }
+
+    bool Location::isDroppedItemInCurrentScene(const std::string& itemId) const
+    {
+        for (const TakeableItemDef& item : getDroppedItemsInCurrentScene())
+        {
+            if (item.id == itemId)
+                return true;
+        }
+
+        return false;
+    }
+
+    void Location::removeDroppedItem(const std::string& sceneId, const std::string& itemId)
+    {
+        std::map<std::string, std::vector<TakeableItemDef>>::iterator sceneIt =
+            droppedItemsByScene.find(sceneId);
+        if (sceneIt == droppedItemsByScene.end())
+            return;
+
+        std::vector<TakeableItemDef>& items = sceneIt->second;
+        for (std::vector<TakeableItemDef>::iterator it = items.begin(); it != items.end(); ++it)
+        {
+            if (it->id == itemId)
+            {
+                items.erase(it);
+                break;
+            }
+        }
+
+        if (items.empty())
+            droppedItemsByScene.erase(sceneIt);
+    }
+
+    TakeableItemDef Location::takeableFromInventory(const InventoryItem& item) const
+    {
+        TakeableItemDef takeable;
+        takeable.id = item.id;
+        takeable.name = item.name.empty() ? item.id : item.name;
+        takeable.iconPath = item.iconPath;
+        takeable.examineImagePath = item.examineImagePath;
+        takeable.examineText = item.examineText;
+        takeable.requiresExamine = true;
+        return takeable;
+    }
+
+    void Location::dropInventoryItem(const std::string& itemId)
+    {
+        const InventoryItem* item = inventoryMgr.getItemById(itemId);
+        if (item == nullptr)
+            return;
+
+        removeDroppedItem(currentSceneId, itemId);
+        droppedItemsByScene[currentSceneId].push_back(takeableFromInventory(*item));
+
+        if (!inventoryMgr.removeItem(itemId))
+            return;
+
+        refreshTakeItems();
+        updateActionAvailability();
+    }
+
+    void Location::handleInventoryDropInput()
+    {
+        const std::string itemId = inventoryMgr.consumePendingDropItemId();
+        if (itemId.empty() || !inventoryMgr.hasItem(itemId))
+            return;
+
+        if (gameConfig.input.skipDropConfirmation)
+        {
+            dropInventoryItem(itemId);
+            return;
+        }
+
+        const InventoryItem* item = inventoryMgr.getItemById(itemId);
+        if (item == nullptr)
+            return;
+
+        const std::string itemName = item->name.empty() ? item->id : item->name;
+        dropConfirmMgr.openForItem(itemId, itemName);
+    }
+
+    std::string Location::buildExamineDetailsWithDroppedItems() const
+    {
+        std::string details = examineDetails;
+        const std::vector<TakeableItemDef> droppedItems = getDroppedItemsInCurrentScene();
+
+        for (const TakeableItemDef& item : droppedItems)
+        {
+            const std::string label = item.name.empty() ? item.id : item.name;
+            details += "\n\nYou notice someone has discarded ";
+            details += label;
+            details += ".";
+        }
+
+        return details;
+    }
+
     std::vector<TakeableItemDef> Location::getAvailableTakeables() const
     {
         std::vector<TakeableItemDef> available;
@@ -794,6 +902,20 @@ namespace
         for (const TakeableItemDef& item : takeables)
         {
             if (takenItemKeys.count(takenItemKey(item.id)) > 0)
+                continue;
+
+            if (inventoryMgr.hasItem(item.id))
+                continue;
+
+            if (item.requiresExamine && !hasExaminedScene(currentSceneId))
+                continue;
+
+            available.push_back(item);
+        }
+
+        for (const TakeableItemDef& item : getDroppedItemsInCurrentScene())
+        {
+            if (inventoryMgr.hasItem(item.id))
                 continue;
 
             if (item.requiresExamine && !hasExaminedScene(currentSceneId))
@@ -836,9 +958,14 @@ namespace
             const std::vector<TakeableItemDef> takenItems = takeMgr.takeAll();
             for (const TakeableItemDef& taken : takenItems)
             {
-                takenItemKeys.insert(takenItemKey(taken.id));
+                if (isDroppedItemInCurrentScene(taken.id))
+                    removeDroppedItem(currentSceneId, taken.id);
+                else
+                    takenItemKeys.insert(takenItemKey(taken.id));
+
                 addTakenItemToInventory(taken);
             }
+            refreshTakeItems();
             updateActionAvailability();
             return;
         }
@@ -851,8 +978,13 @@ namespace
         if (!takeMgr.tryTakeItem(takeId, taken))
             return;
 
-        takenItemKeys.insert(takenItemKey(taken.id));
+        if (isDroppedItemInCurrentScene(taken.id))
+            removeDroppedItem(currentSceneId, taken.id);
+        else
+            takenItemKeys.insert(takenItemKey(taken.id));
+
         addTakenItemToInventory(taken);
+        refreshTakeItems();
         updateActionAvailability();
     }
 
@@ -1025,10 +1157,11 @@ namespace
 
     void Location::appendExamineDetails()
     {
-        if (examineDetails.empty())
+        const std::string details = buildExamineDetailsWithDroppedItems();
+        if (details.empty())
             return;
 
-        appendNarrativeSection("Examining:", examineDetails);
+        appendNarrativeSection("Examining:", details);
         if (!examineFlag.empty())
             storyFlags.insert(examineFlag);
         examinedSceneIds.insert(currentSceneId);
@@ -1393,8 +1526,10 @@ namespace
         examinedSceneIds.clear();
         usedSceneIds.clear();
         takenItemKeys.clear();
+        droppedItemsByScene.clear();
         takeMgr.close();
         inventoryMgr.close();
+        dropConfirmMgr.close();
         applyLocationStruct(cabinLocation);
 
         narrativeText += "\n\n";
@@ -1483,6 +1618,13 @@ namespace
     {
         MovementStruct movement{};
         ActionStruct actions{};
+
+        if (dropConfirmMgr.isOpen())
+        {
+            buttonMgr.setAvailability(movement, actions);
+            buttonMgr.setStatus(health, energy, resolve, lucidity, charisma);
+            return;
+        }
 
         if (takeMgr.isOpen())
         {
@@ -1847,6 +1989,7 @@ namespace
         state.consumedStatusActions = consumedStatusActions;
         state.committedPlayerDialogLines = committedPlayerDialogLines;
         state.inventoryItems = inventoryMgr.exportItemSnapshots();
+        state.droppedItemsByScene = droppedItemsByScene;
         conversationMgr.exportPersistState(state.conversation);
         milestoneMgr.exportPersistState(state.milestones);
         return state;
@@ -1887,6 +2030,8 @@ namespace
         narrativeLayoutDirty = true;
 
         inventoryMgr.restoreFromSnapshots(state.inventoryItems);
+        droppedItemsByScene = state.droppedItemsByScene;
+        dropConfirmMgr.close();
         conversationMgr.importPersistState(state.conversation);
         milestoneMgr.importPersistState(state.milestones);
         takeMgr.close();
@@ -1984,6 +2129,26 @@ namespace
         if (pauseMenu.isOpen())
             return;
 
+        if (dropConfirmMgr.isOpen())
+        {
+            dropConfirmMgr.update();
+
+            const std::string confirmedItemId = dropConfirmMgr.consumeConfirmedItemId();
+            if (!confirmedItemId.empty())
+            {
+                if (dropConfirmMgr.consumeDontShowAgainRequest())
+                {
+                    gameConfig.input.skipDropConfirmation = true;
+                    saveGameConfig(gameConfigPath, gameConfig);
+                }
+
+                dropInventoryItem(confirmedItemId);
+            }
+
+            dropConfirmMgr.consumeCancelled();
+            return;
+        }
+
         updateInventoryLayout();
         updateActionAvailability();
 
@@ -2037,6 +2202,7 @@ namespace
         if (inventoryMgr.isOpen())
         {
             inventoryMgr.update();
+            handleInventoryDropInput();
 
             if (buttonMgr.consumeBackwardButtonClick() && inventoryMgr.isExaminingItem())
             {
@@ -2205,6 +2371,7 @@ namespace
 
         buttonMgr.draw();
         pauseMenu.draw();
+        dropConfirmMgr.draw();
     }
 
     void Location::drawInventoryExamineScrollbar() const

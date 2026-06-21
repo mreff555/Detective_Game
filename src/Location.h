@@ -7,6 +7,7 @@
 #include <MilestoneManager.h>
 #include <GameConfig.h>
 #include <InventoryMgr.h>
+#include <DropConfirmMgr.h>
 #include <PauseMenuMgr.h>
 #include <SaveGame.h>
 #include <TakeMgr.h>
@@ -15,6 +16,7 @@
 #include <ButtonMgr.h>
 #include <SceneLoader.h>
 #include <raylib.h>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -103,6 +105,13 @@ class Location
     void refreshTakeItems();
     void addTakenItemToInventory(const TakeableItemDef& taken);
     void processPendingTakes();
+    void handleInventoryDropInput();
+    void dropInventoryItem(const std::string& itemId);
+    TakeableItemDef takeableFromInventory(const InventoryItem& item) const;
+    std::string buildExamineDetailsWithDroppedItems() const;
+    std::vector<TakeableItemDef> getDroppedItemsInCurrentScene() const;
+    bool isDroppedItemInCurrentScene(const std::string& itemId) const;
+    void removeDroppedItem(const std::string& sceneId, const std::string& itemId);
     bool isSidePanelOpen() const;
     bool canTakeInCurrentScene() const;
     std::vector<TakeableItemDef> getAvailableTakeables() const;
@@ -152,6 +161,7 @@ class Location
     AudioManager& audioManager;
     GameConfig& gameConfig;
     PauseMenuMgr pauseMenu;
+    DropConfirmMgr dropConfirmMgr;
     std::string gameConfigPath;
     bool quitRequested = false;
     std::string currentSceneId;
@@ -218,6 +228,7 @@ class Location
     InventoryMgr inventoryMgr;
     TakeMgr takeMgr;
     std::set<std::string> takenItemKeys;
+    std::map<std::string, std::vector<TakeableItemDef>> droppedItemsByScene;
 
     float narrativeScrollY = 0.0f;
     float inventoryExamineScrollY = 0.0f;

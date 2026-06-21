@@ -70,6 +70,8 @@ bool loadGameConfig(const std::string& configPath, GameConfig& outConfig)
         const nlohmann::json& input = config["input"];
         outConfig.input.clickHoldSeconds = clampClickHoldSeconds(
             input.value("clickHoldSeconds", outConfig.input.clickHoldSeconds));
+        outConfig.input.skipDropConfirmation = input.value(
+            "skipDropConfirmation", outConfig.input.skipDropConfirmation);
     }
 
     return outConfig.display.width > 0 && outConfig.display.height > 0;
@@ -106,7 +108,8 @@ bool saveGameConfig(const std::string& configPath, const GameConfig& config)
         {"sfx", config.audio.sfx}
     };
     root["input"] = {
-        {"clickHoldSeconds", config.input.clickHoldSeconds}
+        {"clickHoldSeconds", config.input.clickHoldSeconds},
+        {"skipDropConfirmation", config.input.skipDropConfirmation}
     };
 
     std::ofstream out(configPath.c_str());

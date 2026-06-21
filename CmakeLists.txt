@@ -22,6 +22,7 @@ set(SOURCES
     src/AudioManager.cpp
     src/OpusAudio.cpp
     src/PauseMenuMgr.cpp
+    src/DropConfirmMgr.cpp
     src/SaveGame.cpp
 )
 

@@ -375,10 +375,24 @@ void InventoryMgr::handleItemGridInput()
     if (viewState != InventoryViewState::ItemList)
         return;
 
+    const Vector2 mousePos = GetMousePosition();
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+    {
+        for (size_t i = 0; i < itemSlotBounds.size(); ++i)
+        {
+            if (i < items.size() && CheckCollisionPointRec(mousePos, itemSlotBounds[i]))
+            {
+                pendingDropItemId = items[i].id;
+                return;
+            }
+        }
+        return;
+    }
+
     if (!IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         return;
 
-    const Vector2 mousePos = GetMousePosition();
     for (size_t i = 0; i < itemSlotBounds.size(); ++i)
     {
         if (CheckCollisionPointRec(mousePos, itemSlotBounds[i]))
@@ -650,6 +664,11 @@ const InventoryItem* InventoryMgr::getSelectedItem() const
     return findItem(selectedItemId);
 }
 
+const InventoryItem* InventoryMgr::getItemById(const std::string& id) const
+{
+    return findItem(id);
+}
+
 bool InventoryMgr::hasItem(const std::string& id) const
 {
     return findItem(id) != nullptr;
@@ -662,6 +681,33 @@ void InventoryMgr::addItem(const InventoryItem& item)
 
     items.push_back(item);
     ensureItemIconLoaded(items.back());
+}
+
+bool InventoryMgr::removeItem(const std::string& id)
+{
+    const int itemIndex = findItemIndex(id);
+    if (itemIndex < 0)
+        return false;
+
+    InventoryItem& item = items[(size_t)itemIndex];
+    if (item.icon.id != 0)
+        UnloadTexture(item.icon);
+    if (item.examineImage.id != 0)
+        UnloadTexture(item.examineImage);
+
+    items.erase(items.begin() + itemIndex);
+
+    if (selectedItemId == id)
+        selectedItemId.clear();
+
+    return true;
+}
+
+std::string InventoryMgr::consumePendingDropItemId()
+{
+    const std::string itemId = pendingDropItemId;
+    pendingDropItemId.clear();
+    return itemId;
 }
 
 std::vector<InventoryItem> InventoryMgr::exportItemSnapshots() const

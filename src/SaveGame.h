@@ -3,6 +3,8 @@
 
 #include <InventoryItem.h>
 #include <MilestoneStruct.h>
+#include <TakeableItemDef.h>
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -37,6 +39,7 @@ struct SavedGameState
     std::set<std::string> consumedStatusActions;
     std::set<std::string> committedPlayerDialogLines;
     std::vector<InventoryItem> inventoryItems;
+    std::map<std::string, std::vector<TakeableItemDef>> droppedItemsByScene;
     ConversationPersistState conversation;
     MilestonePersistState milestones;
 };
