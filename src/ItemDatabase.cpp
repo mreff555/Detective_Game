@@ -101,6 +101,8 @@ bool parseContainerContent(const nlohmann::json& json, ItemContainerContentDef& 
     out.quantity = json.value("quantity", 1);
     out.hidden = json.value("hidden", false);
     out.revealFlag = json.value("revealFlag", json.value("reveal_flag", ""));
+    out.extractable = json.value("extractable", true);
+    out.examineNote = json.value("examineNote", json.value("examine_note", ""));
     return !out.itemId.empty();
 }
 
@@ -330,6 +332,36 @@ std::string ItemDatabase::resolveDescription(
     return def.description;
 }
 
+std::string ItemDatabase::resolveExamineDescription(
+    const ItemDef& def,
+    const ItemInstance& instance,
+    const ItemDefOverrides& overrides) const
+{
+    std::string description = resolveDescription(def, overrides);
+
+    if (!def.container.isContainer)
+        return description;
+
+    for (const ItemInstance& child : instance.contents)
+    {
+        if (child.defId.empty())
+            continue;
+
+        for (const ItemContainerContentDef& content : def.container.contents)
+        {
+            if (content.itemId != child.defId || content.examineNote.empty())
+                continue;
+
+            if (!description.empty())
+                description += "\n\n";
+            description += content.examineNote;
+            break;
+        }
+    }
+
+    return description;
+}
+
 std::string ItemDatabase::resolveIconPath(const ItemDef& def, const ItemInstance& instance) const
 {
     return resolveItemPath(
@@ -353,6 +385,22 @@ float ItemDatabase::resolveWeightLb(const ItemDef& def, const ItemInstance& inst
     return computeContainerTotalWeightLb(def, instance, &ItemDatabase::resolveDefCallback);
 }
 
+bool ItemDatabase::isExtractableContainerContent(
+    const ItemDef& containerDef,
+    const std::string& contentDefId) const
+{
+    if (!containerDef.container.isContainer)
+        return false;
+
+    for (const ItemContainerContentDef& content : containerDef.container.contents)
+    {
+        if (content.itemId == contentDefId)
+            return content.extractable;
+    }
+
+    return false;
+}
+
 const ItemDef* ItemDatabase::resolveDefCallback(const std::string& defId)
 {
     if (activeDatabase == nullptr)
@@ -372,7 +420,7 @@ InventoryItem ItemDatabase::buildInventoryItem(
     if (def != nullptr)
     {
         item.name = resolveName(*def, overrides);
-        item.examineText = resolveDescription(*def, overrides);
+        item.examineText = resolveExamineDescription(*def, instance, overrides);
         item.iconPath = !overrides.iconPath.empty()
             ? overrides.iconPath
             : resolveIconPath(*def, instance);

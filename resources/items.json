@@ -2,7 +2,7 @@
   "items": {
     "wallet": {
       "name": "Wallet",
-      "description": "The wallet is worked from thick full-grain leather, hand-stitched along the edges with waxed thread the color of strong tea. The dye is uneven in the way of good hides, not factory perfect. A maker's stamp inside the flap is too worn to read. It sits heavy in your palm, the sort of piece a man buys once and carries for years.\n\nYou count what it holds. Twenty dollars in worn notes, nothing more. No credit cards. No identification. The pockets are otherwise empty except for a small slip of paper, tucked deep into a corner seam as though someone meant to forget it and could not quite.",
+      "description": "The wallet is worked from thick full-grain leather, hand-stitched along the edges with waxed thread the color of strong tea. The dye is uneven in the way of good hides, not factory perfect. A maker's stamp inside the flap is too worn to read. It sits heavy in your palm, the sort of piece a man buys once and carries for years.\n\nYou count what it holds. Twenty dollars in worn notes, nothing more. No credit cards. No identification. The pockets are otherwise empty.",
       "weightLb": 0.18,
       "visuals": {
         "image": "resources/images/wallet_examine.png"
@@ -17,8 +17,8 @@
           {
             "itemId": "wallet_slip",
             "quantity": 1,
-            "hidden": true,
-            "revealFlag": "wallet:slip_found"
+            "extractable": true,
+            "examineNote": "Examining the pockets carefully, you identify a small piece of carefully folded paper tucked deep into a corner seam."
           }
         ]
       }
@@ -26,7 +26,10 @@
     "wallet_slip": {
       "name": "Slip of Paper",
       "description": "A small slip of paper, folded until the creases have gone soft. The ink is faded but legible.",
-      "weightLb": 0.01
+      "weightLb": 0.01,
+      "icons": {
+        "icon": "resources/icons/wallet_slip_icon.png"
+      }
     },
     "lard": {
       "name": "Lard",

@@ -38,9 +38,14 @@ class ItemDatabase
 
     std::string resolveName(const ItemDef& def, const ItemDefOverrides& overrides) const;
     std::string resolveDescription(const ItemDef& def, const ItemDefOverrides& overrides) const;
+    std::string resolveExamineDescription(
+        const ItemDef& def,
+        const ItemInstance& instance,
+        const ItemDefOverrides& overrides) const;
     std::string resolveIconPath(const ItemDef& def, const ItemInstance& instance) const;
     std::string resolveImagePath(const ItemDef& def, const ItemInstance& instance) const;
     float resolveWeightLb(const ItemDef& def, const ItemInstance& instance) const;
+    bool isExtractableContainerContent(const ItemDef& containerDef, const std::string& contentDefId) const;
 
     InventoryItem buildInventoryItem(
         const ItemInstance& instance,

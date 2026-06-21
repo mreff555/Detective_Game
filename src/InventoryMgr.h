@@ -46,6 +46,9 @@ class InventoryMgr
     void draw() const;
 
     void examineSelectedItem();
+    bool canExtractFromExaminedItem(const ItemDatabase& database) const;
+    bool extractFromExaminedItem(const ItemDatabase& database, InventoryItem& outExtracted);
+    void refreshItemFromDatabase(const std::string& id);
     const InventoryItem* getSelectedItem() const;
     const InventoryItem* getItemById(const std::string& id) const;
     bool hasItem(const std::string& id) const;
@@ -77,6 +80,7 @@ class InventoryMgr
     Rectangle getCloseButtonBounds() const;
     float getInventoryVisibleHeight() const;
     const InventoryItem* findItem(const std::string& id) const;
+    InventoryItem* findMutableItem(const std::string& id);
     int findItemIndex(const std::string& id) const;
 
     static const float kScrollbarWidth;

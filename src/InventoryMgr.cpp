@@ -263,6 +263,8 @@ void InventoryMgr::examineSelectedItem()
     if (!canExamineSelectedItem())
         return;
 
+    refreshItemFromDatabase(selectedItemId);
+
     const int itemIndex = findItemIndex(selectedItemId);
     if (itemIndex >= 0)
         ensureItemExamineImageLoaded(items[(size_t)itemIndex]);
@@ -276,6 +278,98 @@ const InventoryItem* InventoryMgr::findItem(const std::string& id) const
     if (itemIndex < 0)
         return nullptr;
     return &items[(size_t)itemIndex];
+}
+
+InventoryItem* InventoryMgr::findMutableItem(const std::string& id)
+{
+    const int itemIndex = findItemIndex(id);
+    if (itemIndex < 0)
+        return nullptr;
+    return &items[(size_t)itemIndex];
+}
+
+bool InventoryMgr::canExtractFromExaminedItem(const ItemDatabase& database) const
+{
+    if (viewState != InventoryViewState::ExaminingItem || selectedItemId.empty())
+        return false;
+
+    const InventoryItem* parent = findItem(selectedItemId);
+    if (parent == nullptr)
+        return false;
+
+    const ItemDef* parentDef = database.getDef(parent->id);
+    if (parentDef == nullptr || !parentDef->container.isContainer)
+        return false;
+
+    for (const ItemInstance& child : parent->instance.contents)
+    {
+        if (child.defId.empty())
+            continue;
+        if (hasItem(child.defId))
+            continue;
+        if (database.isExtractableContainerContent(*parentDef, child.defId))
+            return true;
+    }
+
+    return false;
+}
+
+bool InventoryMgr::extractFromExaminedItem(
+    const ItemDatabase& database,
+    InventoryItem& outExtracted)
+{
+    if (!canExtractFromExaminedItem(database))
+        return false;
+
+    InventoryItem* parent = findMutableItem(selectedItemId);
+    if (parent == nullptr)
+        return false;
+
+    const ItemDef* parentDef = database.getDef(parent->id);
+    if (parentDef == nullptr)
+        return false;
+
+    for (std::vector<ItemInstance>::iterator it = parent->instance.contents.begin();
+         it != parent->instance.contents.end();
+         ++it)
+    {
+        if (it->defId.empty() || hasItem(it->defId))
+            continue;
+        if (!database.isExtractableContainerContent(*parentDef, it->defId))
+            continue;
+
+        ItemInstance extractedInstance = *it;
+        parent->instance.contents.erase(it);
+
+        const Texture2D parentIcon = parent->icon;
+        const Texture2D parentExamineImage = parent->examineImage;
+        InventoryItem refreshedParent = database.buildInventoryItem(parent->instance);
+        refreshedParent.icon = parentIcon;
+        refreshedParent.examineImage = parentExamineImage;
+        *parent = refreshedParent;
+
+        outExtracted = database.buildInventoryItem(extractedInstance);
+        return true;
+    }
+
+    return false;
+}
+
+void InventoryMgr::refreshItemFromDatabase(const std::string& id)
+{
+    if (itemDatabase == nullptr)
+        return;
+
+    InventoryItem* item = findMutableItem(id);
+    if (item == nullptr)
+        return;
+
+    const Texture2D icon = item->icon;
+    const Texture2D examineImage = item->examineImage;
+    InventoryItem refreshed = itemDatabase->buildInventoryItem(item->instance);
+    refreshed.icon = icon;
+    refreshed.examineImage = examineImage;
+    *item = refreshed;
 }
 
 int InventoryMgr::findItemIndex(const std::string& id) const
@@ -676,6 +770,30 @@ void InventoryMgr::restoreFromSnapshots(const std::vector<InventoryItem>& savedI
 
     if (items.empty())
         createDefaultItems();
+
+    if (itemDatabase != nullptr)
+    {
+        InventoryItem* wallet = findMutableItem("wallet");
+        if (wallet != nullptr && !hasItem("wallet_slip"))
+        {
+            bool hasSlipInWallet = false;
+            for (const ItemInstance& child : wallet->instance.contents)
+            {
+                if (child.defId == "wallet_slip")
+                {
+                    hasSlipInWallet = true;
+                    break;
+                }
+            }
+
+            if (!hasSlipInWallet)
+            {
+                ItemInstance slip = itemDatabase->createInstance("wallet_slip");
+                wallet->instance.contents.push_back(slip);
+                refreshItemFromDatabase("wallet");
+            }
+        }
+    }
 
     for (const InventoryItem& savedItem : savedItems)
     {

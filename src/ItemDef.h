@@ -53,6 +53,8 @@ struct ItemContainerContentDef
     int quantity = 1;
     bool hidden = false;
     std::string revealFlag;
+    bool extractable = true;
+    std::string examineNote;
 };
 
 struct ItemContainerDef

@@ -99,6 +99,8 @@ class Location
         const ItemDefOverrides& overrides = {}) const;
     void playItemExamineAudio(const InventoryItem& item);
     void clearItemExamineAudio();
+    bool canTakeFromExaminedItem() const;
+    void takeFromExaminedItem();
     void playDialogAudio(const SpeakResult& result);
     void applyStatusEffects(const std::vector<StatusEffect>& effects);
     void handleNarrativeChoiceInput();

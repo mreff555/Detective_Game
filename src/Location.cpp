@@ -14,6 +14,8 @@ const float Location::kScrollbarWidth = 16.0f;
 
 namespace
 {
+    const float kDialogHeightShareWhenSidePanelOpen = 2.0f / 3.0f;
+    const float kSidePanelHeightShare = 1.0f / 3.0f;
     const Color kPaperShadow = {118, 98, 68, 255};
     const Color kPaperEdge = {108, 88, 58, 255};
     const Color kRuleLine = {132, 148, 168, 85};
@@ -986,6 +988,26 @@ namespace
         audioManager.clearItemExamineAudio();
     }
 
+    bool Location::canTakeFromExaminedItem() const
+    {
+        return inventoryMgr.isOpen()
+            && inventoryMgr.isExaminingItem()
+            && inventoryMgr.canExtractFromExaminedItem(itemDatabase);
+    }
+
+    void Location::takeFromExaminedItem()
+    {
+        InventoryItem extracted;
+        if (!inventoryMgr.extractFromExaminedItem(itemDatabase, extracted))
+            return;
+
+        if (extracted.id.empty())
+            return;
+
+        inventoryMgr.addItem(extracted);
+        evaluateMilestones();
+    }
+
     void Location::addTakenItemToInventory(const TakeableItemDef& taken)
     {
         if (inventoryMgr.hasItem(taken.id))
@@ -1054,7 +1076,9 @@ namespace
 
     Rectangle Location::getDialogBounds() const
     {
-        const float height = isSidePanelOpen() ? fullDialogHeight * 0.5f : fullDialogHeight;
+        const float height = isSidePanelOpen()
+            ? fullDialogHeight * kDialogHeightShareWhenSidePanelOpen
+            : fullDialogHeight;
         return { textBox.x, textBox.y, textBox.width, height };
     }
 
@@ -1065,7 +1089,7 @@ namespace
             textBox.x,
             dialog.y + dialog.height,
             textBox.width,
-            fullDialogHeight * 0.5f
+            fullDialogHeight * kSidePanelHeightShare
         };
     }
 
@@ -1897,7 +1921,11 @@ namespace
             movement.backward = false;
 
             if (inventoryMgr.isExaminingItem())
+            {
                 movement.backward = true;
+                if (canTakeFromExaminedItem())
+                    actions.take = true;
+            }
             else if (inventoryMgr.canExamineSelectedItem())
                 actions.examine = true;
         }
@@ -2450,7 +2478,12 @@ namespace
 
         if (buttonMgr.consumeTakeButtonClick())
         {
-            if (takeMgr.isOpen())
+            if (canTakeFromExaminedItem())
+            {
+                takeFromExaminedItem();
+                updateActionAvailability();
+            }
+            else if (takeMgr.isOpen())
                 takeMgr.close();
             else
             {
@@ -2494,7 +2527,6 @@ namespace
                 inventoryExamineScrollY = 0.0f;
                 updateActionAvailability();
             }
-
             if (inventoryMgr.isExaminingItem())
                 handleInventoryExamineScrollInput();
             else if (notebookPage == NotebookPage::Todo)
