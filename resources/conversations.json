@@ -290,5 +290,15 @@
         "text": "The woman in blue listens while you tell her about the hanging tree marker, the charcoal ring, the stakes, the silk in the ice house. She does not interrupt.\n\nWhen you finish, she nods once, as though a column in her ledger has finally balanced.\n\n\"You went up the path,\" she says. It is not a question. \"You always do, and you always come back with that look - like the mountain showed you a face you refused to wear.\"\n\nHer voice drops beneath the piano.\n\n\"They hung the wrong man. He was still breathing when they cut him down.\" She holds your gaze without blinking. \"He still is.\"\n\nThen the room reclaims her. She leans over the rail and laughs for a patron below as though nothing happened, leaving you with the words like a splinter under the nail."
       }
     ]
+  },
+  "ridge_haberdashery": {
+    "speakPhases": [
+      {
+        "id": "shopkeeper",
+        "type": "once",
+        "resetOnSceneEnter": false,
+        "text": "You step to the counter. The gentleman straightens from whatever inventory he was tending and offers a courteous nod - the practiced greeting of a tradesman who believes courtesy is part of the merchandise.\n\n\"Good afternoon,\" he says. \"Welcome to the Ridge Haberdashery. If you are looking for cloth, I can show you the rolls. If it is tailoring you require, I will need your measure.\"\n\nHis smile is genuine enough, but his eyes give him away. He did not expect someone like you to walk through that door. Not hostile. Not unwelcoming. Simply surprised, as though a wolf had wandered into a dining room and politely asked for a napkin.\n\n\"Forgive me,\" he says, reading your silence. \"We do not see many strangers who come in for the quality of things. Most on the High Line buy ready-made or go without.\" He folds his hands on the counter. \"Still. You are welcome here. What may I do for you?\""
+      }
+    ]
   }
 }
