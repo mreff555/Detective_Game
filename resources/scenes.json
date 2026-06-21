@@ -620,6 +620,41 @@
       "useDetails": "",
       "movement": {
         "backward": true,
+        "forward": true,
+        "left": false,
+        "right": false,
+        "up": false,
+        "down": false
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "backward": "saloon_service_hall",
+        "forward": "saloon_owner_office_desk"
+      },
+      "audio": {
+        "music": {
+          "path": "resources/audio/music/cabin_theme.mp3",
+          "volume": 0.18,
+          "fade_in": 3.0,
+          "fade_out": 2.5,
+          "loop": true
+        }
+      }
+    },
+    "saloon_owner_office_desk": {
+      "start": false,
+      "image": "resources/images/saloon_owner_office_desk.png",
+      "description": "You settle into the walnut swivel chair and let it carry you into the owner's posture. Leather creaks under your weight, brass studs cold against your forearms. The ironwood desk rises before you like a barricade of carved patience. At center lies the open ledger, columns ruled in ink, appointments and figures written in a hand that does not apologize for precision. The Tiffany lamp throws warm orange across the pages, turning ruled lines into a grid you could follow if you had the right reason. From here the office is not a room to admire. It is a desk to read, and someone built it expecting that whoever sat here would know what to look for.",
+      "examineDetails": "You work the desk the way you would a suspect: surface first, then what is offered, then what is withheld.\n\nThe ledger stays open where you found it. Columns for dates, names, sums. The handwriting is steady, unhurried, the kind of penmanship men learn in counting houses and never unlearn. You read enough to know this is not a guest book. Appointments. Deliveries. Figures crossed out and rewritten in darker ink. Names abbreviated to initials. Nothing on the visible pages names the saloon outright, but the rhythm is payroll and procurement, not poetry.\n\nYou turn to the drawers.\n\nTop left: stationery, a blotter still damp at one corner, spare nibs in a small brass box, a sealed bottle of iron-gall ink. Ordinary clerk's tools kept with care.\n\nTop right: correspondence tied in neat bundles with twine, receipts from Denver and Leadville, a railroad timetable folded until the creases have gone soft. Nothing that should not be in a business desk. Nothing that explains why it sits behind a saloon kitchen.\n\nCenter left: a shallow tray of calling cards, most of them blank at the back, and a ledger of household accounts so domestic it feels like camouflage. Grocer. Livery. Ice delivery.\n\nCenter right: empty except for a felt liner and the ghost of something rectangular that used to live there. The dust outline is recent.\n\nLower left: maps, folded and refolded along the same lines until the paper has gone thin at the corners. Ridge surveys. Timber claims. One map has the saloon marked in pencil so light you almost miss it.\n\nLower right: locked. A small brass lock set flush into the ironwood face, keyhole dark, mechanism silent when you test the pull. The drawer does not give a fraction. No key hangs on a nail. No ring in the inkwell tray. Whoever works here keeps one compartment for truths that do not belong in an open ledger.\n\nYou close each drawer you opened and leave the locked one for what it is: a question with a key you do not yet have.",
+      "speakDetails": "",
+      "useDetails": "",
+      "movement": {
+        "backward": true,
         "forward": false,
         "left": false,
         "right": false,
@@ -633,7 +668,7 @@
         "use": false
       },
       "exits": {
-        "backward": "saloon_service_hall"
+        "backward": "saloon_owner_office"
       },
       "audio": {
         "music": {
