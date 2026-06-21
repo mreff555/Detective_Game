@@ -192,9 +192,13 @@ bool ConversationManager::isScriptedChoiceConsumed(
 
 void ConversationManager::markScriptedChoiceConsumed(
     const std::string& phaseId,
-    const std::string& choiceId)
+    const std::string& choiceId,
+    bool persist)
 {
-    consumedScriptedChoiceIds.insert(scriptedChoiceKey(phaseId, choiceId));
+    const std::string key = scriptedChoiceKey(phaseId, choiceId);
+    consumedScriptedChoiceIds.insert(key);
+    if (persist)
+        persistedConsumedScriptedChoiceIds.insert(key);
 }
 
 void ConversationManager::clearConsumedScriptedChoices(const std::string& phaseId)
@@ -203,7 +207,12 @@ void ConversationManager::clearConsumedScriptedChoices(const std::string& phaseI
     for (auto it = consumedScriptedChoiceIds.begin(); it != consumedScriptedChoiceIds.end();)
     {
         if (it->compare(0, prefix.size(), prefix) == 0)
-            it = consumedScriptedChoiceIds.erase(it);
+        {
+            if (persistedConsumedScriptedChoiceIds.count(*it) > 0)
+                ++it;
+            else
+                it = consumedScriptedChoiceIds.erase(it);
+        }
         else
             ++it;
     }
@@ -457,11 +466,18 @@ SpeakResult ConversationManager::handleSpeak(
 
     if (phase->type == ConversationPhaseType::Scripted)
     {
+        const std::vector<ConversationChoiceDef> available = remainingTopLevelChoices(*phase);
+        if (available.empty())
+        {
+            markPhaseComplete(phase->id);
+            return SpeakResult();
+        }
+
         SpeakResult result;
         result.action = SpeakResult::Action::ShowChoices;
         result.narrative = phase->intro;
         result.sketchPath = phase->sketchPath;
-        result.choices = phase->choices;
+        result.choices = available;
         applyTtsFields(
             result,
             phase->tts,
@@ -472,7 +488,7 @@ SpeakResult ConversationManager::handleSpeak(
         appendDialogAudioTrack(result, phase->introAudio);
         awaitingChoice = true;
         activeScriptPhaseId = phase->id;
-        pendingChoices = phase->choices;
+        pendingChoices = available;
         return result;
     }
 
@@ -488,6 +504,41 @@ SpeakResult ConversationManager::resolveScriptedChoice(
     const ConversationChoiceDef& choice,
     bool fromTopLevel)
 {
+    if (choice.resumeTopLevel)
+    {
+        if (fromTopLevel && choice.consumeOnSelect)
+            markScriptedChoiceConsumed(phase.id, choice.id, choice.persistConsumed);
+
+        SpeakResult result = resumeScriptedPhase(
+            phase,
+            choice.response,
+            choice.status,
+            choice.responseAudio);
+        applyTtsFields(
+            result,
+            choice.tts,
+            choice.ttsText,
+            choice.ttsVoice,
+            choice.ttsAudio,
+            choice.response);
+        applyTtsAfterFields(
+            result,
+            choice.ttsAfter,
+            choice.ttsAfterText,
+            choice.ttsAfterVoice,
+            choice.ttsAfterAudio,
+            "");
+
+        if (result.action == SpeakResult::Action::ShowChoices)
+        {
+            awaitingChoice = true;
+            activeScriptPhaseId = phase.id;
+            pendingChoices = result.choices;
+        }
+
+        return result;
+    }
+
     if (!choice.followUpChoices.empty())
     {
         const std::vector<ConversationChoiceDef> nextChoices = choice.followUpChoices;
@@ -524,7 +575,11 @@ SpeakResult ConversationManager::resolveScriptedChoice(
 
     const std::string consumedChoiceId = fromTopLevel ? choice.id : activeParentChoiceId;
     if (!consumedChoiceId.empty())
-        markScriptedChoiceConsumed(phase.id, consumedChoiceId);
+    {
+        const ConversationChoiceDef* consumedChoice = findTopLevelChoiceForId(phase, consumedChoiceId);
+        const bool persist = consumedChoice != nullptr && consumedChoice->persistConsumed;
+        markScriptedChoiceConsumed(phase.id, consumedChoiceId, persist);
+    }
 
     activeParentChoiceId.clear();
     pendingChoices.clear();
@@ -629,6 +684,7 @@ void ConversationManager::exportPersistState(ConversationPersistState& out) cons
     out.completedPhaseIds = completedPhaseIds;
     out.completedRandomLineIds = completedRandomLineIds;
     out.consumedScriptedChoiceIds = consumedScriptedChoiceIds;
+    out.persistedConsumedScriptedChoiceIds = persistedConsumedScriptedChoiceIds;
 }
 
 void ConversationManager::importPersistState(const ConversationPersistState& state)
@@ -636,6 +692,7 @@ void ConversationManager::importPersistState(const ConversationPersistState& sta
     completedPhaseIds = state.completedPhaseIds;
     completedRandomLineIds = state.completedRandomLineIds;
     consumedScriptedChoiceIds = state.consumedScriptedChoiceIds;
+    persistedConsumedScriptedChoiceIds = state.persistedConsumedScriptedChoiceIds;
     awaitingChoice = false;
     combatAttackAllowed = false;
     combatEncounterId.clear();

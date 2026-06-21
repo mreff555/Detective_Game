@@ -26,6 +26,10 @@ def main() -> None:
                     "in the manner of a man who sells refinement at altitude.\n\n"
                     "\"Good day, sir. Is there anything I can help you find?\""
                 ),
+                "resumeIntro": (
+                    "\"Now then, sir,\" he says, settling his hands on the counter. "
+                    "\"What else may I help you find?\""
+                ),
                 "choices": [
                     {
                         "id": "what_on_offer",
@@ -56,6 +60,10 @@ def main() -> None:
                             "Everything here is chosen so a man need not descend to Graysmill "
                             "merely to look as though he belongs in a room with money.\""
                         ),
+                        "consumeOnSelect": True,
+                        "persistConsumed": True,
+                        "resumeTopLevel": True,
+                        "closePhase": False,
                     },
                     {
                         "id": "just_browsing",

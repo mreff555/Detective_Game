@@ -343,7 +343,9 @@ bool writeSaveFile(const std::string& path, const SavedGameState& state)
     root["conversation"] = {
         {"completedPhaseIds", setToJsonArray(state.conversation.completedPhaseIds)},
         {"completedRandomLineIds", setToJsonArray(state.conversation.completedRandomLineIds)},
-        {"consumedScriptedChoiceIds", setToJsonArray(state.conversation.consumedScriptedChoiceIds)}
+        {"consumedScriptedChoiceIds", setToJsonArray(state.conversation.consumedScriptedChoiceIds)},
+        {"persistedConsumedScriptedChoiceIds",
+            setToJsonArray(state.conversation.persistedConsumedScriptedChoiceIds)}
     };
     root["milestones"] = milestonesToJson(state.milestones);
 
@@ -405,6 +407,9 @@ bool readSaveFile(const std::string& path, SavedGameState& state)
     jsonArrayToSet(
         conversation.value("consumedScriptedChoiceIds", nlohmann::json::array()),
         state.conversation.consumedScriptedChoiceIds);
+    jsonArrayToSet(
+        conversation.value("persistedConsumedScriptedChoiceIds", nlohmann::json::array()),
+        state.conversation.persistedConsumedScriptedChoiceIds);
     milestonesFromJson(root.value("milestones", nlohmann::json::object()), state.milestones);
 
     return !state.sceneId.empty();

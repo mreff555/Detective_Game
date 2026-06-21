@@ -56,6 +56,9 @@ struct ConversationChoiceDef
     GrantedInventoryItemDef grantItem;
     float requiresMoney = 0.0f;
     bool closePhase = true;
+    bool consumeOnSelect = false;
+    bool persistConsumed = false;
+    bool resumeTopLevel = false;
     std::vector<ConversationChoiceDef> followUpChoices;
 
     bool isAvailable(float walletCash) const

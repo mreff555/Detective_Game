@@ -298,6 +298,7 @@
         "type": "scripted",
         "resetOnSceneEnter": true,
         "intro": "The gentleman behind the counter sets down his pen and regards you with practiced courtesy. His vest is pressed, his collar crisp, his hands clean in the manner of a man who sells refinement at altitude.\n\n\"Good day, sir. Is there anything I can help you find?\"",
+        "resumeIntro": "\"Now then, sir,\" he says, settling his hands on the counter. \"What else may I help you find?\"",
         "choices": [
           {
             "id": "what_on_offer",
@@ -706,7 +707,11 @@
           {
             "id": "compliment_store",
             "label": "This is an impressive store.",
-            "response": "You let your gaze travel the shelves, the bolt rolls, the glass cases, the iron rack of ready-made coats, taking it in the way you would a room that has been assembled with intention.\n\n\"This is an impressive store,\" you say.\n\nA modest smile crosses his face, pleased but not surprised\u2014he has heard the compliment before and still believes it.\n\n\"You are kind to say so, sir.\" He rests his fingertips on the counter. \"I trained on Savile Row before the mountains called. My uncle kept a dry goods post on this ridge when the High Line was only timber camps and prayer. I came up to visit, saw what men lacked at altitude, and stayed. That was eighteen ninety-one. Everything here is chosen so a man need not descend to Graysmill merely to look as though he belongs in a room with money.\""
+            "response": "You let your gaze travel the shelves, the bolt rolls, the glass cases, the iron rack of ready-made coats, taking it in the way you would a room that has been assembled with intention.\n\n\"This is an impressive store,\" you say.\n\nA modest smile crosses his face, pleased but not surprised\u2014he has heard the compliment before and still believes it.\n\n\"You are kind to say so, sir.\" He rests his fingertips on the counter. \"I trained on Savile Row before the mountains called. My uncle kept a dry goods post on this ridge when the High Line was only timber camps and prayer. I came up to visit, saw what men lacked at altitude, and stayed. That was eighteen ninety-one. Everything here is chosen so a man need not descend to Graysmill merely to look as though he belongs in a room with money.\"",
+            "consumeOnSelect": true,
+            "persistConsumed": true,
+            "resumeTopLevel": true,
+            "closePhase": false
           },
           {
             "id": "just_browsing",

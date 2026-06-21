@@ -160,6 +160,9 @@ bool parseConversationChoice(const nlohmann::json& choice, ConversationChoiceDef
 
     out.requiresMoney = choice.value("requiresMoney", 0.0f);
     out.closePhase = choice.value("closePhase", true);
+    out.consumeOnSelect = choice.value("consumeOnSelect", false);
+    out.persistConsumed = choice.value("persistConsumed", false);
+    out.resumeTopLevel = choice.value("resumeTopLevel", false);
 
     out.followUpChoices.clear();
     const nlohmann::json& followUps = choice.value("choices", nlohmann::json::array());

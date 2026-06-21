@@ -54,7 +54,10 @@ class ConversationManager
     std::string randomPoolKey(const std::string& sceneId, const ConversationPhase& phase) const;
     std::string scriptedChoiceKey(const std::string& phaseId, const std::string& choiceId) const;
     bool isScriptedChoiceConsumed(const std::string& phaseId, const std::string& choiceId) const;
-    void markScriptedChoiceConsumed(const std::string& phaseId, const std::string& choiceId);
+    void markScriptedChoiceConsumed(
+        const std::string& phaseId,
+        const std::string& choiceId,
+        bool persist = false);
     void clearConsumedScriptedChoices(const std::string& phaseId);
     std::vector<ConversationChoiceDef> remainingTopLevelChoices(const ConversationPhase& phase) const;
     bool allTopLevelChoicesConsumed(const ConversationPhase& phase) const;
@@ -79,6 +82,7 @@ class ConversationManager
     std::set<std::string> completedPhaseIds;
     std::set<std::string> completedRandomLineIds;
     std::set<std::string> consumedScriptedChoiceIds;
+    std::set<std::string> persistedConsumedScriptedChoiceIds;
     std::map<std::string, int> lastRandomLineIndex;
     bool awaitingChoice = false;
     bool combatAttackAllowed = false;
