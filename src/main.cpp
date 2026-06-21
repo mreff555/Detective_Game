@@ -1,5 +1,6 @@
 #include <AudioManager.h>
 #include <GameConfig.h>
+#include <ItemCombinationDatabase.h>
 #include <ItemDatabase.h>
 #include <Location.h>
 #include <MilestoneDatabase.h>
@@ -176,6 +177,13 @@ int main(int argc, char* argv[])
     if (!itemsLoaded)
         TraceLog(LOG_WARNING, "Failed to load items from resources/items.json");
 
+    ItemCombinationDatabase itemCombinationDatabase;
+    const bool combinationsLoaded =
+        itemCombinationDatabase.load("resources/item_combinations.json") ||
+        itemCombinationDatabase.load("../resources/item_combinations.json");
+    if (!combinationsLoaded)
+        TraceLog(LOG_WARNING, "Failed to load item combinations from resources/item_combinations.json");
+
     std::string startSceneId;
     LocationStruct locationStruct;
     if (!sceneDatabase.loadStartScene(locationStruct, startSceneId))
@@ -191,6 +199,7 @@ int main(int argc, char* argv[])
         screenSize,
         sceneDatabase,
         itemDatabase,
+        itemCombinationDatabase,
         milestoneDatabase,
         audioManager,
         gameConfig,

@@ -2,6 +2,7 @@
 #define INVENTORY_MGR_H
 
 #include <InventoryItem.h>
+#include <ItemCombinationDatabase.h>
 #include <ItemDatabase.h>
 #include <raylib.h>
 #include <string>
@@ -27,6 +28,7 @@ class InventoryMgr
     void setFont(Font font);
     void setAssetRoots(const std::string& primaryAssetRoot, const std::string& fallbackAssetRoot);
     void setItemDatabase(const ItemDatabase* database);
+    void setItemCombinationDatabase(const ItemCombinationDatabase* database);
     bool ensureAssetsLoaded();
     bool ensureIconAssetsLoaded();
     void reloadItemIconsIfNeeded();
@@ -73,6 +75,10 @@ class InventoryMgr
     void drawCloseButton() const;
     void drawItemGrid() const;
     void handleItemGridInput();
+    void handleItemCombineInput();
+    bool applyItemCombination(const ItemCombineApplication& application);
+    void drawDragGhost() const;
+    int findItemSlotAtMouse() const;
     void handleCloseButtonInput();
     void handleInventoryScrollInput();
     void drawInventoryScrollbar() const;
@@ -98,6 +104,12 @@ class InventoryMgr
     std::string primaryAssetRoot;
     std::string fallbackAssetRoot;
     const ItemDatabase* itemDatabase = nullptr;
+    const ItemCombinationDatabase* itemCombinationDatabase = nullptr;
+
+    std::string dragItemId;
+    std::string pendingPressItemId;
+    Vector2 pressStartPos{};
+    bool isDraggingItem = false;
 
     float inventoryScrollY = 0.0f;
     mutable float inventoryContentHeight = 0.0f;

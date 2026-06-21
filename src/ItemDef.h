@@ -77,6 +77,8 @@ struct ItemDef
     std::string id;
     std::string name;
     std::string description;
+    std::string alternateDescription;
+    std::string alternateDescriptionFlag;
     float weightLb = 0.0f;
     ItemVisualDef visuals;
     ItemIconDef icons;

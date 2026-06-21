@@ -18,7 +18,9 @@ namespace
     const Color kSlotFill = {40, 38, 50, 255};
     const Color kSlotHover = {54, 50, 64, 255};
     const Color kSlotSelected = {62, 52, 34, 255};
+    const Color kSlotCombineTarget = {72, 58, 36, 255};
     const Color kCloseHover = {210, 178, 108, 255};
+    const float kDragStartThreshold = 8.0f;
 
     bool itemNeedsExamineImage(const InventoryItem& item)
     {
@@ -67,6 +69,11 @@ void InventoryMgr::setItemDatabase(const ItemDatabase* database)
     itemDatabase = database;
     if (items.empty())
         createDefaultItems();
+}
+
+void InventoryMgr::setItemCombinationDatabase(const ItemCombinationDatabase* database)
+{
+    itemCombinationDatabase = database;
 }
 
 bool InventoryMgr::isItemIconReady(const InventoryItem& item) const
@@ -234,6 +241,9 @@ void InventoryMgr::open()
     viewState = InventoryViewState::ItemList;
     selectedItemId.clear();
     inventoryScrollY = 0.0f;
+    dragItemId.clear();
+    pendingPressItemId.clear();
+    isDraggingItem = false;
 }
 
 void InventoryMgr::close()
@@ -241,6 +251,9 @@ void InventoryMgr::close()
     viewState = InventoryViewState::Closed;
     selectedItemId.clear();
     inventoryScrollY = 0.0f;
+    dragItemId.clear();
+    pendingPressItemId.clear();
+    isDraggingItem = false;
 }
 
 void InventoryMgr::returnToItemList()
@@ -407,24 +420,176 @@ void InventoryMgr::handleCloseButtonInput()
         close();
 }
 
+int InventoryMgr::findItemSlotAtMouse() const
+{
+    const Vector2 mousePos = GetMousePosition();
+    for (size_t i = 0; i < items.size() && i < itemSlotBounds.size(); ++i)
+    {
+        Rectangle slot = itemSlotBounds[i];
+        slot.y -= inventoryScrollY;
+        if (CheckCollisionPointRec(mousePos, slot))
+            return (int)i;
+    }
+    return -1;
+}
+
 void InventoryMgr::handleItemGridInput()
 {
     if (viewState != InventoryViewState::ItemList)
         return;
 
     const Vector2 mousePos = GetMousePosition();
-    for (size_t i = 0; i < items.size() && i < itemSlotBounds.size(); ++i)
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        Rectangle slot = itemSlotBounds[i];
-        slot.y -= inventoryScrollY;
-
-        if (!CheckCollisionPointRec(mousePos, slot) || !IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            continue;
-
-        if (i < items.size())
-            selectedItemId = items[i].id;
+        const int slotIndex = findItemSlotAtMouse();
+        if (slotIndex >= 0)
+        {
+            pendingPressItemId = items[(size_t)slotIndex].id;
+            pressStartPos = mousePos;
+        }
         return;
     }
+
+    if (!pendingPressItemId.empty() && IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+    {
+        const float dx = mousePos.x - pressStartPos.x;
+        const float dy = mousePos.y - pressStartPos.y;
+        const float distanceSq = dx * dx + dy * dy;
+        if (!isDraggingItem && distanceSq >= kDragStartThreshold * kDragStartThreshold)
+        {
+            isDraggingItem = true;
+            dragItemId = pendingPressItemId;
+            selectedItemId = dragItemId;
+        }
+    }
+}
+
+void InventoryMgr::handleItemCombineInput()
+{
+    if (viewState != InventoryViewState::ItemList)
+        return;
+
+    if (!IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+        return;
+
+    if (isDraggingItem && !dragItemId.empty())
+    {
+        const int targetSlotIndex = findItemSlotAtMouse();
+        if (targetSlotIndex >= 0)
+        {
+            const std::string& targetItemId = items[(size_t)targetSlotIndex].id;
+            if (!targetItemId.empty() && targetItemId != dragItemId)
+            {
+                const InventoryItem* sourceItem = findItem(dragItemId);
+                const InventoryItem* targetItem = findItem(targetItemId);
+                if (sourceItem != nullptr
+                    && targetItem != nullptr
+                    && itemCombinationDatabase != nullptr
+                    && itemDatabase != nullptr)
+                {
+                    ItemCombineApplication application;
+                    if (itemCombinationDatabase->tryCombine(
+                            dragItemId,
+                            targetItemId,
+                            sourceItem->instance,
+                            targetItem->instance,
+                            application)
+                        && applyItemCombination(application))
+                    {
+                        selectedItemId.clear();
+                        for (const std::string& grantId : application.grantItemIds)
+                        {
+                            if (hasItem(grantId))
+                                selectedItemId = grantId;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else if (!pendingPressItemId.empty())
+    {
+        selectedItemId = pendingPressItemId;
+    }
+
+    dragItemId.clear();
+    pendingPressItemId.clear();
+    isDraggingItem = false;
+}
+
+bool InventoryMgr::applyItemCombination(const ItemCombineApplication& application)
+{
+    if (!application.success || itemDatabase == nullptr)
+        return false;
+
+    for (const std::string& itemId : application.removeItemIds)
+    {
+        if (!hasItem(itemId))
+            return false;
+    }
+
+    for (const std::pair<std::string, std::string>& flagEntry : application.addFlags)
+    {
+        const InventoryItem* item = findItem(flagEntry.first);
+        if (item == nullptr)
+            return false;
+        (void)item;
+    }
+
+    for (const std::string& grantId : application.grantItemIds)
+    {
+        if (grantId.empty() || hasItem(grantId) || !itemDatabase->hasDef(grantId))
+            return false;
+    }
+
+    for (const std::string& itemId : application.removeItemIds)
+        removeItem(itemId);
+
+    for (const std::pair<std::string, std::string>& flagEntry : application.addFlags)
+    {
+        InventoryItem* item = findMutableItem(flagEntry.first);
+        if (item == nullptr)
+            return false;
+
+        if (!item->instance.hasFlag(flagEntry.second))
+            item->instance.activeFlags.push_back(flagEntry.second);
+
+        const std::string previousIconPath = item->iconPath;
+        const std::string previousExaminePath = item->examineImagePath;
+        const Texture2D previousIcon = item->icon;
+        const Texture2D previousExamineImage = item->examineImage;
+
+        InventoryItem refreshed = itemDatabase->buildInventoryItem(item->instance);
+        refreshed.icon = previousIcon;
+        refreshed.examineImage = previousExamineImage;
+        *item = refreshed;
+
+        if (item->iconPath != previousIconPath)
+        {
+            if (item->icon.id != 0)
+                UnloadTexture(item->icon);
+            item->icon = Texture2D{};
+            loadItemIcon(*item);
+        }
+
+        if (item->examineImagePath != previousExaminePath)
+        {
+            if (item->examineImage.id != 0)
+                UnloadTexture(item->examineImage);
+            item->examineImage = Texture2D{};
+            loadItemExamineImage(*item);
+        }
+    }
+
+    for (const std::string& grantId : application.grantItemIds)
+    {
+        ItemInstance instance = itemDatabase->createInstance(grantId);
+        InventoryItem granted = itemDatabase->buildInventoryItem(instance);
+        addItem(granted);
+    }
+
+    return true;
 }
 
 void InventoryMgr::handleInventoryScrollInput()
@@ -463,7 +628,7 @@ void InventoryMgr::handleInventoryScrollInput()
 
     const Vector2 mousePos = GetMousePosition();
 
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !isDraggingItem)
     {
         if (CheckCollisionPointRec(mousePos, scrollThumb))
         {
@@ -491,7 +656,7 @@ void InventoryMgr::handleInventoryScrollInput()
         visibleHeight
     };
 
-    if (CheckCollisionPointRec(mousePos, scrollArea))
+    if (!isDraggingItem && CheckCollisionPointRec(mousePos, scrollArea))
         inventoryScrollY -= GetMouseWheelMove() * lineHeight * 2.0f;
 
     inventoryScrollY = std::max(0.0f, std::min(inventoryScrollY, maxScroll));
@@ -535,6 +700,7 @@ void InventoryMgr::update()
     layoutItemSlots();
     handleCloseButtonInput();
     handleItemGridInput();
+    handleItemCombineInput();
     handleInventoryScrollInput();
 }
 
@@ -585,11 +751,17 @@ void InventoryMgr::drawItemGrid() const
 
         const bool selected = items[i].id == selectedItemId;
         const bool hovered = CheckCollisionPointRec(GetMousePosition(), slot);
-        const Color fill = selected ? kSlotSelected : (hovered ? kSlotHover : kSlotFill);
+        const bool combineTarget = isDraggingItem
+            && !dragItemId.empty()
+            && items[i].id != dragItemId
+            && hovered;
+        const Color fill = combineTarget
+            ? kSlotCombineTarget
+            : (selected ? kSlotSelected : (hovered ? kSlotHover : kSlotFill));
 
         DrawRectangleRounded(slot, 0.18f, 8, fill);
 
-        if (isItemIconReady(items[i]))
+        if (isItemIconReady(items[i]) && !(isDraggingItem && items[i].id == dragItemId))
         {
             const float iconPad = 10.0f;
             const Rectangle iconArea = {
@@ -621,6 +793,43 @@ void InventoryMgr::drawItemGrid() const
         const bool selected = items[i].id == selectedItemId;
         DrawRoundedBorder(slot, 0.18f, 8, 2.0f, selected ? kPanelBorder : kPanelAccent);
     }
+}
+
+void InventoryMgr::drawDragGhost() const
+{
+    if (!isDraggingItem || dragItemId.empty())
+        return;
+
+    const InventoryItem* item = findItem(dragItemId);
+    if (item == nullptr || !isItemIconReady(*item))
+        return;
+
+    const Vector2 mousePos = GetMousePosition();
+    const float ghostSize = kItemSlotSize * 0.72f;
+    const Rectangle ghostArea = {
+        mousePos.x - ghostSize * 0.5f,
+        mousePos.y - ghostSize * 0.5f,
+        ghostSize,
+        ghostSize
+    };
+
+    DrawRectangleRounded(ghostArea, 0.18f, 8, { 40, 38, 50, 210 });
+    DrawRoundedBorder(ghostArea, 0.18f, 8, 2.0f, kPanelBorder);
+
+    const float iconPad = 10.0f;
+    const Rectangle iconArea = {
+        ghostArea.x + iconPad,
+        ghostArea.y + iconPad,
+        ghostArea.width - iconPad * 2.0f,
+        ghostArea.height - iconPad * 2.0f
+    };
+    DrawTexturePro(
+        item->icon,
+        { 0.0f, 0.0f, (float)item->icon.width, (float)item->icon.height },
+        iconArea,
+        { 0.0f, 0.0f },
+        0.0f,
+        { 255, 255, 255, 220 });
 }
 
 void InventoryMgr::drawInventoryScrollbar() const
@@ -679,6 +888,7 @@ void InventoryMgr::draw() const
 
     drawCloseButton();
     drawItemGrid();
+    drawDragGhost();
     drawInventoryScrollbar();
 }
 

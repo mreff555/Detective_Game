@@ -7,6 +7,7 @@
 #include <MilestoneManager.h>
 #include <GameConfig.h>
 #include <InventoryMgr.h>
+#include <ItemCombinationDatabase.h>
 #include <ItemDatabase.h>
 #include <DropConfirmMgr.h>
 #include <PauseMenuMgr.h>
@@ -55,6 +56,7 @@ class Location
         Vector2 screenSize,
         SceneDatabase& sceneDatabase,
         const ItemDatabase& itemDatabase,
+        const ItemCombinationDatabase& itemCombinationDatabase,
         const MilestoneDatabase& milestoneDatabase,
         AudioManager& audioManager,
         GameConfig& gameConfig,
@@ -199,6 +201,7 @@ class Location
 
     SceneDatabase& sceneDatabase;
     const ItemDatabase& itemDatabase;
+    const ItemCombinationDatabase& itemCombinationDatabase;
     MilestoneManager milestoneMgr;
     AudioManager& audioManager;
     GameConfig& gameConfig;

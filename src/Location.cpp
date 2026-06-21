@@ -95,6 +95,7 @@ namespace
         Vector2 screenSize,
         SceneDatabase& sceneDatabase,
         const ItemDatabase& itemDatabase,
+        const ItemCombinationDatabase& itemCombinationDatabase,
         const MilestoneDatabase& milestoneDatabase,
         AudioManager& audioManager,
         GameConfig& gameConfig,
@@ -104,6 +105,7 @@ namespace
       screenHeight((int)screenSize.y),
       sceneDatabase(sceneDatabase),
       itemDatabase(itemDatabase),
+      itemCombinationDatabase(itemCombinationDatabase),
       milestoneMgr(milestoneDatabase),
       audioManager(audioManager),
       gameConfig(gameConfig),
@@ -146,6 +148,7 @@ namespace
         const std::string fallbackRoot = (assetRoot == ".") ? ".." : ".";
         inventoryMgr.setAssetRoots(assetRoot, fallbackRoot);
         inventoryMgr.setItemDatabase(&itemDatabase);
+        inventoryMgr.setItemCombinationDatabase(&itemCombinationDatabase);
         takeMgr.setAssetRoots(assetRoot, fallbackRoot);
         if (!inventoryMgr.ensureIconAssetsLoaded())
             TraceLog(LOG_WARNING, "Some inventory icons failed to load at startup");

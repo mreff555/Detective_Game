@@ -149,6 +149,12 @@ bool parseItemDef(const std::string& id, const nlohmann::json& json, ItemDef& ou
     out.id = id;
     out.name = json.value("name", "");
     out.description = json.value("description", json.value("examineText", ""));
+    out.alternateDescription = json.value(
+        "alternateDescription",
+        json.value("alternate_description", ""));
+    out.alternateDescriptionFlag = json.value(
+        "alternateDescriptionFlag",
+        json.value("alternate_description_flag", ""));
     out.weightLb = json.value("weightLb", json.value("weight_lb", 0.0f));
 
     const nlohmann::json& visuals = json.value("visuals", nlohmann::json::object());
@@ -339,6 +345,14 @@ std::string ItemDatabase::resolveExamineDescription(
     const ItemDefOverrides& overrides) const
 {
     std::string description = resolveDescription(def, overrides);
+    if (!overrides.description.empty())
+        return description;
+
+    if (!def.alternateDescription.empty()
+        && hasItemFlag(instance.activeFlags, def.alternateDescriptionFlag))
+    {
+        description = def.alternateDescription;
+    }
 
     if (!def.container.isContainer)
         return description;
