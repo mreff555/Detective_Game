@@ -111,14 +111,15 @@ ITEMS = [
         "id": "copper_wire_spool",
         "name": "Spool of Copper Wire",
         "price": 1.60,
-        "weightLb": 0.9,
+        "weightLb": 0.35,
         "icon": "copper_wire_spool_icon.png",
         "examine": "copper_wire_spool_examine.png",
         "description": (
-            "A spool of bare copper wire, twelve-gauge, wound tight on a turned wooden core. "
-            "The metal has the warm rose color of new copper and the faint oily sheen of stock "
-            "kept dry against mountain damp. Useful for repairs, grounding lanterns, and the "
-            "small improvisations men make when the valley is too far below."
+            "A small spool of bare eighteen-gauge copper wire wound tight on a turned wooden "
+            "core. The strand is fine as a pencil lead, rose-bright and springy, the sort of "
+            "wire used for lantern leads, telegraph repairs, and the small electrical "
+            "improvisations men make when the valley is too far below. The spool is light in "
+            "the hand and the coils sit close, kept dry against mountain damp."
         ),
     },
 ]
