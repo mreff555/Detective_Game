@@ -470,7 +470,7 @@
     "mountain_road_trade_row": {
       "start": false,
       "image": "resources/images/mountain_road_trade_row.png",
-      "description": "The road widens into the busiest stretch of the High Line. On your left, a general store spreads its porch with the unapologetic abundance of a place that expects winter to last: flour sacks, mason jars, rope coils, lantern oil, and tinned goods arranged on trestle tables as though the mountain might run out of patience before it runs out of stock. On your right, a blacksmith's forge breathes orange against the failing light. You catch the ring of hammer on iron, the roar when the bellows feed the coals, and the stamp and snort of a horse tied to the hitching rail. Smoke rises from both chimneys and mingles with the cold alpine air. Beyond the shops the road still runs forward, and below it the valley city keeps lighting its windows one by one.",
+      "description": "The road widens into the busiest stretch of the High Line. On your left, a general store spreads its porch with the unapologetic abundance of a place that expects winter to last: flour sacks, mason jars, rope coils, lantern oil, and tinned goods arranged on trestle tables as though the mountain might run out of patience before it runs out of stock. On your right, a blacksmith's forge breathes orange against the failing light, smoke rising from the chimney and mingling with the cold alpine air. A saddled horse waits at the hitching rail, ears forward, breath steaming. Beyond the shops the road still runs forward, and below it the valley city keeps lighting its windows one by one.",
       "examineDetails": "You read the row the way you would a ledger: who trades, who makes, what the ridge cannot do without.\n\nThe general store on your left is honest frontier carpentry dressed up with mercantile habit. Glass jars in the window catch the last sun. Sacks stamped for flour and sugar sit on the porch boards beside lantern crates and coils of hemp rope. A painted sign advertises the Mountain Trading Company, est. 1891, which is recent enough to mean someone expected this settlement to last. The goods are not tourist trinkets. lamp chimneys, nails, salt, coffee, the dry architecture of a community that feeds itself at altitude.\n\nAcross the road the blacksmith shop tells a harder story. The forge is open to the street, fire alive in the coals, an anvil set on a stout stump, horseshoes and iron stock hung along the wall. A wagon wheel leans in the dirt beside leather bellows hose still warm from use. The smith is not at his work, or not visible, but the shop is not idle: a saddled horse waits at the rail, ears forward, breath steaming in the cold. Tools are laid out in the order of a job interrupted, not abandoned.\n\nThe road between them is beaten flat by boots, hooves, and iron-rimmed wheels. Whoever keeps the High Line running buys here and shoes here. This is not the overlook yet, but it is the reason the overlook has a name worth carving in stone.",
       "useDetails": "",
       "movement": {
@@ -487,7 +487,7 @@
       },
       "exits": {
         "backward": "mountain_road",
-        "forward": "mountain_road_forward"
+        "forward": "mountain_road_supply_row"
       },
       "audio": {
         "ambient": [
@@ -504,33 +504,46 @@
             "fade_in": 1.5,
             "fade_out": 1.5,
             "loop": true
-          },
+          }
+        ]
+      }
+    },
+    "mountain_road_supply_row": {
+      "start": false,
+      "image": "resources/images/mountain_road_supply_row.png",
+      "description": "The road continues into another row of ridge commerce, the air still thin and cold, the valley still far below. On your left, a haberdashery hangs coats and hats from its porch rail as though dressing the mountain itself: bolts of wool and calico in the window, a dress form in a dark suit jacket, notions and ribbon tucked into every corner. On your right, a hardware store displays the harder language of altitude: axes, shovels, picks, coils of rope, lanterns, and mining supplies stacked with the frank utility of men who expect to break ground or break ice before spring. Lanterns burn on both porches. The road runs forward toward whatever crest the High Line keeps for last.",
+      "examineDetails": "You take the measure of the row the way you would a witness: what people buy when they live above the clouds.\n\nThe Ridge Haberdashery on your left is dry goods and notions dressed up as civilization. Hats on pegs, coats on the rail, folded cloth in the window glass still warm from the day's sun. A mannequin wears a suit jacket cut for a man who attends church in Graysmill on Sundays and keeps his timber deeds in an inside pocket. The stock is not frivolous. wool, canvas, boot hooks, sewing notions, the soft goods that keep a ridge settlement from looking like a camp.\n\nAlpine Hardware and Mining Supplies on your right speaks a different dialect. Axes with fresh edge grind, shovels, prospector's picks, rope in neat coils, lanterns filled and trimmed, crates of nails, barrels of lime. The sign claims est. 1893, which puts it in the same ambitious decade as the trading company down the road. Someone expected the High Line to dig, build, and stay.\n\nBetween the shops the road is worn pale by traffic. Haberdashery left, hardware right, valley below, crest ahead. The settlement is assembling itself in types: food, iron, cloth, tools.",
+      "useDetails": "",
+      "movement": {
+        "forward": true,
+        "backward": true,
+        "left": false,
+        "right": false
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "backward": "mountain_road_trade_row",
+        "forward": "mountain_road_forward"
+      },
+      "audio": {
+        "ambient": [
           {
-            "path": "resources/audio/ambient/blacksmith_hammer.mp3",
-            "volume": 0.34,
-            "fade_in": 2.5,
-            "fade_out": 2.0,
-            "loop": true
-          },
-          {
-            "path": "resources/audio/ambient/forge_fire.mp3",
-            "volume": 0.14,
-            "fade_in": 2.5,
-            "fade_out": 2.0,
-            "loop": true
-          },
-          {
-            "path": "resources/audio/ambient/forge_bellows.mp3",
-            "volume": 0.14,
+            "path": "resources/audio/ambient/town_ambient.mp3",
+            "volume": 0.35,
             "fade_in": 2.0,
             "fade_out": 2.0,
             "loop": true
           },
           {
-            "path": "resources/audio/ambient/horse_stable.mp3",
-            "volume": 0.16,
-            "fade_in": 2.5,
-            "fade_out": 2.0,
+            "path": "resources/audio/ambient/town_footsteps.mp3",
+            "volume": 0.25,
+            "fade_in": 1.5,
+            "fade_out": 1.5,
             "loop": true
           }
         ]
@@ -556,7 +569,7 @@
         "use": false
       },
       "exits": {
-        "backward": "mountain_road_trade_row"
+        "backward": "mountain_road_supply_row"
       },
       "audio": {
         "ambient": [
