@@ -2645,8 +2645,26 @@ namespace
             panelHeight
         };
 
-        DrawRectangleRounded(panel, 0.2f, 8, {28, 26, 34, 230});
-        DrawRoundedBorder(panel, 0.2f, 8, 2.0f, {168, 138, 72, 255});
+        const Color panelBorder = uiBackdrop.isActive()
+            ? uiBackdrop.panelBorderColor()
+            : Color{168, 138, 72, 255};
+        if (uiBackdrop.isActive())
+            uiBackdrop.drawPanel(panel, 0.2f, 8);
+        else
+            DrawRectangleRounded(panel, 0.2f, 8, {28, 26, 34, 230});
+        DrawRoundedBorder(panel, 0.2f, 8, 2.0f, panelBorder);
+
+        const Rectangle accentBar = {
+            panel.x + 8.0f,
+            panel.y + 8.0f,
+            panel.width - 16.0f,
+            3.0f
+        };
+        if (uiBackdrop.isActive())
+            uiBackdrop.drawAccentBar(accentBar);
+        else
+            DrawRectangleRounded(accentBar, 1.0f, 4, {96, 78, 48, 255});
+
         DrawTextEx(
             descriptionFont,
             transientMessage.c_str(),
