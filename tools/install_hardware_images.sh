@@ -21,7 +21,7 @@ install_icon 87.jpg mining_pick_icon.png
 install_icon 85.jpg shovel_icon.png
 install_icon 88.jpg garden_rake_icon.png
 install_icon 84.jpg hand_drill_icon.png
-install_icon 86.jpg blacksmith_hammer_icon.png
+install_icon 84.jpg blacksmith_hammer_icon.png
 install_icon 83.jpg mid_anvil_icon.png
 install_icon 82.jpg box_of_nails_icon.png
 install_icon 81.jpg copper_wire_spool_icon.png
@@ -30,7 +30,7 @@ install_examine 90.jpg mining_pick_examine.png
 install_examine 91.jpg shovel_examine.png
 install_examine 92.jpg garden_rake_examine.png
 install_examine 89.jpg hand_drill_examine.png
-install_examine 93.jpg blacksmith_hammer_examine.png
+install_examine 89.jpg blacksmith_hammer_examine.png
 install_examine 94.jpg mid_anvil_examine.png
 install_examine 95.jpg box_of_nails_examine.png
 install_examine 96.jpg copper_wire_spool_examine.png
