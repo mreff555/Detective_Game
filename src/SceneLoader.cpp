@@ -88,8 +88,10 @@ bool parseStatusEffect(const nlohmann::json& status, StatusEffect& out)
     out.key = status.value("key", "");
     out.health = status.value("health", 0.0f);
     out.energy = status.value("energy", 0.0f);
-    out.tenacity = status.value("tenacity", 0.0f);
+    out.resolve = status.value("resolve", status.value("tenacity", 0.0f));
     out.lucidity = status.value("lucidity", 0.0f);
+    out.charisma = status.value("charisma", 0.0f);
+    out.money = status.value("money", 0.0f);
     out.repeat = status.value("repeat", false);
     out.onZeroLucidity = status.value("onZeroLucidity", "");
     return true;
@@ -111,6 +113,27 @@ std::string formatChoiceLabel(const std::string& label)
     return "> " + label;
 }
 
+std::string parseOptionalAudioField(const nlohmann::json& object, const char* key)
+{
+    if (!object.contains(key) || !object[key].is_string())
+        return "";
+
+    return object.value(key, "");
+}
+
+bool parseGrantedInventoryItem(const nlohmann::json& item, GrantedInventoryItemDef& out)
+{
+    if (!item.is_object())
+        return true;
+
+    out.id = item.value("id", "");
+    out.name = item.value("name", "");
+    out.iconPath = item.value("icon", "");
+    out.examineImagePath = item.value("examineImage", "");
+    out.examineText = item.value("examineText", "");
+    return true;
+}
+
 bool parseConversationChoice(const nlohmann::json& choice, ConversationChoiceDef& out)
 {
     if (!choice.is_object())
@@ -119,8 +142,40 @@ bool parseConversationChoice(const nlohmann::json& choice, ConversationChoiceDef
     out.id = choice.value("id", "");
     out.label = formatChoiceLabel(choice.value("label", ""));
     out.response = choice.value("response", "");
+    out.responseAudio = parseOptionalAudioField(choice, "responseAudio");
+    out.sketchPath = choice.value("sketch", "");
+    out.tts = choice.value("tts", false);
+    out.ttsVoice = choice.value("ttsVoice", "");
+    out.ttsText = choice.value("ttsText", "");
+    out.ttsAudio = choice.value("ttsAudio", "");
+    out.ttsAfter = choice.value("ttsAfter", false);
+    out.ttsAfterVoice = choice.value("ttsAfterVoice", "");
+    out.ttsAfterText = choice.value("ttsAfterText", "");
+    out.ttsAfterAudio = choice.value("ttsAfterAudio", "");
     if (!parseStatusEffect(choice.value("status", nlohmann::json::object()), out.status))
         return false;
+
+    if (!parseGrantedInventoryItem(choice.value("grantItem", nlohmann::json::object()), out.grantItem))
+        return false;
+
+    out.requiresMoney = choice.value("requiresMoney", 0.0f);
+    out.closePhase = choice.value("closePhase", true);
+    out.consumeOnSelect = choice.value("consumeOnSelect", false);
+    out.persistConsumed = choice.value("persistConsumed", false);
+    out.resumeTopLevel = choice.value("resumeTopLevel", false);
+
+    out.followUpChoices.clear();
+    const nlohmann::json& followUps = choice.value("choices", nlohmann::json::array());
+    if (!followUps.is_array())
+        return false;
+
+    for (const nlohmann::json& followUp : followUps)
+    {
+        ConversationChoiceDef parsed;
+        if (!parseConversationChoice(followUp, parsed))
+            return false;
+        out.followUpChoices.push_back(parsed);
+    }
 
     return !out.id.empty() && !out.label.empty() && !out.response.empty();
 }
@@ -132,9 +187,27 @@ bool parseRandomLine(const nlohmann::json& line, RandomConversationLine& out)
 
     out.id = line.value("id", "");
     out.text = line.value("text", "");
+    out.sketchPath = line.value("sketch", "");
+    out.audio = parseOptionalAudioField(line, "audio");
     out.weight = line.value("weight", 1);
+    out.once = line.value("once", false);
+    out.allowAttack = line.value("allowAttack", false);
+    out.attackEncounterId = line.value("attackEncounterId", "");
     if (!parseStatusEffect(line.value("status", nlohmann::json::object()), out.status))
         return false;
+
+    out.choices.clear();
+    const nlohmann::json& choices = line.value("choices", nlohmann::json::array());
+    if (!choices.is_array())
+        return false;
+
+    for (const nlohmann::json& choice : choices)
+    {
+        ConversationChoiceDef parsed;
+        if (!parseConversationChoice(choice, parsed))
+            return false;
+        out.choices.push_back(parsed);
+    }
 
     return !out.text.empty();
 }
@@ -150,11 +223,31 @@ bool parseConversationPhase(const nlohmann::json& phase, ConversationPhase& out)
     out.requiresFlag = phase.value("requiresFlag", "");
     out.resetOnSceneEnter = phase.value("resetOnSceneEnter", true);
     out.text = phase.value("text", "");
+    out.audio = parseOptionalAudioField(phase, "audio");
     out.intro = phase.value("intro", "");
+    out.introAudio = parseOptionalAudioField(phase, "introAudio");
+    out.sketchPath = phase.value("sketch", "");
+    out.tts = phase.value("tts", false);
+    out.ttsVoice = phase.value("ttsVoice", "");
+    out.ttsText = phase.value("ttsText", "");
+    out.ttsAudio = phase.value("ttsAudio", "");
+    out.ttsAfter = phase.value("ttsAfter", false);
+    out.ttsAfterVoice = phase.value("ttsAfterVoice", "");
+    out.ttsAfterText = phase.value("ttsAfterText", "");
+    out.ttsAfterAudio = phase.value("ttsAfterAudio", "");
+    out.resumeTts = phase.value("resumeTts", false);
+    out.resumeTtsVoice = phase.value("resumeTtsVoice", "");
+    out.resumeTtsText = phase.value("resumeTtsText", "");
+    out.resumeTtsAudio = phase.value("resumeTtsAudio", "");
+    out.resumeIntro = phase.value("resumeIntro", "");
+    out.resumeIntroAudio = parseOptionalAudioField(phase, "resumeIntroAudio");
     out.poolId = phase.value("poolId", "");
     out.avoidRepeat = phase.value("avoidRepeat", true);
 
     if (!parseStatusEffect(phase.value("status", nlohmann::json::object()), out.status))
+        return false;
+
+    if (!parseGrantedInventoryItem(phase.value("grantItem", nlohmann::json::object()), out.grantItem))
         return false;
 
     out.choices.clear();
@@ -374,6 +467,105 @@ bool parseExits(const nlohmann::json& exits, std::map<std::string, std::string>&
     return true;
 }
 
+bool parseExitRequirement(const nlohmann::json& requirement, ExitRequirementDef& out)
+{
+    if (!requirement.is_object())
+        return false;
+
+    out.requiresLightSource = requirement.value(
+        "requiresLightSource",
+        requirement.value("requires_light_source", false));
+    out.blockedDetails = requirement.value(
+        "blockedDetails",
+        requirement.value("blocked_details", ""));
+    return out.requiresLightSource || !out.blockedDetails.empty();
+}
+
+bool parseExitRequirements(
+    const nlohmann::json& requirements,
+    std::map<std::string, ExitRequirementDef>& out)
+{
+    out.clear();
+    if (!requirements.is_object())
+        return true;
+
+    for (auto it = requirements.begin(); it != requirements.end(); ++it)
+    {
+        ExitRequirementDef parsed;
+        if (!parseExitRequirement(it.value(), parsed))
+            return false;
+        out[it.key()] = parsed;
+    }
+
+    return true;
+}
+
+bool parseTakeableItem(const nlohmann::json& item, TakeableItemDef& out)
+{
+    if (!item.is_object())
+        return false;
+
+    out.id = item.value("id", "");
+    out.name = item.value("name", "");
+    out.iconPath = item.value("icon", "");
+    out.examineImagePath = item.value("examineImage", "");
+    out.examineText = item.value("examineText", "");
+    out.requiresExamine = item.value("requiresExamine", true);
+
+    return !out.id.empty();
+}
+
+bool parseTakeables(const nlohmann::json& takeables, std::vector<TakeableItemDef>& out)
+{
+    out.clear();
+    if (!takeables.is_array())
+        return true;
+
+    for (const nlohmann::json& item : takeables)
+    {
+        TakeableItemDef parsed;
+        if (!parseTakeableItem(item, parsed))
+            return false;
+        out.push_back(parsed);
+    }
+
+    return true;
+}
+
+bool parseInteraction(const nlohmann::json& interaction, SceneInteractionDef& out)
+{
+    if (!interaction.is_object())
+        return false;
+
+    out.id = interaction.value("id", "");
+    out.label = interaction.value("label", "");
+    out.useDetails = interaction.value("useDetails", "");
+    out.exitSceneId = interaction.value("exitSceneId", "");
+    out.useHealthDelta = interaction.value("useHealthDelta", 0.0f);
+    out.useEnergyDelta = interaction.value("useEnergyDelta", 0.0f);
+    out.repeat = interaction.value("repeat", false);
+    out.requiresExamine = interaction.value("requiresExamine", true);
+
+    return !out.id.empty() && !out.label.empty();
+}
+
+bool parseInteractions(const nlohmann::json& interactions, std::vector<SceneInteractionDef>& out)
+{
+    out.clear();
+    if (!interactions.is_array())
+        return true;
+
+    for (const nlohmann::json& interaction : interactions)
+    {
+        SceneInteractionDef parsed;
+        if (!parseInteraction(interaction, parsed))
+            return false;
+        out.push_back(parsed);
+    }
+
+    return true;
+}
+
 bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneData& out)
 {
     if (!sceneJson.is_object())
@@ -390,6 +582,8 @@ bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneDat
     out.useHealthDelta = sceneJson.value("useHealthDelta", 0.0f);
     out.useEnergyDelta = sceneJson.value("useEnergyDelta", 0.0f);
     out.useRepeatStatus = sceneJson.value("useRepeatStatus", false);
+    out.useRequiresExamine = sceneJson.value("useRequiresExamine", true);
+    out.useExit = sceneJson.value("useExit", "");
 
     if (out.description.empty())
         return false;
@@ -403,10 +597,23 @@ bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneDat
     if (!parseExits(sceneJson.value("exits", nlohmann::json::object()), out.exits))
         return false;
 
+    if (!parseExitRequirements(
+            sceneJson.value("exitRequirements", sceneJson.value("exit_requirements", nlohmann::json::object())),
+            out.exitRequirements))
+    {
+        return false;
+    }
+
     if (!parseSpeakConfig(sceneJson, out.speakConfig))
         return false;
 
     if (!parseRoomAudio(sceneJson.value("audio", nlohmann::json::object()), out.audio))
+        return false;
+
+    if (!parseTakeables(sceneJson.value("takeables", nlohmann::json::array()), out.takeables))
+        return false;
+
+    if (!parseInteractions(sceneJson.value("interactions", nlohmann::json::array()), out.interactions))
         return false;
 
     return true;
@@ -423,6 +630,14 @@ bool loadResourceTexture(
 
     for (const std::string& path : paths)
     {
+        const std::string compressedPath = compressedAssetPath(path);
+        if (FileExists(compressedPath.c_str()) &&
+            loadTextureFromAssetFile(compressedPath, outTexture))
+        {
+            TraceLog(LOG_INFO, "Loaded compressed resource texture: %s", compressedPath.c_str());
+            return true;
+        }
+
         if (FileExists(path.c_str()))
         {
             Texture2D texture = LoadTexture(path.c_str());
@@ -438,14 +653,6 @@ bool loadResourceTexture(
                 TraceLog(LOG_INFO, "Loaded resource texture: %s", path.c_str());
                 return true;
             }
-        }
-
-        const std::string compressedPath = compressedAssetPath(path);
-        if (FileExists(compressedPath.c_str()) &&
-            loadTextureFromAssetFile(compressedPath, outTexture))
-        {
-            TraceLog(LOG_INFO, "Loaded compressed resource texture: %s", compressedPath.c_str());
-            return true;
         }
     }
 
@@ -607,7 +814,7 @@ void SceneDatabase::ensureUnderConstructionImage() const
     RenderTexture2D renderTarget = LoadRenderTexture(width, height);
 
     BeginTextureMode(renderTarget);
-    ClearBackground((Color){34, 32, 40, 255});
+    ClearBackground(Color{34, 32, 40, 255});
 
     const Color accent = {186, 150, 72, 255};
     const Color stripe = {168, 132, 48, 255};
@@ -638,7 +845,7 @@ void SceneDatabase::ensureUnderConstructionImage() const
         { (width - subtitleMeasure.x) * 0.5f, height * 0.36f + titleMeasure.y + 18.0f },
         subtitleSize,
         1.0f,
-        (Color){176, 168, 152, 255});
+        Color{176, 168, 152, 255});
 
     EndTextureMode();
 
@@ -672,6 +879,8 @@ bool SceneDatabase::buildLocationStruct(const SceneData& scene, LocationStruct& 
     outLocation.useHealthDelta = scene.useHealthDelta;
     outLocation.useEnergyDelta = scene.useEnergyDelta;
     outLocation.useRepeatStatus = scene.useRepeatStatus;
+    outLocation.useRequiresExamine = scene.useRequiresExamine;
+    outLocation.useExit = scene.useExit;
     outLocation.descriptionFont = descriptionFont;
     outLocation.boldFont = boldFont;
     outLocation.uiFont = uiFont;
@@ -741,6 +950,26 @@ const RoomAudioConfig& SceneDatabase::getSceneAudio(const std::string& sceneId) 
     return it->second.audio;
 }
 
+const std::vector<TakeableItemDef>& SceneDatabase::getTakeables(const std::string& sceneId) const
+{
+    static const std::vector<TakeableItemDef> kEmptyTakeables;
+    std::map<std::string, SceneData>::const_iterator it = scenes.find(sceneId);
+    if (it == scenes.end())
+        return kEmptyTakeables;
+
+    return it->second.takeables;
+}
+
+const std::vector<SceneInteractionDef>& SceneDatabase::getInteractions(const std::string& sceneId) const
+{
+    static const std::vector<SceneInteractionDef> kEmptyInteractions;
+    std::map<std::string, SceneData>::const_iterator it = scenes.find(sceneId);
+    if (it == scenes.end())
+        return kEmptyInteractions;
+
+    return it->second.interactions;
+}
+
 std::string SceneDatabase::getExitSceneId(const std::string& sceneId, const std::string& direction) const
 {
     std::map<std::string, SceneData>::const_iterator it = scenes.find(sceneId);
@@ -752,6 +981,24 @@ std::string SceneDatabase::getExitSceneId(const std::string& sceneId, const std:
         return "";
 
     return exitIt->second;
+}
+
+bool SceneDatabase::getExitRequirement(
+    const std::string& sceneId,
+    const std::string& direction,
+    ExitRequirementDef& outRequirement) const
+{
+    std::map<std::string, SceneData>::const_iterator it = scenes.find(sceneId);
+    if (it == scenes.end())
+        return false;
+
+    std::map<std::string, ExitRequirementDef>::const_iterator requirementIt =
+        it->second.exitRequirements.find(direction);
+    if (requirementIt == it->second.exitRequirements.end())
+        return false;
+
+    outRequirement = requirementIt->second;
+    return true;
 }
 
 bool loadStartLocation(

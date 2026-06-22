@@ -1,4 +1,5 @@
 #include <InventoryMgr.h>
+#include <RaylibCompat.h>
 #include <SceneLoader.h>
 #include <algorithm>
 
@@ -17,19 +18,14 @@ namespace
     const Color kSlotFill = {40, 38, 50, 255};
     const Color kSlotHover = {54, 50, 64, 255};
     const Color kSlotSelected = {62, 52, 34, 255};
+    const Color kSlotCombineTarget = {72, 58, 36, 255};
     const Color kCloseHover = {210, 178, 108, 255};
+    const float kDragStartThreshold = 8.0f;
 
-    const char* kWalletExamineText =
-        "The wallet is worked from thick full-grain leather, hand-stitched along the edges "
-        "with waxed thread the color of strong tea. The dye is uneven in the way of good hides, "
-        "not factory perfect. A maker's stamp inside the flap is too worn to read. It sits heavy "
-        "in your palm, the sort of piece a man buys once and carries for years.\n\n"
-        "You count what it holds. Twenty dollars in worn notes, nothing more. No credit cards. "
-        "No identification. The pockets are otherwise empty except for a small slip of paper, "
-        "tucked deep into a corner seam as though someone meant to forget it and could not quite.";
-
-    const char* kWalletIconFiles[] = { "icons/wallet_icon.png", "icons/wallet_icon.jpg" };
-    const char* kWalletExamineFiles[] = { "images/wallet_examine.png", "images/wallet_examine.jpg" };
+    bool itemNeedsExamineImage(const InventoryItem& item)
+    {
+        return !item.examineImagePath.empty();
+    }
 }
 
 const float InventoryMgr::kScrollbarWidth = 16.0f;
@@ -37,10 +33,7 @@ const float InventoryMgr::kCloseButtonSize = 28.0f;
 const float InventoryMgr::kItemSlotSize = 76.0f;
 const float InventoryMgr::kItemGap = 12.0f;
 
-InventoryMgr::InventoryMgr()
-{
-    createDefaultItems();
-}
+InventoryMgr::InventoryMgr() = default;
 
 InventoryMgr::~InventoryMgr()
 {
@@ -71,16 +64,33 @@ void InventoryMgr::setAssetRoots(
     fallbackAssetRoot = fallbackRoot;
 }
 
+void InventoryMgr::setItemDatabase(const ItemDatabase* database)
+{
+    itemDatabase = database;
+    if (items.empty())
+        createDefaultItems();
+}
+
+void InventoryMgr::setItemCombinationDatabase(const ItemCombinationDatabase* database)
+{
+    itemCombinationDatabase = database;
+}
+
 void InventoryMgr::setUiBackdrop(const UiBackdrop* backdrop)
 {
     uiBackdrop = backdrop;
+}
+
+bool InventoryMgr::isItemIconReady(const InventoryItem& item) const
+{
+    return item.icon.id != 0 && IsTextureValid(item.icon);
 }
 
 bool InventoryMgr::hasLoadedAssets() const
 {
     for (const InventoryItem& item : items)
     {
-        if (item.icon.id == 0 || item.examineImage.id == 0)
+        if (!isItemIconReady(item))
             return false;
     }
 
@@ -104,49 +114,98 @@ bool InventoryMgr::loadItemTexture(const char* filename, Texture2D& outTexture) 
     return false;
 }
 
+void InventoryMgr::loadItemIcon(InventoryItem& item)
+{
+    if (item.iconPath.empty())
+        return;
+
+    const std::string path = item.iconPath.find("resources/") == 0
+        ? item.iconPath.substr(10)
+        : item.iconPath;
+    if (loadItemTexture(path.c_str(), item.icon))
+        SetTextureFilter(item.icon, TEXTURE_FILTER_BILINEAR);
+}
+
+void InventoryMgr::loadItemExamineImage(InventoryItem& item)
+{
+    if (!itemNeedsExamineImage(item))
+        return;
+
+    if (item.examineImagePath.empty())
+        return;
+
+    const std::string path = item.examineImagePath.find("resources/") == 0
+        ? item.examineImagePath.substr(10)
+        : item.examineImagePath;
+    if (loadItemTexture(path.c_str(), item.examineImage))
+        SetTextureFilter(item.examineImage, TEXTURE_FILTER_BILINEAR);
+}
+
+void InventoryMgr::loadItemAssets(InventoryItem& item)
+{
+    if (item.icon.id != 0)
+    {
+        UnloadTexture(item.icon);
+        item.icon = Texture2D{};
+    }
+    if (item.examineImage.id != 0)
+    {
+        UnloadTexture(item.examineImage);
+        item.examineImage = Texture2D{};
+    }
+
+    loadItemIcon(item);
+    loadItemExamineImage(item);
+}
+
+void InventoryMgr::ensureItemIconLoaded(InventoryItem& item)
+{
+    if (isItemIconReady(item))
+        return;
+
+    if (item.icon.id != 0)
+    {
+        UnloadTexture(item.icon);
+        item.icon = Texture2D{};
+    }
+
+    loadItemIcon(item);
+}
+
+void InventoryMgr::ensureItemExamineImageLoaded(InventoryItem& item)
+{
+    if (!itemNeedsExamineImage(item))
+        return;
+
+    if (item.examineImage.id != 0 && IsTextureValid(item.examineImage))
+        return;
+
+    if (item.examineImage.id != 0)
+    {
+        UnloadTexture(item.examineImage);
+        item.examineImage = Texture2D{};
+    }
+
+    loadItemExamineImage(item);
+}
+
 void InventoryMgr::loadItemTextures()
 {
     for (InventoryItem& item : items)
-    {
-        if (item.icon.id != 0)
-        {
-            UnloadTexture(item.icon);
-            item.icon = Texture2D{};
-        }
-        if (item.examineImage.id != 0)
-        {
-            UnloadTexture(item.examineImage);
-            item.examineImage = Texture2D{};
-        }
-    }
+        loadItemAssets(item);
+}
 
-    InventoryItem* wallet = nullptr;
+bool InventoryMgr::ensureIconAssetsLoaded()
+{
     for (InventoryItem& item : items)
-    {
-        if (item.id == "wallet")
-            wallet = &item;
-    }
+        ensureItemIconLoaded(item);
 
-    if (wallet == nullptr)
-        return;
+    return hasLoadedAssets();
+}
 
-    for (const char* filename : kWalletIconFiles)
-    {
-        if (loadItemTexture(filename, wallet->icon))
-        {
-            SetTextureFilter(wallet->icon, TEXTURE_FILTER_BILINEAR);
-            break;
-        }
-    }
-
-    for (const char* filename : kWalletExamineFiles)
-    {
-        if (loadItemTexture(filename, wallet->examineImage))
-        {
-            SetTextureFilter(wallet->examineImage, TEXTURE_FILTER_BILINEAR);
-            break;
-        }
-    }
+void InventoryMgr::reloadItemIconsIfNeeded()
+{
+    ensureIconAssetsLoaded();
 }
 
 bool InventoryMgr::ensureAssetsLoaded()
@@ -160,21 +219,36 @@ bool InventoryMgr::ensureAssetsLoaded()
 
 void InventoryMgr::createDefaultItems()
 {
+    items.clear();
+
+    if (itemDatabase != nullptr && itemDatabase->hasDef("wallet"))
+    {
+        items.push_back(itemDatabase->buildInventoryItem(itemDatabase->createInstance("wallet")));
+        return;
+    }
+
     InventoryItem wallet;
     wallet.id = "wallet";
+    wallet.instance.defId = "wallet";
+    wallet.instance.instanceId = "wallet";
     wallet.name = "Wallet";
-    wallet.examineText = kWalletExamineText;
+    wallet.examineText =
+        "The wallet is worked from thick full-grain leather, hand-stitched along the edges "
+        "with waxed thread the color of strong tea.";
     items.push_back(wallet);
 }
 
 void InventoryMgr::open()
 {
-    if (!ensureAssetsLoaded())
-        TraceLog(LOG_WARNING, "Inventory images are not loaded; wallet art may be missing");
+    if (!ensureIconAssetsLoaded())
+        TraceLog(LOG_WARNING, "Some inventory icons failed to load");
 
     viewState = InventoryViewState::ItemList;
     selectedItemId.clear();
     inventoryScrollY = 0.0f;
+    dragItemId.clear();
+    pendingPressItemId.clear();
+    isDraggingItem = false;
 }
 
 void InventoryMgr::close()
@@ -182,6 +256,9 @@ void InventoryMgr::close()
     viewState = InventoryViewState::Closed;
     selectedItemId.clear();
     inventoryScrollY = 0.0f;
+    dragItemId.clear();
+    pendingPressItemId.clear();
+    isDraggingItem = false;
 }
 
 void InventoryMgr::returnToItemList()
@@ -204,18 +281,113 @@ void InventoryMgr::examineSelectedItem()
     if (!canExamineSelectedItem())
         return;
 
-    ensureAssetsLoaded();
+    refreshItemFromDatabase(selectedItemId);
+
+    const int itemIndex = findItemIndex(selectedItemId);
+    if (itemIndex >= 0)
+        ensureItemExamineImageLoaded(items[(size_t)itemIndex]);
+
     viewState = InventoryViewState::ExaminingItem;
 }
 
 const InventoryItem* InventoryMgr::findItem(const std::string& id) const
 {
-    for (const InventoryItem& item : items)
+    const int itemIndex = findItemIndex(id);
+    if (itemIndex < 0)
+        return nullptr;
+    return &items[(size_t)itemIndex];
+}
+
+InventoryItem* InventoryMgr::findMutableItem(const std::string& id)
+{
+    const int itemIndex = findItemIndex(id);
+    if (itemIndex < 0)
+        return nullptr;
+    return &items[(size_t)itemIndex];
+}
+
+bool InventoryMgr::canExtractFromExaminedItem(const ItemDatabase& database) const
+{
+    if (viewState != InventoryViewState::ExaminingItem || selectedItemId.empty())
+        return false;
+
+    const InventoryItem* parent = findItem(selectedItemId);
+    if (parent == nullptr)
+        return false;
+
+    const ItemDef* parentDef = database.getDef(parent->id);
+    if (parentDef == nullptr || !parentDef->container.isContainer)
+        return false;
+
+    for (const ItemInstance& child : parent->instance.contents)
     {
-        if (item.id == id)
-            return &item;
+        if (child.defId.empty())
+            continue;
+        if (hasItem(child.defId))
+            continue;
+        if (database.isExtractableContainerContent(*parentDef, child.defId))
+            return true;
     }
-    return nullptr;
+
+    return false;
+}
+
+bool InventoryMgr::extractFromExaminedItem(
+    const ItemDatabase& database,
+    InventoryItem& outExtracted)
+{
+    if (!canExtractFromExaminedItem(database))
+        return false;
+
+    InventoryItem* parent = findMutableItem(selectedItemId);
+    if (parent == nullptr)
+        return false;
+
+    const ItemDef* parentDef = database.getDef(parent->id);
+    if (parentDef == nullptr)
+        return false;
+
+    for (std::vector<ItemInstance>::iterator it = parent->instance.contents.begin();
+         it != parent->instance.contents.end();
+         ++it)
+    {
+        if (it->defId.empty() || hasItem(it->defId))
+            continue;
+        if (!database.isExtractableContainerContent(*parentDef, it->defId))
+            continue;
+
+        ItemInstance extractedInstance = *it;
+        parent->instance.contents.erase(it);
+
+        const Texture2D parentIcon = parent->icon;
+        const Texture2D parentExamineImage = parent->examineImage;
+        InventoryItem refreshedParent = database.buildInventoryItem(parent->instance);
+        refreshedParent.icon = parentIcon;
+        refreshedParent.examineImage = parentExamineImage;
+        *parent = refreshedParent;
+
+        outExtracted = database.buildInventoryItem(extractedInstance);
+        return true;
+    }
+
+    return false;
+}
+
+void InventoryMgr::refreshItemFromDatabase(const std::string& id)
+{
+    if (itemDatabase == nullptr)
+        return;
+
+    InventoryItem* item = findMutableItem(id);
+    if (item == nullptr)
+        return;
+
+    const Texture2D icon = item->icon;
+    const Texture2D examineImage = item->examineImage;
+    InventoryItem refreshed = itemDatabase->buildInventoryItem(item->instance);
+    refreshed.icon = icon;
+    refreshed.examineImage = examineImage;
+    *item = refreshed;
 }
 
 int InventoryMgr::findItemIndex(const std::string& id) const
@@ -232,7 +404,7 @@ Rectangle InventoryMgr::getCloseButtonBounds() const
 {
     const float pad = 14.0f;
     return {
-        panelBounds.x + panelBounds.width - pad - kCloseButtonSize,
+        panelBounds.x + panelBounds.width - kCloseButtonSize - pad,
         panelBounds.y + pad,
         kCloseButtonSize,
         kCloseButtonSize
@@ -249,11 +421,21 @@ float InventoryMgr::getInventoryVisibleHeight() const
 void InventoryMgr::handleCloseButtonInput()
 {
     const Rectangle closeBounds = getCloseButtonBounds();
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) &&
-        CheckCollisionPointRec(GetMousePosition(), closeBounds))
-    {
+    if (CheckCollisionPointRec(GetMousePosition(), closeBounds) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         close();
+}
+
+int InventoryMgr::findItemSlotAtMouse() const
+{
+    const Vector2 mousePos = GetMousePosition();
+    for (size_t i = 0; i < items.size() && i < itemSlotBounds.size(); ++i)
+    {
+        Rectangle slot = itemSlotBounds[i];
+        slot.y -= inventoryScrollY;
+        if (CheckCollisionPointRec(mousePos, slot))
+            return (int)i;
     }
+    return -1;
 }
 
 void InventoryMgr::handleItemGridInput()
@@ -261,19 +443,158 @@ void InventoryMgr::handleItemGridInput()
     if (viewState != InventoryViewState::ItemList)
         return;
 
-    if (!IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-        return;
-
     const Vector2 mousePos = GetMousePosition();
-    for (size_t i = 0; i < itemSlotBounds.size(); ++i)
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
-        if (CheckCollisionPointRec(mousePos, itemSlotBounds[i]))
+        const int slotIndex = findItemSlotAtMouse();
+        if (slotIndex >= 0)
         {
-            if (i < items.size())
-                selectedItemId = items[i].id;
-            return;
+            pendingPressItemId = items[(size_t)slotIndex].id;
+            pressStartPos = mousePos;
+        }
+        return;
+    }
+
+    if (!pendingPressItemId.empty() && IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+    {
+        const float dx = mousePos.x - pressStartPos.x;
+        const float dy = mousePos.y - pressStartPos.y;
+        const float distanceSq = dx * dx + dy * dy;
+        if (!isDraggingItem && distanceSq >= kDragStartThreshold * kDragStartThreshold)
+        {
+            isDraggingItem = true;
+            dragItemId = pendingPressItemId;
+            selectedItemId = dragItemId;
         }
     }
+}
+
+void InventoryMgr::handleItemCombineInput()
+{
+    if (viewState != InventoryViewState::ItemList)
+        return;
+
+    if (!IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+        return;
+
+    if (isDraggingItem && !dragItemId.empty())
+    {
+        const int targetSlotIndex = findItemSlotAtMouse();
+        if (targetSlotIndex >= 0)
+        {
+            const std::string& targetItemId = items[(size_t)targetSlotIndex].id;
+            if (!targetItemId.empty() && targetItemId != dragItemId)
+            {
+                const InventoryItem* sourceItem = findItem(dragItemId);
+                const InventoryItem* targetItem = findItem(targetItemId);
+                if (sourceItem != nullptr
+                    && targetItem != nullptr
+                    && itemCombinationDatabase != nullptr
+                    && itemDatabase != nullptr)
+                {
+                    ItemCombineApplication application;
+                    if (itemCombinationDatabase->tryCombine(
+                            dragItemId,
+                            targetItemId,
+                            sourceItem->instance,
+                            targetItem->instance,
+                            application)
+                        && applyItemCombination(application))
+                    {
+                        selectedItemId.clear();
+                        for (const std::string& grantId : application.grantItemIds)
+                        {
+                            if (hasItem(grantId))
+                                selectedItemId = grantId;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else if (!pendingPressItemId.empty())
+    {
+        selectedItemId = pendingPressItemId;
+    }
+
+    dragItemId.clear();
+    pendingPressItemId.clear();
+    isDraggingItem = false;
+}
+
+bool InventoryMgr::applyItemCombination(const ItemCombineApplication& application)
+{
+    if (!application.success || itemDatabase == nullptr)
+        return false;
+
+    for (const std::string& itemId : application.removeItemIds)
+    {
+        if (!hasItem(itemId))
+            return false;
+    }
+
+    for (const std::pair<std::string, std::string>& flagEntry : application.addFlags)
+    {
+        const InventoryItem* item = findItem(flagEntry.first);
+        if (item == nullptr)
+            return false;
+        (void)item;
+    }
+
+    for (const std::string& grantId : application.grantItemIds)
+    {
+        if (grantId.empty() || hasItem(grantId) || !itemDatabase->hasDef(grantId))
+            return false;
+    }
+
+    for (const std::string& itemId : application.removeItemIds)
+        removeItem(itemId);
+
+    for (const std::pair<std::string, std::string>& flagEntry : application.addFlags)
+    {
+        InventoryItem* item = findMutableItem(flagEntry.first);
+        if (item == nullptr)
+            return false;
+
+        if (!item->instance.hasFlag(flagEntry.second))
+            item->instance.activeFlags.push_back(flagEntry.second);
+
+        const std::string previousIconPath = item->iconPath;
+        const std::string previousExaminePath = item->examineImagePath;
+        const Texture2D previousIcon = item->icon;
+        const Texture2D previousExamineImage = item->examineImage;
+
+        InventoryItem refreshed = itemDatabase->buildInventoryItem(item->instance);
+        refreshed.icon = previousIcon;
+        refreshed.examineImage = previousExamineImage;
+        *item = refreshed;
+
+        if (item->iconPath != previousIconPath)
+        {
+            if (item->icon.id != 0)
+                UnloadTexture(item->icon);
+            item->icon = Texture2D{};
+            loadItemIcon(*item);
+        }
+
+        if (item->examineImagePath != previousExaminePath)
+        {
+            if (item->examineImage.id != 0)
+                UnloadTexture(item->examineImage);
+            item->examineImage = Texture2D{};
+            loadItemExamineImage(*item);
+        }
+    }
+
+    for (const std::string& grantId : application.grantItemIds)
+    {
+        ItemInstance instance = itemDatabase->createInstance(grantId);
+        InventoryItem granted = itemDatabase->buildInventoryItem(instance);
+        addItem(granted);
+    }
+
+    return true;
 }
 
 void InventoryMgr::handleInventoryScrollInput()
@@ -312,7 +633,7 @@ void InventoryMgr::handleInventoryScrollInput()
 
     const Vector2 mousePos = GetMousePosition();
 
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !isDraggingItem)
     {
         if (CheckCollisionPointRec(mousePos, scrollThumb))
         {
@@ -340,13 +661,13 @@ void InventoryMgr::handleInventoryScrollInput()
         visibleHeight
     };
 
-    if (CheckCollisionPointRec(mousePos, scrollArea))
+    if (!isDraggingItem && CheckCollisionPointRec(mousePos, scrollArea))
         inventoryScrollY -= GetMouseWheelMove() * lineHeight * 2.0f;
 
     inventoryScrollY = std::max(0.0f, std::min(inventoryScrollY, maxScroll));
 }
 
-void InventoryMgr::layoutItemSlots()
+void InventoryMgr::layoutItemSlots() const
 {
     const float pad = 14.0f;
     const float headerHeight = 28.0f;
@@ -384,6 +705,7 @@ void InventoryMgr::update()
     layoutItemSlots();
     handleCloseButtonInput();
     handleItemGridInput();
+    handleItemCombineInput();
     handleInventoryScrollInput();
 }
 
@@ -407,6 +729,9 @@ void InventoryMgr::drawCloseButton() const
 
 void InventoryMgr::drawItemGrid() const
 {
+    if (itemSlotBounds.size() != items.size())
+        layoutItemSlots();
+
     const float pad = 14.0f;
     const float headerHeight = 28.0f;
     const float contentX = panelBounds.x + pad;
@@ -431,14 +756,20 @@ void InventoryMgr::drawItemGrid() const
 
         const bool selected = items[i].id == selectedItemId;
         const bool hovered = CheckCollisionPointRec(GetMousePosition(), slot);
+        const bool combineTarget = isDraggingItem
+            && !dragItemId.empty()
+            && items[i].id != dragItemId
+            && hovered;
         const Color slotFill = (uiBackdrop != nullptr) ? uiBackdrop->slotFillColor() : kSlotFill;
         const Color slotHover = (uiBackdrop != nullptr) ? uiBackdrop->slotHoverColor() : kSlotHover;
         const Color slotSelected = (uiBackdrop != nullptr) ? uiBackdrop->slotSelectedColor() : kSlotSelected;
-        const Color fill = selected ? slotSelected : (hovered ? slotHover : slotFill);
+        const Color fill = combineTarget
+            ? kSlotCombineTarget
+            : (selected ? slotSelected : (hovered ? slotHover : slotFill));
 
         DrawRectangleRounded(slot, 0.18f, 8, fill);
 
-        if (items[i].icon.id != 0)
+        if (isItemIconReady(items[i]) && !(isDraggingItem && items[i].id == dragItemId))
         {
             const float iconPad = 10.0f;
             const Rectangle iconArea = {
@@ -468,10 +799,45 @@ void InventoryMgr::drawItemGrid() const
             continue;
 
         const bool selected = items[i].id == selectedItemId;
-        const Color panelBorder = (uiBackdrop != nullptr) ? uiBackdrop->panelBorderColor() : kPanelBorder;
-        const Color panelAccent = (uiBackdrop != nullptr) ? uiBackdrop->panelAccentColor() : kPanelAccent;
-        DrawRectangleRoundedLinesEx(slot, 0.18f, 8, 2.0f, selected ? panelBorder : panelAccent);
+        DrawRoundedBorder(slot, 0.18f, 8, 2.0f, selected ? kPanelBorder : kPanelAccent);
     }
+}
+
+void InventoryMgr::drawDragGhost() const
+{
+    if (!isDraggingItem || dragItemId.empty())
+        return;
+
+    const InventoryItem* item = findItem(dragItemId);
+    if (item == nullptr || !isItemIconReady(*item))
+        return;
+
+    const Vector2 mousePos = GetMousePosition();
+    const float ghostSize = kItemSlotSize * 0.72f;
+    const Rectangle ghostArea = {
+        mousePos.x - ghostSize * 0.5f,
+        mousePos.y - ghostSize * 0.5f,
+        ghostSize,
+        ghostSize
+    };
+
+    DrawRectangleRounded(ghostArea, 0.18f, 8, { 40, 38, 50, 210 });
+    DrawRoundedBorder(ghostArea, 0.18f, 8, 2.0f, kPanelBorder);
+
+    const float iconPad = 10.0f;
+    const Rectangle iconArea = {
+        ghostArea.x + iconPad,
+        ghostArea.y + iconPad,
+        ghostArea.width - iconPad * 2.0f,
+        ghostArea.height - iconPad * 2.0f
+    };
+    DrawTexturePro(
+        item->icon,
+        { 0.0f, 0.0f, (float)item->icon.width, (float)item->icon.height },
+        iconArea,
+        { 0.0f, 0.0f },
+        0.0f,
+        { 255, 255, 255, 220 });
 }
 
 void InventoryMgr::drawInventoryScrollbar() const
@@ -522,7 +888,7 @@ void InventoryMgr::draw() const
     else
         DrawRectangleRounded(panelBounds, 0.04f, 10, kPanelFill);
 
-    DrawRectangleRoundedLinesEx(panelBounds, 0.04f, 10, 3.0f, panelBorder);
+    DrawRoundedBorder(panelBounds, 0.04f, 10, 3.0f, panelBorder);
 
     Rectangle accentBar = {
         panelBounds.x + 8.0f,
@@ -536,16 +902,156 @@ void InventoryMgr::draw() const
         DrawRectangleRounded(accentBar, 1.0f, 4, kPanelAccent);
 
     const float pad = 14.0f;
-    DrawTextEx(panelFont, "INVENTORY", { panelBounds.x + pad, panelBounds.y + pad }, 15.0f, 1, sectionLabel);
+    DrawTextEx(panelFont, "INVENTORY", { panelBounds.x + pad, panelBounds.y + pad }, 17.0f, 1, sectionLabel);
 
     drawCloseButton();
     drawItemGrid();
+    drawDragGhost();
     drawInventoryScrollbar();
 }
 
 const InventoryItem* InventoryMgr::getSelectedItem() const
 {
     return findItem(selectedItemId);
+}
+
+const InventoryItem* InventoryMgr::getItemById(const std::string& id) const
+{
+    return findItem(id);
+}
+
+bool InventoryMgr::hasItem(const std::string& id) const
+{
+    return findItem(id) != nullptr;
+}
+
+void InventoryMgr::addItem(const InventoryItem& item)
+{
+    if (item.id.empty() || hasItem(item.id))
+        return;
+
+    items.push_back(item);
+    ensureItemIconLoaded(items.back());
+}
+
+bool InventoryMgr::removeItem(const std::string& id)
+{
+    const int itemIndex = findItemIndex(id);
+    if (itemIndex < 0)
+        return false;
+
+    InventoryItem& item = items[(size_t)itemIndex];
+    if (item.icon.id != 0)
+        UnloadTexture(item.icon);
+    if (item.examineImage.id != 0)
+        UnloadTexture(item.examineImage);
+
+    items.erase(items.begin() + itemIndex);
+
+    if (selectedItemId == id)
+        selectedItemId.clear();
+
+    return true;
+}
+
+std::string InventoryMgr::consumePendingDropItemId()
+{
+    const std::string itemId = pendingDropItemId;
+    pendingDropItemId.clear();
+    return itemId;
+}
+
+std::vector<InventoryItem> InventoryMgr::exportItemSnapshots() const
+{
+    std::vector<InventoryItem> snapshots;
+    snapshots.reserve(items.size());
+
+    for (const InventoryItem& item : items)
+    {
+        InventoryItem snapshot;
+        snapshot.id = item.id;
+        snapshot.name = item.name;
+        snapshot.iconPath = item.iconPath;
+        snapshot.examineImagePath = item.examineImagePath;
+        snapshot.examineText = item.examineText;
+        snapshot.weightLb = item.weightLb;
+        snapshot.instance = item.instance;
+        snapshots.push_back(snapshot);
+    }
+
+    return snapshots;
+}
+
+void InventoryMgr::restoreFromSnapshots(const std::vector<InventoryItem>& savedItems)
+{
+    close();
+
+    while (items.size() > 1)
+    {
+        InventoryItem& item = items.back();
+        if (item.icon.id != 0)
+            UnloadTexture(item.icon);
+        if (item.examineImage.id != 0)
+            UnloadTexture(item.examineImage);
+        items.pop_back();
+    }
+
+    if (items.empty())
+        createDefaultItems();
+
+    if (itemDatabase != nullptr)
+    {
+        InventoryItem* wallet = findMutableItem("wallet");
+        if (wallet != nullptr && !hasItem("wallet_slip"))
+        {
+            bool hasSlipInWallet = false;
+            for (const ItemInstance& child : wallet->instance.contents)
+            {
+                if (child.defId == "wallet_slip")
+                {
+                    hasSlipInWallet = true;
+                    break;
+                }
+            }
+
+            if (!hasSlipInWallet)
+            {
+                ItemInstance slip = itemDatabase->createInstance("wallet_slip");
+                wallet->instance.contents.push_back(slip);
+                refreshItemFromDatabase("wallet");
+            }
+        }
+    }
+
+    for (const InventoryItem& savedItem : savedItems)
+    {
+        if (savedItem.id.empty() || savedItem.id == "wallet" || savedItem.id == "hand_lantern")
+            continue;
+
+        InventoryItem restored = savedItem;
+        if (itemDatabase != nullptr && itemDatabase->hasDef(savedItem.id))
+        {
+            ItemDefOverrides overrides;
+            overrides.name = savedItem.name;
+            overrides.description = savedItem.examineText;
+            overrides.iconPath = savedItem.iconPath;
+            overrides.examineImagePath = savedItem.examineImagePath;
+
+            ItemInstance instance = savedItem.instance.defId.empty()
+                ? itemDatabase->createInstance(savedItem.id)
+                : savedItem.instance;
+            if (instance.defId.empty())
+                instance.defId = savedItem.id;
+            if (instance.instanceId.empty())
+                instance.instanceId = savedItem.id;
+
+            restored = itemDatabase->buildInventoryItem(instance, overrides);
+        }
+
+        addItem(restored);
+    }
+
+    ensureIconAssetsLoaded();
 }
 
 }

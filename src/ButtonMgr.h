@@ -3,8 +3,8 @@
 
 #include "Button.h"
 #include <ActionStruct.h>
-#include <UiBackdrop.h>
 #include <MovementStruct.h>
+#include <UiBackdrop.h>
 #include <raylib.h>
 #include <vector>
 
@@ -14,12 +14,19 @@ namespace testgame
     class ButtonMgr
     {
         public:
-        ButtonMgr(Rectangle _buttonBox, Font buttonFont);
+        ButtonMgr(Rectangle _buttonBox, Font buttonFont, Font boldButtonFont);
         virtual ~ButtonMgr();
         void update();
         void draw() const;
         void setAvailability(const MovementStruct& movement, const ActionStruct& actions);
-        void setStatus(float healthPercent, float energyPercent, float tenacityPercent, float lucidityPercent);
+        void setStatus(
+            float healthPercent,
+            float energyPercent,
+            float resolvePercent,
+            float lucidityPercent,
+            float charismaPercent);
+        void relayout(Rectangle newButtonBox);
+        void setClickHoldDuration(float seconds);
         void setUiBackdrop(const UiBackdrop* backdrop);
 
         bool isUpButtonPressed() const { return upButtonPressed; }
@@ -32,6 +39,7 @@ namespace testgame
         bool consumeExamineButtonClick();
         bool consumeSpeakButtonClick();
         bool consumeUseButtonClick();
+        bool consumeTakeButtonClick();
         bool consumeUpButtonClick();
         bool consumeDownButtonClick();
         bool consumeForwardButtonClick();
@@ -41,11 +49,14 @@ namespace testgame
         bool isSpeakButtonPressed() const { return speakButtonPressed; }
         bool isInventoryButtonPressed() const { return inventoryButtonPressed; }
         bool consumeInventoryButtonClick();
+        bool consumeMoveOrActionButtonClick();
+        bool consumeHitButtonClick();
         bool isHitButtonPressed() const { return hitButtonPressed; }
         bool isUseButtonPressed() const { return useButtonPressed; }
 
         private:
         void addButton(const char* label, Rectangle bounds);
+        void buildButtonLayout();
         void drawSectionLabel(const char* label, float x, float y) const;
         void drawStatusBar(const char* label, Rectangle bounds, float percent) const;
         void updatePressedFlags();
@@ -63,7 +74,10 @@ namespace testgame
         bool examineButtonClicked = false;
         bool speakButtonClicked = false;
         bool useButtonClicked = false;
+        bool takeButtonClicked = false;
+        bool hitButtonClicked = false;
         bool inventoryButtonClicked = false;
+        bool moveOrActionButtonClicked = false;
         bool upButtonClicked = false;
         bool downButtonClicked = false;
         bool forwardButtonClicked = false;
@@ -77,19 +91,24 @@ namespace testgame
 
         float healthPercent = 90.0f;
         float energyPercent = 20.0f;
-        float tenacityPercent = 50.0f;
+        float resolvePercent = 50.0f;
         float lucidityPercent = 30.0f;
+        float charismaPercent = 50.0f;
         int activePressButtonIndex = -1;
         double activePressStartTime = 0.0;
         bool activePressClickFired = false;
         bool mouseWasDownLastFrame = false;
+        float clickHoldDurationSeconds = 0.1f;
 
         Rectangle buttonBox;
         Rectangle healthBarBounds;
         Rectangle energyBarBounds;
-        Rectangle tenacityBarBounds;
+        Rectangle resolveBarBounds;
         Rectangle lucidityBarBounds;
+        Rectangle charismaBarBounds;
+        Rectangle reservedBarBounds;
         Font buttonFont;
+        Font boldButtonFont;
         ButtonStyle baseButtonStyle;
         ButtonStyle buttonStyle;
         const UiBackdrop* uiBackdrop = nullptr;

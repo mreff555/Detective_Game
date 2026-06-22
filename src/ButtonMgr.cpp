@@ -1,6 +1,6 @@
 #include "Button.h"
 #include "ButtonMgr.h"
-#include <raylib.h>
+#include <RaylibCompat.h>
 #include <algorithm>
 #include <cstdio>
 #include <vector>
@@ -14,12 +14,12 @@ namespace
     const Color kPanelBorder = {168, 138, 72, 255};
     const Color kPanelAccent = {96, 78, 48, 255};
     const Color kSectionLabel = {132, 122, 104, 255};
-    const Color kDivider = {68, 62, 54, 255};
     const Color kStatusTrack = {40, 38, 50, 255};
     const Color kHealthFill = {168, 72, 72, 255};
     const Color kEnergyFill = {168, 138, 72, 255};
-    const Color kTenacityFill = {88, 118, 168, 255};
+    const Color kResolveFill = {88, 118, 168, 255};
     const Color kLucidityFill = {118, 88, 168, 255};
+    const Color kCharismaFill = {168, 108, 88, 255};
 
     Color statusBarFillColor(const char* label)
     {
@@ -27,22 +27,25 @@ namespace
         {
             case 'H': return kHealthFill;
             case 'E': return kEnergyFill;
-            case 'T': return kTenacityFill;
+            case 'R': return kResolveFill;
             case 'L': return kLucidityFill;
+            case 'C': return kCharismaFill;
             default: return kEnergyFill;
         }
     }
 
-    const float kButtonHoldDurationSeconds = 0.1f;
 }
 
-ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
+ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont, Font _boldButtonFont)
     : buttonBox(_buttonBox),
-      buttonFont(_buttonFont),
       healthBarBounds{},
       energyBarBounds{},
-      tenacityBarBounds{},
+      resolveBarBounds{},
       lucidityBarBounds{},
+      charismaBarBounds{},
+      reservedBarBounds{},
+      buttonFont(_buttonFont),
+      boldButtonFont(_boldButtonFont.texture.id != 0 ? _boldButtonFont : _buttonFont),
       baseButtonStyle{
           {228, 220, 198, 255},
           {54, 50, 64, 255},
@@ -53,11 +56,18 @@ ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
           {62, 52, 34, 255},
           {108, 102, 92, 255},
           0.18f,
-          17.0f
+          19.0f
       },
       buttonStyle{}
 {
     buttonStyle = baseButtonStyle;
+    buildButtonLayout();
+}
+
+void ButtonMgr::buildButtonLayout()
+{
+    buttons.clear();
+
     const float pad = 18.0f;
     const float labelHeight = 22.0f;
     const float gap = 10.0f;
@@ -115,27 +125,26 @@ ButtonMgr::ButtonMgr(Rectangle _buttonBox, Font _buttonFont)
     addButton("Use",
         { actionX + actionBtnW + gap, contentY + (actionBtnH + gap) * 1.0f, actionBtnW, actionBtnH });
 
-    addButton("Reserved",
-        { actionX, contentY + (actionBtnH + gap) * 2.0f, actionBtnW, actionBtnH });
+    addButton("Attack",
+        { actionX, contentY + (actionBtnH + gap) * 2.0f, actionW, actionBtnH });
 
-    addButton("Reserved",
-        { actionX + actionBtnW + gap, contentY + (actionBtnH + gap) * 2.0f, actionBtnW, actionBtnH });
-
-    const float statusRowH = (contentH - gap) / 2.0f;
+    const float statusRowH = (contentH - gap * 2.0f) / 3.0f;
     const float statusBarW = (statusW - gap) / 2.0f;
     const float statusRow2Y = contentY + statusRowH + gap;
+    const float statusRow3Y = contentY + (statusRowH + gap) * 2.0f;
     healthBarBounds = { statusX, contentY, statusBarW, statusRowH };
     energyBarBounds = { statusX + statusBarW + gap, contentY, statusBarW, statusRowH };
-    tenacityBarBounds = { statusX, statusRow2Y, statusBarW, statusRowH };
+    resolveBarBounds = { statusX, statusRow2Y, statusBarW, statusRowH };
     lucidityBarBounds = { statusX + statusBarW + gap, statusRow2Y, statusBarW, statusRowH };
+    charismaBarBounds = { statusX, statusRow3Y, statusBarW, statusRowH };
+    reservedBarBounds = { statusX + statusBarW + gap, statusRow3Y, statusBarW, statusRowH };
 
     const float inventoryY = buttonBox.y + buttonBox.height - pad - inventoryHeight;
     addButton("Inventory",
         { contentX, inventoryY, contentW, inventoryHeight });
-}
 
-ButtonMgr::~ButtonMgr()
-{
+    if (uiBackdrop != nullptr)
+        refreshButtonStyles();
 }
 
 void ButtonMgr::setUiBackdrop(const UiBackdrop* backdrop)
@@ -154,12 +163,28 @@ void ButtonMgr::refreshButtonStyles()
         button.setStyle(buttonStyle);
 }
 
-void ButtonMgr::setStatus(float health, float energy, float tenacity, float lucidity)
+void ButtonMgr::relayout(Rectangle newButtonBox)
+{
+    buttonBox = newButtonBox;
+    buildButtonLayout();
+}
+
+void ButtonMgr::setClickHoldDuration(float seconds)
+{
+    clickHoldDurationSeconds = std::max(0.05f, std::min(seconds, 0.5f));
+}
+
+ButtonMgr::~ButtonMgr()
+{
+}
+
+void ButtonMgr::setStatus(float health, float energy, float resolve, float lucidity, float charisma)
 {
     healthPercent = std::max(0.0f, std::min(health, 100.0f));
     energyPercent = std::max(0.0f, std::min(energy, 100.0f));
-    tenacityPercent = std::max(0.0f, std::min(tenacity, 100.0f));
+    resolvePercent = std::max(0.0f, std::min(resolve, 100.0f));
     lucidityPercent = std::max(0.0f, std::min(lucidity, 100.0f));
+    charismaPercent = std::max(0.0f, std::min(charisma, 100.0f));
 }
 
 void ButtonMgr::addButton(const char* label, Rectangle bounds)
@@ -174,12 +199,12 @@ void ButtonMgr::addButton(const char* label, Rectangle bounds)
 
 void ButtonMgr::drawSectionLabel(const char* label, float x, float y) const
 {
-    DrawTextEx(buttonFont, label, { x, y }, 15.0f, 1, kSectionLabel);
+    DrawTextEx(buttonFont, label, { x, y }, 17.0f, 1, kSectionLabel);
 }
 
 void ButtonMgr::drawStatusBar(const char* label, Rectangle bounds, float percent) const
 {
-    const float labelHeight = 16.0f;
+    const float labelHeight = 17.0f;
     const float barTop = bounds.y + labelHeight;
     const float barHeight = bounds.height - labelHeight - 4.0f;
     const Rectangle track = { bounds.x, barTop, bounds.width, barHeight };
@@ -201,9 +226,9 @@ void ButtonMgr::drawStatusBar(const char* label, Rectangle bounds, float percent
         ? uiBackdrop->panelBorderColor()
         : kPanelBorder;
 
-    DrawTextEx(buttonFont, label, { bounds.x, bounds.y }, 13.0f, 1, sectionLabel);
+    DrawTextEx(buttonFont, label, { bounds.x, bounds.y }, 15.0f, 1, sectionLabel);
     DrawRectangleRounded(track, 0.18f, 8, statusTrack);
-    DrawRectangleRoundedLinesEx(track, 0.18f, 8, 2.0f, panelBorder);
+    DrawRoundedBorder(track, 0.18f, 8, 2.0f, panelBorder);
 
     if (fillWidth > 0.0f)
     {
@@ -212,14 +237,15 @@ void ButtonMgr::drawStatusBar(const char* label, Rectangle bounds, float percent
 
     char percentText[8];
     snprintf(percentText, sizeof(percentText), "%d%%", (int)percent);
-    const Vector2 textSize = MeasureTextEx(buttonFont, percentText, 13.0f, 1);
+    const float percentFontSize = 20.0f;
+    const Vector2 textSize = MeasureTextEx(boldButtonFont, percentText, percentFontSize, 1);
     DrawTextEx(
-        buttonFont,
+        boldButtonFont,
         percentText,
         { bounds.x + (bounds.width - textSize.x) / 2.0f, barTop + (barHeight - textSize.y) / 2.0f },
-        13.0f,
+        percentFontSize,
         1,
-        {228, 220, 198, 220});
+        {228, 220, 198, 255});
 }
 
 void ButtonMgr::setAvailability(const MovementStruct& movement, const ActionStruct& actions)
@@ -234,9 +260,8 @@ void ButtonMgr::setAvailability(const MovementStruct& movement, const ActionStru
     buttons[7].setEnabled(actions.speak);
     buttons[8].setEnabled(actions.take);
     buttons[9].setEnabled(actions.use);
-    buttons[10].setEnabled(false);
-    buttons[11].setEnabled(false);
-    buttons[12].setEnabled(true);
+    buttons[10].setEnabled(actions.hit);
+    buttons[11].setEnabled(true);
 }
 
 namespace
@@ -256,7 +281,7 @@ namespace
 int ButtonMgr::findEnabledButtonUnderMouse(Vector2 mousePos) const
 {
     const float clickPadding = 3.0f;
-    const int movementAndActionCount = 12;
+    const int movementAndActionCount = 11;
     for (int i = 0; i < movementAndActionCount; ++i)
     {
         if (buttons[i].isEnabled() &&
@@ -264,15 +289,18 @@ int ButtonMgr::findEnabledButtonUnderMouse(Vector2 mousePos) const
             return i;
     }
 
-    if (buttons[12].isEnabled() &&
-        isPointInClickableBounds(mousePos, buttons[12].getBounds(), clickPadding))
-        return 12;
+    if (buttons[11].isEnabled() &&
+        isPointInClickableBounds(mousePos, buttons[11].getBounds(), clickPadding))
+        return 11;
 
     return -1;
 }
 
 void ButtonMgr::registerButtonClick(int buttonIndex)
 {
+    if (buttonIndex >= 0 && buttonIndex <= 10)
+        moveOrActionButtonClicked = true;
+
     switch (buttonIndex)
     {
         case 0: upButtonClicked = true; break;
@@ -283,8 +311,10 @@ void ButtonMgr::registerButtonClick(int buttonIndex)
         case 5: backwardButtonClicked = true; break;
         case 6: examineButtonClicked = true; break;
         case 7: speakButtonClicked = true; break;
+        case 8: takeButtonClicked = true; break;
         case 9: useButtonClicked = true; break;
-        case 12: inventoryButtonClicked = true; break;
+        case 10: hitButtonClicked = true; break;
+        case 11: inventoryButtonClicked = true; break;
         default: break;
     }
 }
@@ -299,9 +329,9 @@ void ButtonMgr::updatePressedFlags()
     backButtonPressed = buttons[5].isEnabled() && buttons[5].getState() == PRESSED;
     examineButtonPressed = buttons[6].isEnabled() && buttons[6].getState() == PRESSED;
     speakButtonPressed = buttons[7].isEnabled() && buttons[7].getState() == PRESSED;
-    hitButtonPressed = false;
+    hitButtonPressed = buttons[10].isEnabled() && buttons[10].getState() == PRESSED;
     useButtonPressed = buttons[9].isEnabled() && buttons[9].getState() == PRESSED;
-    inventoryButtonPressed = buttons[12].isEnabled() && buttons[12].getState() == PRESSED;
+    inventoryButtonPressed = buttons[11].isEnabled() && buttons[11].getState() == PRESSED;
 }
 
 void ButtonMgr::update()
@@ -315,7 +345,10 @@ void ButtonMgr::update()
     examineButtonClicked = false;
     speakButtonClicked = false;
     useButtonClicked = false;
+    takeButtonClicked = false;
+    hitButtonClicked = false;
     inventoryButtonClicked = false;
+    moveOrActionButtonClicked = false;
 
     Vector2 mousePos = GetMousePosition();
     const bool mouseDown = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
@@ -335,7 +368,7 @@ void ButtonMgr::update()
     {
         if (findEnabledButtonUnderMouse(mousePos) == activePressButtonIndex)
         {
-            if (GetTime() - activePressStartTime >= kButtonHoldDurationSeconds)
+            if (GetTime() - activePressStartTime >= clickHoldDurationSeconds)
             {
                 registerButtonClick(activePressButtonIndex);
                 activePressClickFired = true;
@@ -396,6 +429,13 @@ bool ButtonMgr::consumeSpeakButtonClick()
     return clicked;
 }
 
+bool ButtonMgr::consumeTakeButtonClick()
+{
+    const bool clicked = takeButtonClicked;
+    takeButtonClicked = false;
+    return clicked;
+}
+
 bool ButtonMgr::consumeUseButtonClick()
 {
     const bool clicked = useButtonClicked;
@@ -452,23 +492,33 @@ bool ButtonMgr::consumeInventoryButtonClick()
     return clicked;
 }
 
+bool ButtonMgr::consumeMoveOrActionButtonClick()
+{
+    const bool clicked = moveOrActionButtonClicked;
+    moveOrActionButtonClicked = false;
+    return clicked;
+}
+
+bool ButtonMgr::consumeHitButtonClick()
+{
+    const bool clicked = hitButtonClicked;
+    hitButtonClicked = false;
+    return clicked;
+}
+
 void ButtonMgr::draw() const
 {
     const float pad = 18.0f;
-    const float labelHeight = 22.0f;
     const Color panelBorder = (uiBackdrop != nullptr)
         ? uiBackdrop->panelBorderColor()
         : kPanelBorder;
-    const Color sectionLabel = (uiBackdrop != nullptr)
-        ? uiBackdrop->sectionLabelColor()
-        : kSectionLabel;
 
     if (uiBackdrop != nullptr)
         uiBackdrop->drawPanel(buttonBox, 0.04f, 10);
     else
         DrawRectangleRounded(buttonBox, 0.04f, 10, kPanelFill);
 
-    DrawRectangleRoundedLinesEx(buttonBox, 0.04f, 10, 3.0f, panelBorder);
+    DrawRoundedBorder(buttonBox, 0.04f, 10, 3.0f, panelBorder);
 
     Rectangle accentBar = {
         buttonBox.x + 8.0f,
@@ -481,24 +531,19 @@ void ButtonMgr::draw() const
     else
         DrawRectangleRounded(accentBar, 1.0f, 4, kPanelAccent);
 
-    DrawTextEx(buttonFont, "MOVE", { buttonBox.x + pad, buttonBox.y + pad }, 15.0f, 1, sectionLabel);
-    DrawTextEx(
-        buttonFont,
-        "ACTIONS",
-        { buttonBox.x + pad + buttonBox.width * 0.32f, buttonBox.y + pad },
-        15.0f,
-        1,
-        sectionLabel);
-    DrawTextEx(buttonFont, "STATUS", { healthBarBounds.x, buttonBox.y + pad }, 15.0f, 1, sectionLabel);
+    drawSectionLabel("MOVE", buttonBox.x + pad, buttonBox.y + pad);
+    drawSectionLabel("ACTIONS", buttonBox.x + pad + buttonBox.width * 0.32f, buttonBox.y + pad);
+    drawSectionLabel("STATUS", healthBarBounds.x, buttonBox.y + pad);
 
     const float inventoryHeight = 52.0f;
     const float inventoryY = buttonBox.y + buttonBox.height - pad - inventoryHeight;
-    DrawTextEx(buttonFont, "INVENTORY", { buttonBox.x + pad, inventoryY - 24.0f }, 15.0f, 1, sectionLabel);
+    drawSectionLabel("INVENTORY", buttonBox.x + pad, inventoryY - 24.0f);
 
     drawStatusBar("Health", healthBarBounds, healthPercent);
     drawStatusBar("Energy", energyBarBounds, energyPercent);
-    drawStatusBar("Tenacity", tenacityBarBounds, tenacityPercent);
+    drawStatusBar("Resolve", resolveBarBounds, resolvePercent);
     drawStatusBar("Lucidity", lucidityBarBounds, lucidityPercent);
+    drawStatusBar("Charisma", charismaBarBounds, charismaPercent);
 
     for (const auto& button : buttons)
         button.draw();

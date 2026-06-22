@@ -18,6 +18,15 @@ float clampVolume(float value)
     return value;
 }
 
+float clampClickHoldSeconds(float value)
+{
+    if (value < 0.05f)
+        return 0.05f;
+    if (value > 0.5f)
+        return 0.5f;
+    return value;
+}
+
 }
 
 bool loadGameConfig(const std::string& configPath, GameConfig& outConfig)
@@ -44,6 +53,7 @@ bool loadGameConfig(const std::string& configPath, GameConfig& outConfig)
         const nlohmann::json& display = config["display"];
         outConfig.display.width = display.value("width", outConfig.display.width);
         outConfig.display.height = display.value("height", outConfig.display.height);
+        outConfig.display.fullscreen = display.value("fullscreen", outConfig.display.fullscreen);
     }
 
     if (config.contains("audio") && config["audio"].is_object())
@@ -55,6 +65,33 @@ bool loadGameConfig(const std::string& configPath, GameConfig& outConfig)
         outConfig.audio.sfx = clampVolume(audio.value("sfx", outConfig.audio.sfx));
     }
 
+    if (config.contains("input") && config["input"].is_object())
+    {
+        const nlohmann::json& input = config["input"];
+        outConfig.input.clickHoldSeconds = clampClickHoldSeconds(
+            input.value("clickHoldSeconds", outConfig.input.clickHoldSeconds));
+        outConfig.input.skipDropConfirmation = input.value(
+            "skipDropConfirmation", outConfig.input.skipDropConfirmation);
+    }
+
+    if (config.contains("tts") && config["tts"].is_object())
+    {
+        const nlohmann::json& tts = config["tts"];
+        outConfig.tts.enabled = tts.value("enabled", outConfig.tts.enabled);
+        outConfig.tts.voiceId = tts.value("voice", outConfig.tts.voiceId);
+        outConfig.tts.bundleDir = tts.value("bundleDir", outConfig.tts.bundleDir);
+    }
+
+    if (config.contains("saves") && config["saves"].is_object())
+    {
+        const nlohmann::json& saves = config["saves"];
+        outConfig.saves.maxNamedSaves = saves.value(
+            "maxNamedSaves",
+            saves.value("max_number_of_saves", outConfig.saves.maxNamedSaves));
+        if (outConfig.saves.maxNamedSaves < 0)
+            outConfig.saves.maxNamedSaves = 0;
+    }
+
     if (config.contains("ui") && config["ui"].is_object())
     {
         const std::string background = config["ui"].value("background", "morris");
@@ -62,6 +99,52 @@ bool loadGameConfig(const std::string& configPath, GameConfig& outConfig)
     }
 
     return outConfig.display.width > 0 && outConfig.display.height > 0;
+}
+
+bool saveGameConfig(const std::string& configPath, const GameConfig& config)
+{
+    nlohmann::json root;
+    std::ifstream in(configPath.c_str());
+    if (in.is_open())
+    {
+        try
+        {
+            in >> root;
+        }
+        catch (const nlohmann::json::exception&)
+        {
+            root = nlohmann::json::object();
+        }
+    }
+
+    if (!root.is_object())
+        root = nlohmann::json::object();
+
+    root["display"] = {
+        {"width", config.display.width},
+        {"height", config.display.height},
+        {"fullscreen", config.display.fullscreen}
+    };
+    root["audio"] = {
+        {"master", config.audio.master},
+        {"music", config.audio.music},
+        {"ambient", config.audio.ambient},
+        {"sfx", config.audio.sfx}
+    };
+    root["input"] = {
+        {"clickHoldSeconds", config.input.clickHoldSeconds},
+        {"skipDropConfirmation", config.input.skipDropConfirmation}
+    };
+    root["saves"] = {
+        {"maxNamedSaves", config.saves.maxNamedSaves}
+    };
+
+    std::ofstream out(configPath.c_str());
+    if (!out.is_open())
+        return false;
+
+    out << root.dump(2);
+    return out.good();
 }
 
 }

@@ -2,6 +2,8 @@
 #define INVENTORY_MGR_H
 
 #include <InventoryItem.h>
+#include <ItemCombinationDatabase.h>
+#include <ItemDatabase.h>
 #include <UiBackdrop.h>
 #include <raylib.h>
 #include <string>
@@ -26,8 +28,12 @@ class InventoryMgr
     void setPanelBounds(Rectangle bounds);
     void setFont(Font font);
     void setAssetRoots(const std::string& primaryAssetRoot, const std::string& fallbackAssetRoot);
+    void setItemDatabase(const ItemDatabase* database);
+    void setItemCombinationDatabase(const ItemCombinationDatabase* database);
     void setUiBackdrop(const UiBackdrop* backdrop);
     bool ensureAssetsLoaded();
+    bool ensureIconAssetsLoaded();
+    void reloadItemIconsIfNeeded();
 
     bool isOpen() const { return viewState != InventoryViewState::Closed; }
     bool isExaminingItem() const { return viewState == InventoryViewState::ExaminingItem; }
@@ -44,23 +50,45 @@ class InventoryMgr
     void draw() const;
 
     void examineSelectedItem();
+    bool canExtractFromExaminedItem(const ItemDatabase& database) const;
+    bool extractFromExaminedItem(const ItemDatabase& database, InventoryItem& outExtracted);
+    void refreshItemFromDatabase(const std::string& id);
     const InventoryItem* getSelectedItem() const;
+    const InventoryItem* getItemById(const std::string& id) const;
+    bool hasItem(const std::string& id) const;
+    void addItem(const InventoryItem& item);
+    bool removeItem(const std::string& id);
+    std::vector<InventoryItem> exportItemSnapshots() const;
+    void restoreFromSnapshots(const std::vector<InventoryItem>& savedItems);
+
+    std::string consumePendingDropItemId();
 
     private:
     void createDefaultItems();
     void loadItemTextures();
+    void loadItemAssets(InventoryItem& item);
+    void loadItemIcon(InventoryItem& item);
+    void loadItemExamineImage(InventoryItem& item);
+    void ensureItemIconLoaded(InventoryItem& item);
+    void ensureItemExamineImageLoaded(InventoryItem& item);
     bool loadItemTexture(const char* filename, Texture2D& outTexture) const;
     bool hasLoadedAssets() const;
+    bool isItemIconReady(const InventoryItem& item) const;
     void drawCloseButton() const;
     void drawItemGrid() const;
     void handleItemGridInput();
+    void handleItemCombineInput();
+    bool applyItemCombination(const ItemCombineApplication& application);
+    void drawDragGhost() const;
+    int findItemSlotAtMouse() const;
     void handleCloseButtonInput();
     void handleInventoryScrollInput();
     void drawInventoryScrollbar() const;
-    void layoutItemSlots();
+    void layoutItemSlots() const;
     Rectangle getCloseButtonBounds() const;
     float getInventoryVisibleHeight() const;
     const InventoryItem* findItem(const std::string& id) const;
+    InventoryItem* findMutableItem(const std::string& id);
     int findItemIndex(const std::string& id) const;
 
     static const float kScrollbarWidth;
@@ -72,17 +100,24 @@ class InventoryMgr
     Rectangle panelBounds{};
     InventoryViewState viewState = InventoryViewState::Closed;
     std::string selectedItemId;
+    std::string pendingDropItemId;
     std::vector<InventoryItem> items;
     mutable std::vector<Rectangle> itemSlotBounds;
     std::string primaryAssetRoot;
     std::string fallbackAssetRoot;
+    const ItemDatabase* itemDatabase = nullptr;
+    const ItemCombinationDatabase* itemCombinationDatabase = nullptr;
     const UiBackdrop* uiBackdrop = nullptr;
 
+    std::string dragItemId;
+    std::string pendingPressItemId;
+    Vector2 pressStartPos{};
+    bool isDraggingItem = false;
+
     float inventoryScrollY = 0.0f;
-    float inventoryContentHeight = 0.0f;
+    mutable float inventoryContentHeight = 0.0f;
     bool inventoryScrollbarDragging = false;
     float inventoryScrollbarDragOffsetY = 0.0f;
-    bool mouseWasDownLastFrame = false;
 };
 
 }

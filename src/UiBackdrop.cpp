@@ -162,17 +162,6 @@ void UiBackdrop::drawPanel(Rectangle bounds, float roundness, int segments) cons
     drawDarkOverlay(bounds, roundness, segments, 198);
 }
 
-void UiBackdrop::drawDialogPanel(Rectangle bounds) const
-{
-    if (!isActive())
-        return;
-
-    DrawRectangleRec(bounds, {14, 12, 18, 255});
-    drawTiledWallpaper(bounds, 0.45f);
-    drawDarkOverlay(bounds, 0.0f, 4, 210);
-    DrawRectangleRec(bounds, {36, 32, 42, 48});
-}
-
 void UiBackdrop::drawAccentBar(Rectangle bar) const
 {
     DrawRectangleRounded(bar, 1.0f, 4, kPanelAccent);

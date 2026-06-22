@@ -1,5 +1,6 @@
 #include "AudioManager.h"
 #include "ImageCompression.h"
+#include "OpusAudio.h"
 
 #include <algorithm>
 #include <cctype>
@@ -105,6 +106,8 @@ bool AudioManager::ensureDeviceReady()
 
 void AudioManager::shutdown()
 {
+    stopDialog();
+    clearItemExamineAudio();
     unloadMusicTrack(musicTrack);
     unloadAmbientTracks();
 
@@ -136,6 +139,48 @@ void AudioManager::setVolumes(const AudioVolumeConfig& volumeConfig)
     volumes = volumeConfig;
     if (deviceReady)
         SetMasterVolume(volumes.master);
+
+    refreshCategoryVolumes();
+}
+
+void AudioManager::setGameplayPaused(bool paused, float fadeSeconds)
+{
+    gameplayPaused = paused;
+    gameplayMixTarget = paused ? 0.0f : 1.0f;
+    gameplayMixFadeRate = fadeSeconds > 0.0f ? (1.0f / fadeSeconds) : 1000.0f;
+}
+
+float AudioManager::appliedVolume(float baseVolume) const
+{
+    return baseVolume * gameplayMix;
+}
+
+void AudioManager::updateGameplayMix(float deltaSeconds)
+{
+    if (gameplayMix < gameplayMixTarget)
+        gameplayMix = std::min(gameplayMixTarget, gameplayMix + gameplayMixFadeRate * deltaSeconds);
+    else if (gameplayMix > gameplayMixTarget)
+        gameplayMix = std::max(gameplayMixTarget, gameplayMix - gameplayMixFadeRate * deltaSeconds);
+}
+
+void AudioManager::refreshCategoryVolumes()
+{
+    if (musicTrack.loaded)
+    {
+        musicTrack.targetVolume = effectiveVolume(AudioCategory::Music, musicTrack.sourceClipVolume);
+        if (musicTrack.playing && !musicTrack.fadingIn && !musicTrack.fadingOut)
+            musicTrack.currentVolume = musicTrack.targetVolume;
+    }
+
+    for (FadingAmbientTrack& track : ambientTracks)
+    {
+        if (!track.loaded)
+            continue;
+
+        track.targetVolume = effectiveVolume(AudioCategory::Ambient, track.sourceClipVolume);
+        if (track.playing && !track.fadingIn && !track.fadingOut)
+            track.currentVolume = track.targetVolume;
+    }
 }
 
 float AudioManager::effectiveVolume(AudioCategory category, float clipVolume) const
@@ -283,6 +328,45 @@ bool AudioManager::loadSoundClip(
     return true;
 }
 
+bool AudioManager::loadDialogClip(
+    const std::string& path,
+    Sound& outSound,
+    float& outDurationSeconds)
+{
+    outSound = Sound{};
+    outDurationSeconds = 0.0f;
+
+    const std::string extension = fileExtensionFromPath(stripXzSuffix(path));
+    if (extension != ".opus")
+    {
+        TraceLog(LOG_WARNING, "Unsupported dialog format for '%s' (expected .opus)", path.c_str());
+        return false;
+    }
+
+    std::vector<unsigned char> bytes;
+    if (!resolveAssetBytes(path, bytes) || bytes.empty())
+        return false;
+
+    Wave wave = {};
+    if (!decodeOpusBytesToWave(bytes.data(), static_cast<int>(bytes.size()), wave))
+        return false;
+
+    outSound = LoadSoundFromWave(wave);
+    unloadDecodedWave(wave);
+    if (outSound.stream.buffer == nullptr)
+        return false;
+
+    if (outSound.frameCount > 0 && outSound.stream.sampleRate > 0)
+    {
+        outDurationSeconds = static_cast<float>(outSound.frameCount)
+            / static_cast<float>(outSound.stream.sampleRate);
+    }
+    if (outDurationSeconds <= 0.0f)
+        outDurationSeconds = 0.2f;
+
+    return true;
+}
+
 bool AudioManager::acquireAmbientSound(const std::string& path, Sound& outSound, bool& outUsesAlias)
 {
     outSound = Sound{};
@@ -408,6 +492,7 @@ void AudioManager::startMusicTrack(FadingMusicTrack& track, const AudioClipDef& 
     track.loaded = true;
     track.path = clip.path;
     track.tempFilePath = tempFile;
+    track.sourceClipVolume = clip.volume;
     track.targetVolume = effectiveVolume(AudioCategory::Music, clip.volume);
     track.fadeInSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_in", clip.fadeIn));
     track.fadeOutSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_out", clip.fadeOut));
@@ -418,7 +503,7 @@ void AudioManager::startMusicTrack(FadingMusicTrack& track, const AudioClipDef& 
     track.loop = clip.loop;
     track.music.looping = clip.loop;
 
-    SetMusicVolume(track.music, track.currentVolume);
+    SetMusicVolume(track.music, appliedVolume(track.currentVolume));
     PlayMusicStream(track.music);
     track.playing = true;
     TraceLog(LOG_INFO, "Started music: %s", clip.path.c_str());
@@ -442,6 +527,7 @@ void AudioManager::startAmbientTrack(const AudioClipDef& clip)
     track.loaded = true;
     track.path = clip.path;
     track.usesCachedAlias = usesAlias;
+    track.sourceClipVolume = clip.volume;
     track.targetVolume = effectiveVolume(AudioCategory::Ambient, clip.volume);
     track.fadeInSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_in", clip.fadeIn));
     track.fadeOutSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_out", clip.fadeOut));
@@ -451,7 +537,7 @@ void AudioManager::startAmbientTrack(const AudioClipDef& clip)
     track.currentVolume = track.fadingIn ? 0.0f : track.targetVolume;
     track.loop = clip.loop;
 
-    SetSoundVolume(track.sound, track.currentVolume);
+    SetSoundVolume(track.sound, appliedVolume(track.currentVolume));
     PlaySound(track.sound);
     track.playing = true;
     ambientTracks.push_back(track);
@@ -511,7 +597,7 @@ void AudioManager::updateMusicTrack(FadingMusicTrack& track, float deltaSeconds)
     }
 
     if (track.playing || track.fadingOut)
-        SetMusicVolume(track.music, track.currentVolume);
+        SetMusicVolume(track.music, appliedVolume(track.currentVolume));
 }
 
 void AudioManager::updateAmbientTrack(FadingAmbientTrack& track, float deltaSeconds)
@@ -521,7 +607,7 @@ void AudioManager::updateAmbientTrack(FadingAmbientTrack& track, float deltaSeco
 
     if (track.loop && track.playing && !track.fadingOut && !IsSoundPlaying(track.sound))
     {
-        SetSoundVolume(track.sound, track.currentVolume);
+        SetSoundVolume(track.sound, appliedVolume(track.currentVolume));
         PlaySound(track.sound);
     }
 
@@ -570,7 +656,218 @@ void AudioManager::updateAmbientTrack(FadingAmbientTrack& track, float deltaSeco
     }
 
     if (track.playing || track.fadingOut)
-        SetSoundVolume(track.sound, track.currentVolume);
+        SetSoundVolume(track.sound, appliedVolume(track.currentVolume));
+}
+
+void AudioManager::stopDialog()
+{
+    for (ActiveSound& queuedClip : dialogQueue)
+    {
+        if (queuedClip.loaded)
+            UnloadSound(queuedClip.sound);
+        removeTempFile(queuedClip.tempFilePath);
+    }
+
+    dialogQueue.clear();
+    dialogQueueIndex = 0;
+}
+
+void AudioManager::startNextQueuedDialogClip()
+{
+    while (dialogQueueIndex < dialogQueue.size())
+    {
+        ActiveSound& queuedClip = dialogQueue[dialogQueueIndex];
+        if (!queuedClip.loaded)
+        {
+            ++dialogQueueIndex;
+            continue;
+        }
+
+        const float volume = effectiveVolume(AudioCategory::Sfx, dialogClipVolume);
+        queuedClip.baseVolume = volume;
+        SetSoundVolume(queuedClip.sound, appliedVolume(volume));
+        PlaySound(queuedClip.sound);
+        return;
+    }
+}
+
+void AudioManager::updateDialogQueue(float deltaSeconds)
+{
+    if (dialogQueue.empty() || dialogQueueIndex >= dialogQueue.size())
+        return;
+
+    ActiveSound& currentClip = dialogQueue[dialogQueueIndex];
+    if (!currentClip.loaded)
+    {
+        ++dialogQueueIndex;
+        startNextQueuedDialogClip();
+        return;
+    }
+
+    currentClip.remainingSeconds -= deltaSeconds;
+    if (currentClip.remainingSeconds > 0.0f)
+    {
+        SetSoundVolume(currentClip.sound, appliedVolume(currentClip.baseVolume));
+        return;
+    }
+
+    removeTempFile(currentClip.tempFilePath);
+    UnloadSound(currentClip.sound);
+    currentClip.loaded = false;
+    ++dialogQueueIndex;
+    startNextQueuedDialogClip();
+}
+
+void AudioManager::playDialog(const std::string& relativePath, float volume)
+{
+    if (relativePath.empty())
+        return;
+
+    playDialogSequence({ relativePath }, volume);
+}
+
+bool AudioManager::hasDialogAsset(const std::string& relativePath) const
+{
+    if (relativePath.empty())
+        return false;
+
+    std::string playablePath;
+    std::string tempFile;
+    return resolveMusicAssetFile(relativePath, playablePath, tempFile);
+}
+
+bool AudioManager::playDialogAsset(const std::string& relativePath, float volume)
+{
+    return playDialogAssetSequence({ relativePath }, volume);
+}
+
+bool AudioManager::playDialogAssetSequence(
+    const std::vector<std::string>& relativePaths,
+    float volume)
+{
+    if (!ensureDeviceReady())
+        return false;
+
+    stopDialog();
+    dialogClipVolume = volume;
+
+    bool queuedAny = false;
+    for (const std::string& relativePath : relativePaths)
+    {
+        if (relativePath.empty())
+            continue;
+
+        std::string playablePath;
+        std::string tempFile;
+        if (!resolveMusicAssetFile(relativePath, playablePath, tempFile))
+        {
+            TraceLog(LOG_WARNING, "Failed to load bundled TTS clip: %s", relativePath.c_str());
+            continue;
+        }
+
+        Sound sound = LoadSound(playablePath.c_str());
+        if (sound.stream.buffer == nullptr)
+        {
+            TraceLog(LOG_WARNING, "Failed to decode bundled TTS clip: %s", playablePath.c_str());
+            removeTempFile(tempFile);
+            continue;
+        }
+
+        float durationSeconds = 0.2f;
+        if (sound.frameCount > 0 && sound.stream.sampleRate > 0)
+        {
+            durationSeconds = static_cast<float>(sound.frameCount)
+                / static_cast<float>(sound.stream.sampleRate);
+        }
+
+        ActiveSound queuedClip;
+        queuedClip.sound = sound;
+        queuedClip.loaded = true;
+        queuedClip.baseVolume = effectiveVolume(AudioCategory::Sfx, volume);
+        queuedClip.remainingSeconds = std::max(0.05f, durationSeconds);
+        queuedClip.tempFilePath = tempFile;
+        dialogQueue.push_back(queuedClip);
+        TraceLog(LOG_INFO, "Queued bundled TTS: %s (%.2fs)", relativePath.c_str(), durationSeconds);
+        queuedAny = true;
+    }
+
+    if (!queuedAny)
+        return false;
+
+    dialogQueueIndex = 0;
+    startNextQueuedDialogClip();
+    return true;
+}
+
+void AudioManager::playDialogMp3File(
+    const std::string& filePath,
+    float volume,
+    const std::string& tempFilePath)
+{
+    if (filePath.empty() || !ensureDeviceReady() || !FileExists(filePath.c_str()))
+        return;
+
+    stopDialog();
+    dialogClipVolume = volume;
+
+    Sound sound = LoadSound(filePath.c_str());
+    if (sound.stream.buffer == nullptr)
+    {
+        TraceLog(LOG_WARNING, "Failed to load TTS dialog clip: %s", filePath.c_str());
+        return;
+    }
+
+    float durationSeconds = 0.2f;
+    if (sound.frameCount > 0 && sound.stream.sampleRate > 0)
+    {
+        durationSeconds = static_cast<float>(sound.frameCount)
+            / static_cast<float>(sound.stream.sampleRate);
+    }
+
+    ActiveSound queuedClip;
+    queuedClip.sound = sound;
+    queuedClip.loaded = true;
+    queuedClip.baseVolume = effectiveVolume(AudioCategory::Sfx, 1.0f);
+    queuedClip.remainingSeconds = std::max(0.05f, durationSeconds);
+    queuedClip.tempFilePath = tempFilePath;
+    dialogQueue.push_back(queuedClip);
+    dialogQueueIndex = 0;
+    startNextQueuedDialogClip();
+    TraceLog(LOG_INFO, "Playing TTS dialog: %s (%.2fs)", filePath.c_str(), durationSeconds);
+}
+
+void AudioManager::playDialogSequence(const std::vector<std::string>& relativePaths, float volume)
+{
+    if (!ensureDeviceReady())
+        return;
+
+    stopDialog();
+    dialogClipVolume = volume;
+
+    for (const std::string& relativePath : relativePaths)
+    {
+        if (relativePath.empty())
+            continue;
+
+        Sound sound{};
+        float durationSeconds = 0.0f;
+        if (!loadDialogClip(relativePath, sound, durationSeconds))
+        {
+            TraceLog(LOG_WARNING, "Failed to load dialog clip: %s", relativePath.c_str());
+            continue;
+        }
+
+        ActiveSound queuedClip;
+        queuedClip.sound = sound;
+        queuedClip.loaded = true;
+        queuedClip.baseVolume = effectiveVolume(AudioCategory::Sfx, volume);
+        queuedClip.remainingSeconds = std::max(0.05f, durationSeconds);
+        dialogQueue.push_back(queuedClip);
+        TraceLog(LOG_INFO, "Queued dialog: %s (%.2fs)", relativePath.c_str(), durationSeconds);
+    }
+
+    dialogQueueIndex = 0;
+    startNextQueuedDialogClip();
 }
 
 void AudioManager::updateActiveSounds(float deltaSeconds)
@@ -586,6 +883,7 @@ void AudioManager::updateActiveSounds(float deltaSeconds)
         activeSound.remainingSeconds -= deltaSeconds;
         if (activeSound.remainingSeconds > 0.0f)
         {
+            SetSoundVolume(activeSound.sound, appliedVolume(activeSound.baseVolume));
             remainingSounds.push_back(activeSound);
             continue;
         }
@@ -602,8 +900,26 @@ void AudioManager::update(float deltaSeconds)
     if (!deviceReady)
         return;
 
+    updateGameplayMix(deltaSeconds);
     updateActiveSounds(deltaSeconds);
+    updateDialogQueue(deltaSeconds);
+
+    const bool duckRoomAudio = !dialogQueue.empty()
+        && dialogQueueIndex < dialogQueue.size()
+        && dialogQueue[dialogQueueIndex].loaded;
+    const float dialogDuck = duckRoomAudio ? 0.15f : 1.0f;
+    const float sceneMix = itemExamineAudioActive ? itemSceneMix : 1.0f;
+    const float roomAudioDuck = dialogDuck * sceneMix;
+    if (musicTrack.loaded && musicTrack.playing)
+        musicTrack.targetVolume = effectiveVolume(AudioCategory::Music, musicTrack.sourceClipVolume) * roomAudioDuck;
+    for (FadingAmbientTrack& track : ambientTracks)
+    {
+        if (track.playing)
+            track.targetVolume = effectiveVolume(AudioCategory::Ambient, track.sourceClipVolume) * roomAudioDuck;
+    }
+
     updateMusicTrack(musicTrack, deltaSeconds);
+    updateMusicTrack(itemMusicTrack, deltaSeconds);
 
     std::vector<FadingAmbientTrack> remainingAmbient;
     remainingAmbient.reserve(ambientTracks.size());
@@ -618,6 +934,18 @@ void AudioManager::update(float deltaSeconds)
     }
 
     ambientTracks.swap(remainingAmbient);
+
+    std::vector<FadingAmbientTrack> remainingItemAmbient;
+    remainingItemAmbient.reserve(itemAmbientTracks.size());
+    for (FadingAmbientTrack& track : itemAmbientTracks)
+    {
+        updateAmbientTrack(track, deltaSeconds);
+        if (track.loaded && (track.playing || track.fadingIn || track.fadingOut))
+            remainingItemAmbient.push_back(track);
+        else
+            unloadAmbientTrack(track);
+    }
+    itemAmbientTracks.swap(remainingItemAmbient);
 
     if (pendingMusicStart && musicTrack.loaded && !musicTrack.playing && !musicTrack.fadingIn && !musicTrack.fadingOut)
     {
@@ -643,13 +971,14 @@ void AudioManager::playSfx(const AudioClipDef& clip)
     }
 
     const float volume = effectiveVolume(AudioCategory::Sfx, clip.volume);
-    SetSoundVolume(sound, volume);
+    SetSoundVolume(sound, appliedVolume(volume));
     PlaySound(sound);
     TraceLog(LOG_INFO, "Playing sfx: %s (%.2fs at volume %.2f)", clip.path.c_str(), durationSeconds, volume);
 
     ActiveSound activeSound;
     activeSound.sound = sound;
     activeSound.loaded = true;
+    activeSound.baseVolume = volume;
     activeSound.remainingSeconds = std::max(0.05f, durationSeconds);
     activeSound.tempFilePath = tempFile;
     activeSounds.push_back(activeSound);
@@ -693,6 +1022,7 @@ void AudioManager::retainMusicTrack(FadingMusicTrack& track, const AudioClipDef&
     track.fadingOut = false;
     track.fadingIn = false;
     track.fadeElapsed = 0.0f;
+    track.sourceClipVolume = clip.volume;
     track.targetVolume = effectiveVolume(AudioCategory::Music, clip.volume);
     track.fadeInSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_in", clip.fadeIn));
     track.fadeOutSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_out", clip.fadeOut));
@@ -702,7 +1032,7 @@ void AudioManager::retainMusicTrack(FadingMusicTrack& track, const AudioClipDef&
     if (track.playing)
         track.currentVolume = track.targetVolume;
 
-    SetMusicVolume(track.music, track.currentVolume);
+    SetMusicVolume(track.music, appliedVolume(track.currentVolume));
 }
 
 void AudioManager::retainAmbientTrack(FadingAmbientTrack& track, const AudioClipDef& clip)
@@ -710,6 +1040,7 @@ void AudioManager::retainAmbientTrack(FadingAmbientTrack& track, const AudioClip
     track.fadingOut = false;
     track.fadingIn = false;
     track.fadeElapsed = 0.0f;
+    track.sourceClipVolume = clip.volume;
     track.targetVolume = effectiveVolume(AudioCategory::Ambient, clip.volume);
     track.fadeInSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_in", clip.fadeIn));
     track.fadeOutSeconds = std::max(0.0f, attributeOrDefault(clip, "fade_out", clip.fadeOut));
@@ -718,7 +1049,7 @@ void AudioManager::retainAmbientTrack(FadingAmbientTrack& track, const AudioClip
     if (track.playing)
         track.currentVolume = track.targetVolume;
 
-    SetSoundVolume(track.sound, track.currentVolume);
+    SetSoundVolume(track.sound, appliedVolume(track.currentVolume));
 
     if (track.loop && !IsSoundPlaying(track.sound))
     {
@@ -742,6 +1073,10 @@ void AudioManager::syncRoomStreams(const RoomAudioConfig& roomAudio)
 {
     if (!ensureDeviceReady())
         return;
+
+    TraceLog(LOG_INFO, "Room audio sync: music=%s ambient_tracks=%zu",
+        roomAudio.hasMusic ? roomAudio.music.path.c_str() : "(none)",
+        roomAudio.ambient.size());
 
     if (roomAudio.hasMusic)
     {
@@ -810,6 +1145,75 @@ void AudioManager::onRoomEnter(const RoomAudioConfig& roomAudio, const std::stri
 {
     playRoomSfx(roomAudio, "on_enter", fromRoom, "");
     syncRoomStreams(roomAudio);
+}
+
+void AudioManager::applyItemExamineAudio(const ItemAudioOverlayDef& overlay)
+{
+    clearItemExamineAudio();
+
+    if (!overlay.hasMusic && overlay.ambient.empty() && !overlay.muteSceneAudio)
+        return;
+
+    itemExamineAudioActive = true;
+    activeItemAudio = overlay;
+    itemSceneMix = overlay.muteSceneAudio ? 0.0f : std::max(0.0f, overlay.sceneMix);
+
+    if (overlay.hasMusic)
+        startMusicTrack(itemMusicTrack, overlay.music);
+
+    for (const AudioClipDef& clip : overlay.ambient)
+    {
+        if (clip.path.empty() || !ensureDeviceReady())
+            continue;
+
+        FadingAmbientTrack track;
+        Sound sound{};
+        bool usesAlias = false;
+        if (!acquireAmbientSound(clip.path, sound, usesAlias))
+            continue;
+
+        track.sound = sound;
+        track.loaded = true;
+        track.path = clip.path;
+        track.usesCachedAlias = usesAlias;
+        track.sourceClipVolume = clip.volume;
+        track.targetVolume = effectiveVolume(AudioCategory::Ambient, clip.volume);
+        track.fadeInSeconds = std::max(0.0f, clip.fadeIn);
+        track.fadeOutSeconds = std::max(0.0f, clip.fadeOut);
+        track.fadeElapsed = 0.0f;
+        track.fadingIn = track.fadeInSeconds > 0.0f;
+        track.fadingOut = false;
+        track.currentVolume = track.fadingIn ? 0.0f : track.targetVolume;
+        track.loop = clip.loop;
+
+        SetSoundVolume(track.sound, appliedVolume(track.currentVolume));
+        PlaySound(track.sound);
+        track.playing = true;
+        itemAmbientTracks.push_back(track);
+    }
+}
+
+void AudioManager::clearItemExamineAudio()
+{
+    if (itemMusicTrack.loaded)
+    {
+        if (itemMusicTrack.playing)
+            fadeOutMusicTrack(itemMusicTrack, itemMusicTrack.fadeOutSeconds > 0.0f ? itemMusicTrack.fadeOutSeconds : 0.35f);
+        else
+            unloadMusicTrack(itemMusicTrack);
+    }
+
+    for (FadingAmbientTrack& track : itemAmbientTracks)
+    {
+        if (track.playing)
+            fadeOutAmbientTrack(track, track.fadeOutSeconds > 0.0f ? track.fadeOutSeconds : 0.35f);
+        else if (track.loaded)
+            unloadAmbientTrack(track);
+    }
+
+    itemExamineAudioActive = false;
+    activeItemAudio = ItemAudioOverlayDef{};
+    itemSceneMix = 1.0f;
 }
 
 }

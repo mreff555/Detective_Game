@@ -18,6 +18,15 @@ std::string compressedAssetPath(const std::string& path);
 
 bool decompressXzFile(const std::string& path, std::vector<unsigned char>& outBytes);
 
+bool compressBytesToXzFile(
+    const unsigned char* input,
+    size_t inputSize,
+    const std::string& outputPath);
+
+bool writeBinaryFile(const std::string& path, const unsigned char* data, size_t size);
+
+bool ensureParentDirectoryExists(const std::string& filePath);
+
 bool loadAssetBytesFromFile(const std::string& path, std::vector<unsigned char>& outBytes);
 
 bool loadImageFromAssetFile(const std::string& path, Image& outImage);

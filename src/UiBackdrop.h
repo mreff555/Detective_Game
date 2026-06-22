@@ -30,7 +30,6 @@ class UiBackdrop
     bool isActive() const { return backgroundId != UiBackgroundId::None && textureReady; }
 
     void drawPanel(Rectangle bounds, float roundness = 0.04f, int segments = 10) const;
-    void drawDialogPanel(Rectangle bounds) const;
     void drawAccentBar(Rectangle bar) const;
 
     ButtonStyle contrastedButtonStyle(const ButtonStyle& base) const;

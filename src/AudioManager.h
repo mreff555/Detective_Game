@@ -2,6 +2,7 @@
 #define AUDIO_MANAGER_H
 
 #include <AudioTypes.h>
+#include <ItemDef.h>
 #include <GameConfig.h>
 #include <raylib.h>
 #include <map>
@@ -21,11 +22,26 @@ class AudioManager
     void shutdown();
 
     void setVolumes(const AudioVolumeConfig& volumes);
+    void setGameplayPaused(bool paused, float fadeSeconds = 0.6f);
+    bool isGameplayPaused() const { return gameplayPaused; }
     void update(float deltaSeconds);
 
     void onRoomEnter(const RoomAudioConfig& roomAudio, const std::string& fromRoom = "");
     void onRoomExit(const RoomAudioConfig& roomAudio, const std::string& toRoom = "");
     void playSfx(const AudioClipDef& clip);
+    void playDialog(const std::string& relativePath, float volume = 1.0f);
+    void playDialogSequence(const std::vector<std::string>& relativePaths, float volume = 1.0f);
+    void playDialogMp3File(
+        const std::string& filePath,
+        float volume = 1.0f,
+        const std::string& tempFilePath = "");
+    bool hasDialogAsset(const std::string& relativePath) const;
+    bool playDialogAsset(const std::string& relativePath, float volume = 1.0f);
+    bool playDialogAssetSequence(const std::vector<std::string>& relativePaths, float volume = 1.0f);
+    void stopDialog();
+    void applyItemExamineAudio(const ItemAudioOverlayDef& overlay);
+    void clearItemExamineAudio();
+    bool hasItemExamineAudio() const { return itemExamineAudioActive; }
 
     private:
     struct FadingMusicTrack
@@ -33,6 +49,7 @@ class AudioManager
         Music music{};
         bool loaded = false;
         bool playing = false;
+        float sourceClipVolume = 1.0f;
         float targetVolume = 1.0f;
         float currentVolume = 0.0f;
         float fadeInSeconds = 0.0f;
@@ -50,6 +67,7 @@ class AudioManager
         Sound sound{};
         bool loaded = false;
         bool playing = false;
+        float sourceClipVolume = 1.0f;
         float targetVolume = 1.0f;
         float currentVolume = 0.0f;
         float fadeInSeconds = 0.0f;
@@ -67,13 +85,19 @@ class AudioManager
     {
         Sound sound{};
         bool loaded = false;
+        float baseVolume = 1.0f;
         float remainingSeconds = 0.0f;
         std::string tempFilePath;
     };
 
+    void refreshCategoryVolumes();
+    void updateGameplayMix(float deltaSeconds);
+    float appliedVolume(float baseVolume) const;
+
     bool ensureDeviceReady();
     bool loadMusicClip(const std::string& path, Music& outMusic, std::string& outTempFile);
     bool loadSoundClip(const std::string& path, Sound& outSound, float& outDurationSeconds, std::string& outTempFile);
+    bool loadDialogClip(const std::string& path, Sound& outSound, float& outDurationSeconds);
     bool acquireAmbientSound(const std::string& path, Sound& outSound, bool& outUsesAlias);
     void releaseAmbientSound(const std::string& path, Sound& sound, bool usesAlias);
     bool resolveAssetBytes(const std::string& relativePath, std::vector<unsigned char>& outBytes) const;
@@ -90,6 +114,8 @@ class AudioManager
     void unloadAmbientTrack(FadingAmbientTrack& track);
     void unloadAmbientTracks();
     void updateActiveSounds(float deltaSeconds);
+    void updateDialogQueue(float deltaSeconds);
+    void startNextQueuedDialogClip();
     void syncRoomStreams(const RoomAudioConfig& roomAudio);
     void retainMusicTrack(FadingMusicTrack& track, const AudioClipDef& clip);
     void retainAmbientTrack(FadingAmbientTrack& track, const AudioClipDef& clip);
@@ -117,8 +143,21 @@ class AudioManager
     FadingMusicTrack musicTrack;
     std::vector<FadingAmbientTrack> ambientTracks;
     std::vector<ActiveSound> activeSounds;
+    std::vector<ActiveSound> dialogQueue;
+    size_t dialogQueueIndex = 0;
+    float dialogClipVolume = 1.0f;
     bool pendingMusicStart = false;
     AudioClipDef pendingMusicClip;
+    bool gameplayPaused = false;
+    float gameplayMix = 1.0f;
+    float gameplayMixTarget = 1.0f;
+    float gameplayMixFadeRate = 2.0f;
+
+    bool itemExamineAudioActive = false;
+    ItemAudioOverlayDef activeItemAudio;
+    FadingMusicTrack itemMusicTrack;
+    std::vector<FadingAmbientTrack> itemAmbientTracks;
+    float itemSceneMix = 1.0f;
 };
 
 }

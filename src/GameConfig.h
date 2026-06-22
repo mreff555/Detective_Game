@@ -19,16 +19,39 @@ struct DisplayConfig
 {
     int width = 1500;
     int height = 1117;
+    bool fullscreen = false;
+};
+
+struct InputConfig
+{
+    float clickHoldSeconds = 0.1f;
+    bool skipDropConfirmation = false;
+};
+
+struct TtsConfig
+{
+    bool enabled = true;
+    std::string voiceId = "leo";
+    std::string bundleDir = "resources/audio/tts";
+};
+
+struct SaveConfig
+{
+    int maxNamedSaves = 10;
 };
 
 struct GameConfig
 {
     DisplayConfig display;
     AudioVolumeConfig audio;
+    InputConfig input;
+    TtsConfig tts;
+    SaveConfig saves;
     UiConfig ui;
 };
 
 bool loadGameConfig(const std::string& configPath, GameConfig& outConfig);
+bool saveGameConfig(const std::string& configPath, const GameConfig& config);
 
 }
 

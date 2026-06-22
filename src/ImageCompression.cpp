@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <jpeglib.h>
@@ -295,6 +296,75 @@ bool loadTextureFromAssetFile(const std::string& path, Texture2D& outTexture)
 
     outTexture = texture;
     return true;
+}
+
+bool writeBinaryFile(const std::string& path, const unsigned char* data, size_t size)
+{
+    if (path.empty() || data == nullptr || size == 0)
+        return false;
+
+    std::ofstream file(path.c_str(), std::ios::binary);
+    if (!file.is_open())
+        return false;
+
+    file.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(size));
+    return file.good();
+}
+
+bool ensureParentDirectoryExists(const std::string& filePath)
+{
+    const size_t slash = filePath.find_last_of('/');
+    if (slash == std::string::npos)
+        return true;
+
+    const std::string directory = filePath.substr(0, slash);
+    if (directory.empty())
+        return true;
+
+    const std::string command = "mkdir -p \"" + directory + "\"";
+    return std::system(command.c_str()) == 0;
+}
+
+bool compressBytesToXzFile(
+    const unsigned char* input,
+    size_t inputSize,
+    const std::string& outputPath)
+{
+    if (input == nullptr || inputSize == 0 || outputPath.empty())
+        return false;
+
+    if (!ensureParentDirectoryExists(outputPath))
+        return false;
+
+    lzma_stream stream = LZMA_STREAM_INIT;
+    const lzma_ret initResult = lzma_easy_encoder(&stream, LZMA_PRESET_DEFAULT, LZMA_CHECK_CRC64);
+    if (initResult != LZMA_OK)
+        return false;
+
+    stream.next_in = input;
+    stream.avail_in = inputSize;
+
+    std::vector<unsigned char> compressed;
+    unsigned char buffer[16 * 1024];
+    lzma_ret codeResult = LZMA_OK;
+
+    do
+    {
+        stream.next_out = buffer;
+        stream.avail_out = sizeof(buffer);
+        codeResult = lzma_code(&stream, LZMA_FINISH);
+
+        const size_t produced = sizeof(buffer) - stream.avail_out;
+        if (produced > 0)
+            compressed.insert(compressed.end(), buffer, buffer + produced);
+    }
+    while (codeResult == LZMA_OK);
+
+    lzma_end(&stream);
+    if (codeResult != LZMA_STREAM_END)
+        return false;
+
+    return writeBinaryFile(outputPath, compressed.data(), compressed.size());
 }
 
 }
