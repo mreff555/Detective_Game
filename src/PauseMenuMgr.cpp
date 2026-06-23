@@ -1,6 +1,7 @@
 #include "PauseMenuMgr.h"
 #include <AudioManager.h>
 #include <RaylibCompat.h>
+#include <ScrollPanel.h>
 #include <algorithm>
 #include <cstdio>
 
@@ -43,6 +44,7 @@ PauseMenuMgr::PauseMenuMgr(int screenWidth_, int screenHeight_, Font uiFont_)
     : screenWidth(screenWidth_),
       screenHeight(screenHeight_),
       uiFont(uiFont_),
+      modalPanel(screenWidth_, screenHeight_),
       baseButtonStyle{
           {228, 220, 198, 255},
           {54, 50, 64, 255},
@@ -95,6 +97,7 @@ void PauseMenuMgr::setScreenSize(int width, int height)
 {
     screenWidth = width;
     screenHeight = height;
+    modalPanel.setScreenSize(width, height);
     if (open)
     {
         if (panel == PauseMenuPanel::Config)
@@ -440,13 +443,12 @@ float PauseMenuMgr::readSliderValue(const Rectangle& track) const
 void PauseMenuMgr::handleConfigScrollInput()
 {
     const Rectangle content = getConfigContentBounds();
-    const float maxScroll = std::max(0.0f, getConfigContentHeight() - content.height);
-    const Vector2 mouse = GetMousePosition();
-
-    if (CheckCollisionPointRec(mouse, content))
-        configScrollY -= GetMouseWheelMove() * 36.0f;
-
-    configScrollY = std::max(0.0f, std::min(configScrollY, maxScroll));
+    ScrollPanel::applyWheelScroll(
+        configScrollY,
+        content,
+        getConfigContentHeight(),
+        content.height,
+        36.0f);
 }
 
 void PauseMenuMgr::handleSliderInput()
@@ -639,8 +641,7 @@ void PauseMenuMgr::update(float deltaSeconds)
 void PauseMenuMgr::drawPanelFrame(const char* title) const
 {
     const Rectangle panel = getPanelBounds();
-
-    DrawRectangle(0, 0, screenWidth, screenHeight, kOverlayDim);
+    modalPanel.drawOverlay();
 
     const Color panelBorder = (uiBackdrop != nullptr) ? uiBackdrop->panelBorderColor() : kPanelBorder;
     if (uiBackdrop != nullptr)

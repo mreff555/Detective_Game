@@ -549,7 +549,7 @@ bool writeSaveFile(const std::string& path, const SavedGameState& state, const S
         return false;
 
     nlohmann::json root;
-    root["version"] = 4;
+    root["version"] = 5;
     root["saveMeta"] = saveMetadataToJson(metadata);
     root["sceneId"] = state.sceneId;
     root["previousSceneId"] = state.previousSceneId;
@@ -569,7 +569,19 @@ bool writeSaveFile(const std::string& path, const SavedGameState& state, const S
     root["storyFlags"] = setToJsonArray(state.storyFlags);
     root["consumedStatusActions"] = setToJsonArray(state.consumedStatusActions);
     root["committedPlayerDialogLines"] = setToJsonArray(state.committedPlayerDialogLines);
-    root["inventoryItems"] = inventoryToJson(state.inventoryItems);
+    nlohmann::json itemInstances = nlohmann::json::array();
+    for (const InventoryItem& item : state.inventoryItems)
+    {
+        ItemInstance instance = item.instance;
+        if (instance.defId.empty() && !item.id.empty())
+            instance.defId = item.id;
+        if (instance.defId.empty())
+            continue;
+        if (instance.instanceId.empty())
+            instance.instanceId = instance.defId;
+        itemInstances.push_back(itemInstanceToJson(instance));
+    }
+    root["itemInstances"] = itemInstances;
     root["droppedItems"] = droppedItemsToJson(state.droppedItemsByScene);
     root["conversation"] = {
         {"completedPhaseIds", setToJsonArray(state.conversation.completedPhaseIds)},
@@ -638,7 +650,72 @@ bool readSaveFile(const std::string& path, SavedGameState& state, SaveSlotMetada
     jsonArrayToSet(root.value("storyFlags", nlohmann::json::array()), state.storyFlags);
     jsonArrayToSet(root.value("consumedStatusActions", nlohmann::json::array()), state.consumedStatusActions);
     jsonArrayToSet(root.value("committedPlayerDialogLines", nlohmann::json::array()), state.committedPlayerDialogLines);
-    inventoryFromJson(root.value("inventoryItems", nlohmann::json::array()), state.inventoryItems);
+    const int saveVersion = root.value("version", 4);
+    if (saveVersion >= 5)
+    {
+        const nlohmann::json& itemInstances = root.value("itemInstances", nlohmann::json::array());
+        const nlohmann::json& legacyInventory = root.value("inventoryItems", nlohmann::json::array());
+        std::vector<InventoryItem> legacyItems;
+        inventoryFromJson(legacyInventory, legacyItems);
+
+        if (itemInstances.is_array() && !itemInstances.empty())
+        {
+            state.inventoryItems.clear();
+            size_t legacyIndex = 0;
+            for (const nlohmann::json& entry : itemInstances)
+            {
+                if (!entry.is_object())
+                    continue;
+
+                ItemInstance instance;
+                itemInstanceFromJson(entry, instance);
+                if (instance.defId.empty())
+                    continue;
+
+                InventoryItem item;
+                if (legacyIndex < legacyItems.size()
+                    && (legacyItems[legacyIndex].id == instance.defId
+                        || legacyItems[legacyIndex].instance.defId == instance.defId))
+                {
+                    item = legacyItems[legacyIndex];
+                    item.instance = instance;
+                    item.id = item.id.empty() ? instance.defId : item.id;
+                    ++legacyIndex;
+                }
+                else
+                {
+                    for (const InventoryItem& legacy : legacyItems)
+                    {
+                        if (legacy.id == instance.defId || legacy.instance.defId == instance.defId)
+                        {
+                            item = legacy;
+                            item.instance = instance;
+                            item.id = item.id.empty() ? instance.defId : item.id;
+                            break;
+                        }
+                    }
+                    if (item.id.empty())
+                    {
+                        item.instance = instance;
+                        item.id = instance.defId;
+                    }
+                }
+
+                state.inventoryItems.push_back(item);
+            }
+
+            if (state.inventoryItems.empty())
+                state.inventoryItems = legacyItems;
+        }
+        else
+        {
+            state.inventoryItems = legacyItems;
+        }
+    }
+    else
+    {
+        inventoryFromJson(root.value("inventoryItems", nlohmann::json::array()), state.inventoryItems);
+    }
     droppedItemsFromJson(root.value("droppedItems", nlohmann::json::object()), state.droppedItemsByScene);
 
     const nlohmann::json& conversation = root.value("conversation", nlohmann::json::object());

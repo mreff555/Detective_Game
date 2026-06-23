@@ -7,6 +7,11 @@
 
 namespace testgame
 {
+class ItemDatabase;
+}
+
+namespace testgame
+{
 
 struct ItemInstance
 {
@@ -25,6 +30,11 @@ float computeContainerTotalWeightLb(
     const ItemDef& def,
     const ItemInstance& instance,
     const ItemDef* (*resolveDef)(const std::string& defId));
+
+float computeContainerTotalWeightLb(
+    const ItemDef& def,
+    const ItemInstance& instance,
+    const ItemDatabase& database);
 
 }
 

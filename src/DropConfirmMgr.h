@@ -2,6 +2,7 @@
 #define DROP_CONFIRM_MGR_H
 
 #include <Button.h>
+#include <ModalPanel.h>
 #include <UiBackdrop.h>
 #include <raylib.h>
 #include <string>
@@ -55,6 +56,7 @@ class DropConfirmMgr
 
     Button yesButton;
     Button noButton;
+    ModalPanel modalPanel;
 };
 
 }

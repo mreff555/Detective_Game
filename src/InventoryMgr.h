@@ -4,6 +4,7 @@
 #include <InventoryItem.h>
 #include <ItemCombinationDatabase.h>
 #include <ItemDatabase.h>
+#include <ScrollPanel.h>
 #include <UiBackdrop.h>
 #include <raylib.h>
 #include <string>
@@ -114,10 +115,8 @@ class InventoryMgr
     Vector2 pressStartPos{};
     bool isDraggingItem = false;
 
-    float inventoryScrollY = 0.0f;
+    ScrollPanel inventoryScroll;
     mutable float inventoryContentHeight = 0.0f;
-    bool inventoryScrollbarDragging = false;
-    float inventoryScrollbarDragOffsetY = 0.0f;
 };
 
 }

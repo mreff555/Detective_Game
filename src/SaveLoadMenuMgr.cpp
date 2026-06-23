@@ -1,5 +1,7 @@
 #include "SaveLoadMenuMgr.h"
+#include <SaveGameService.h>
 #include <RaylibCompat.h>
+#include <ScrollPanel.h>
 #include <algorithm>
 #include <cctype>
 
@@ -25,6 +27,7 @@ SaveLoadMenuMgr::SaveLoadMenuMgr(int screenWidth_, int screenHeight_, Font uiFon
     : screenWidth(screenWidth_),
       screenHeight(screenHeight_),
       uiFont(uiFont_),
+      modalPanel(screenWidth_, screenHeight_),
       baseButtonStyle{
           {228, 220, 198, 255},
           {54, 50, 64, 255},
@@ -57,6 +60,7 @@ void SaveLoadMenuMgr::setScreenSize(int width, int height)
 {
     screenWidth = width;
     screenHeight = height;
+    modalPanel.setScreenSize(width, height);
     if (isOpen())
         layoutButtons();
 }
@@ -161,7 +165,9 @@ void SaveLoadMenuMgr::closeMenu()
 
 void SaveLoadMenuMgr::refreshLoadList()
 {
-    loadSlots = listSaveSlots();
+    loadSlots = saveGameService != nullptr
+        ? saveGameService->listSlots()
+        : listSaveSlots();
 }
 
 bool SaveLoadMenuMgr::consumeBackRequest()
@@ -279,9 +285,7 @@ void SaveLoadMenuMgr::handleLoadInput()
         : loadSlots.size() * kRowHeight;
     const float maxScroll = std::max(0.0f, contentHeight - content.height);
 
-    if (CheckCollisionPointRec(mousePos, content))
-        loadScrollY -= GetMouseWheelMove() * kRowHeight;
-    loadScrollY = std::max(0.0f, std::min(loadScrollY, maxScroll));
+    ScrollPanel::applyWheelScroll(loadScrollY, content, contentHeight, content.height, kRowHeight);
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
     {
@@ -346,8 +350,7 @@ void SaveLoadMenuMgr::update()
 void SaveLoadMenuMgr::drawPanelFrame(const char* title) const
 {
     const Rectangle panel = getPanelBounds();
-
-    DrawRectangle(0, 0, screenWidth, screenHeight, kOverlayDim);
+    modalPanel.drawOverlay();
 
     const Color panelBorder = (uiBackdrop != nullptr) ? uiBackdrop->panelBorderColor() : kPanelBorder;
     if (uiBackdrop != nullptr)

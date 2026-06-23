@@ -8,7 +8,21 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SOURCES
     src/main.cpp
-    src/Location.cpp
+    src/GameApplication.cpp
+    src/GameSession.cpp
+    src/ScrollPanel.cpp
+    src/ModalPanel.cpp
+    src/PlayerStats.cpp
+    src/GameContext.cpp
+    src/SceneVisitTracker.cpp
+    src/WorldState.cpp
+    src/SaveGameService.cpp
+    src/UiCoordinator.cpp
+    src/ActiveScene.cpp
+    src/SceneController.cpp
+    src/NarrativeNotebook.cpp
+    src/SidePanel.cpp
+    src/ProgressionService.cpp
     src/Button.cpp
     src/ButtonMgr.cpp
     src/SceneLoader.cpp

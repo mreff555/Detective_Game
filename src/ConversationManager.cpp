@@ -1,4 +1,5 @@
 #include <ConversationManager.h>
+#include <ProgressionService.h>
 #include <cstdlib>
 
 namespace testgame
@@ -95,8 +96,14 @@ bool ConversationManager::isPhaseRequirementMet(
     if (!phase.requiresPhaseId.empty() && !isPhaseComplete(phase.requiresPhaseId))
         return false;
 
-    if (!phase.requiresFlag.empty() && storyFlags.count(phase.requiresFlag) == 0)
-        return false;
+    if (!phase.requiresFlag.empty())
+    {
+        const bool hasFlag = progressionService != nullptr
+            ? progressionService->hasStoryFlag(storyFlags, phase.requiresFlag)
+            : storyFlags.count(phase.requiresFlag) > 0;
+        if (!hasFlag)
+            return false;
+    }
 
     return true;
 }

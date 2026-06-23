@@ -6,7 +6,7 @@
 namespace testgame
 {
 
-ItemDatabase* ItemDatabase::activeDatabase = nullptr;
+
 
 namespace
 {
@@ -259,7 +259,6 @@ bool ItemDatabase::load(const std::string& path, const std::string& assetRoot)
         items[it.key()] = parsed;
     }
 
-    activeDatabase = this;
     return !items.empty();
 }
 
@@ -397,7 +396,7 @@ std::string ItemDatabase::resolveImagePath(const ItemDef& def, const ItemInstanc
 
 float ItemDatabase::resolveWeightLb(const ItemDef& def, const ItemInstance& instance) const
 {
-    return computeContainerTotalWeightLb(def, instance, &ItemDatabase::resolveDefCallback);
+    return computeContainerTotalWeightLb(def, instance, *this);
 }
 
 bool ItemDatabase::isExtractableContainerContent(
@@ -414,13 +413,6 @@ bool ItemDatabase::isExtractableContainerContent(
     }
 
     return false;
-}
-
-const ItemDef* ItemDatabase::resolveDefCallback(const std::string& defId)
-{
-    if (activeDatabase == nullptr)
-        return nullptr;
-    return activeDatabase->getDef(defId);
 }
 
 InventoryItem ItemDatabase::buildInventoryItem(

@@ -1,4 +1,5 @@
 #include <InteractionMgr.h>
+#include <SidePanel.h>
 
 #include <algorithm>
 
@@ -67,13 +68,7 @@ float InteractionMgr::getRowHeight() const
 
 Rectangle InteractionMgr::getCloseButtonBounds() const
 {
-    const float pad = 14.0f;
-    return {
-        panelBounds.x + panelBounds.width - pad - kCloseButtonSize,
-        panelBounds.y + pad,
-        kCloseButtonSize,
-        kCloseButtonSize
-    };
+    return SidePanelChrome::getCloseButtonBounds(panelBounds, kCloseButtonSize);
 }
 
 void InteractionMgr::layoutOptionBounds()

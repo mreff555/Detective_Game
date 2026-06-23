@@ -10,9 +10,12 @@
 namespace testgame
 {
 
+class ProgressionService;
+
 class ConversationManager
 {
     public:
+    void setProgressionService(const ProgressionService* service) { progressionService = service; }
     void onEnterScene(const std::string& sceneId, const SceneSpeakConfig& config);
     bool canSpeak(
         const SceneSpeakConfig& config,
@@ -90,6 +93,7 @@ class ConversationManager
     std::string activeScriptPhaseId;
     std::string activeParentChoiceId;
     std::vector<ConversationChoiceDef> pendingChoices;
+    const ProgressionService* progressionService = nullptr;
 };
 
 }

@@ -245,7 +245,7 @@ void InventoryMgr::open()
 
     viewState = InventoryViewState::ItemList;
     selectedItemId.clear();
-    inventoryScrollY = 0.0f;
+    inventoryScroll.resetScroll();
     dragItemId.clear();
     pendingPressItemId.clear();
     isDraggingItem = false;
@@ -255,7 +255,7 @@ void InventoryMgr::close()
 {
     viewState = InventoryViewState::Closed;
     selectedItemId.clear();
-    inventoryScrollY = 0.0f;
+    inventoryScroll.resetScroll();
     dragItemId.clear();
     pendingPressItemId.clear();
     isDraggingItem = false;
@@ -264,7 +264,7 @@ void InventoryMgr::close()
 void InventoryMgr::returnToItemList()
 {
     viewState = InventoryViewState::ItemList;
-    inventoryScrollY = 0.0f;
+    inventoryScroll.resetScroll();
 }
 
 bool InventoryMgr::canExamineSelectedItem() const
@@ -431,7 +431,7 @@ int InventoryMgr::findItemSlotAtMouse() const
     for (size_t i = 0; i < items.size() && i < itemSlotBounds.size(); ++i)
     {
         Rectangle slot = itemSlotBounds[i];
-        slot.y -= inventoryScrollY;
+        slot.y -= inventoryScroll.getScrollY();
         if (CheckCollisionPointRec(mousePos, slot))
             return (int)i;
     }
@@ -603,68 +603,27 @@ void InventoryMgr::handleInventoryScrollInput()
         return;
 
     const float visibleHeight = getInventoryVisibleHeight();
-    const float maxScroll = std::max(0.0f, inventoryContentHeight - visibleHeight);
-    const float lineHeight = 24.0f;
     const float pad = 14.0f;
     const float headerHeight = 28.0f;
     const float contentY = panelBounds.y + pad + headerHeight;
 
-    const Rectangle scrollTrack = {
-        panelBounds.x + panelBounds.width - kScrollbarWidth - pad,
-        contentY,
-        kScrollbarWidth,
-        visibleHeight
-    };
-
-    const float thumbHeight = (inventoryContentHeight <= 0.0f)
-        ? visibleHeight
-        : std::max(24.0f, visibleHeight * (visibleHeight / inventoryContentHeight));
-    const float thumbTravel = std::max(0.0f, visibleHeight - thumbHeight);
-    const float thumbY = scrollTrack.y + (maxScroll > 0.0f
-        ? (inventoryScrollY / maxScroll) * thumbTravel
-        : 0.0f);
-
-    const Rectangle scrollThumb = {
-        scrollTrack.x + 2.0f,
-        thumbY,
-        scrollTrack.width - 4.0f,
-        thumbHeight
-    };
-
-    const Vector2 mousePos = GetMousePosition();
-
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !isDraggingItem)
-    {
-        if (CheckCollisionPointRec(mousePos, scrollThumb))
-        {
-            inventoryScrollbarDragging = true;
-            inventoryScrollbarDragOffsetY = mousePos.y - scrollThumb.y;
-        }
-        else if (CheckCollisionPointRec(mousePos, scrollTrack) && thumbTravel > 0.0f)
-        {
-            inventoryScrollY = ((mousePos.y - scrollTrack.y - thumbHeight * 0.5f) / thumbTravel) * maxScroll;
-        }
-    }
-
-    if (inventoryScrollbarDragging)
-    {
-        if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && thumbTravel > 0.0f)
-            inventoryScrollY = ((mousePos.y - scrollTrack.y - inventoryScrollbarDragOffsetY) / thumbTravel) * maxScroll;
-        else
-            inventoryScrollbarDragging = false;
-    }
-
-    const Rectangle scrollArea = {
+    inventoryScroll.setContentHeight(inventoryContentHeight);
+    inventoryScroll.setVisibleArea({
         panelBounds.x + pad,
         contentY,
         panelBounds.width - pad * 2.0f - kScrollbarWidth - 4.0f,
         visibleHeight
-    };
-
-    if (!isDraggingItem && CheckCollisionPointRec(mousePos, scrollArea))
-        inventoryScrollY -= GetMouseWheelMove() * lineHeight * 2.0f;
-
-    inventoryScrollY = std::max(0.0f, std::min(inventoryScrollY, maxScroll));
+    });
+    inventoryScroll.setScrollTrack({
+        panelBounds.x + panelBounds.width - kScrollbarWidth - pad,
+        contentY,
+        kScrollbarWidth,
+        visibleHeight
+    });
+    inventoryScroll.setWheelStep(24.0f);
+    inventoryScroll.setWheelMultiplier(2.0f);
+    inventoryScroll.setInputBlocked(isDraggingItem);
+    inventoryScroll.handleInput();
 }
 
 void InventoryMgr::layoutItemSlots() const
@@ -749,7 +708,7 @@ void InventoryMgr::drawItemGrid() const
     for (size_t i = 0; i < items.size() && i < itemSlotBounds.size(); ++i)
     {
         Rectangle slot = itemSlotBounds[i];
-        slot.y -= inventoryScrollY;
+        slot.y -= inventoryScroll.getScrollY();
 
         if (slot.y + kItemSlotSize < contentY || slot.y > contentY + visibleHeight)
             continue;
@@ -793,7 +752,7 @@ void InventoryMgr::drawItemGrid() const
     for (size_t i = 0; i < items.size() && i < itemSlotBounds.size(); ++i)
     {
         Rectangle slot = itemSlotBounds[i];
-        slot.y -= inventoryScrollY;
+        slot.y -= inventoryScroll.getScrollY();
 
         if (slot.y + kItemSlotSize < contentY || slot.y > contentY + visibleHeight)
             continue;
@@ -842,37 +801,7 @@ void InventoryMgr::drawDragGhost() const
 
 void InventoryMgr::drawInventoryScrollbar() const
 {
-    const float visibleHeight = getInventoryVisibleHeight();
-    const float maxScroll = std::max(0.0f, inventoryContentHeight - visibleHeight);
-    if (maxScroll <= 0.0f)
-        return;
-
-    const float pad = 14.0f;
-    const float headerHeight = 28.0f;
-    const float contentY = panelBounds.y + pad + headerHeight;
-
-    const Rectangle scrollTrack = {
-        panelBounds.x + panelBounds.width - kScrollbarWidth - pad,
-        contentY,
-        kScrollbarWidth,
-        visibleHeight
-    };
-
-    DrawRectangleRec(scrollTrack, kScrollTrack);
-
-    const float thumbHeight = std::max(24.0f, visibleHeight * (visibleHeight / inventoryContentHeight));
-    const float thumbTravel = std::max(0.0f, visibleHeight - thumbHeight);
-    const float thumbY = scrollTrack.y + (inventoryScrollY / maxScroll) * thumbTravel;
-
-    const Rectangle scrollThumb = {
-        scrollTrack.x + 2.0f,
-        thumbY,
-        scrollTrack.width - 4.0f,
-        thumbHeight
-    };
-
-    const bool thumbHovered = CheckCollisionPointRec(GetMousePosition(), scrollThumb);
-    DrawRectangleRounded(scrollThumb, 0.4f, 6, thumbHovered ? kScrollThumbHover : kScrollThumb);
+    inventoryScroll.drawScrollbar();
 }
 
 void InventoryMgr::draw() const

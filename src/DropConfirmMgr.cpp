@@ -21,6 +21,7 @@ DropConfirmMgr::DropConfirmMgr(int screenWidth_, int screenHeight_, Font uiFont_
     : screenWidth(screenWidth_),
       screenHeight(screenHeight_),
       uiFont(uiFont_),
+      modalPanel(screenWidth_, screenHeight_),
       baseButtonStyle{
           {228, 220, 198, 255},
           {54, 50, 64, 255},
@@ -54,6 +55,7 @@ void DropConfirmMgr::setScreenSize(int width, int height)
 {
     screenWidth = width;
     screenHeight = height;
+    modalPanel.setScreenSize(width, height);
     if (open)
         layoutButtons();
 }
@@ -186,7 +188,7 @@ void DropConfirmMgr::drawPanelFrame() const
 {
     const Rectangle panel = getPanelBounds();
 
-    DrawRectangle(0, 0, screenWidth, screenHeight, kOverlayDim);
+    modalPanel.drawOverlay();
 
     const Color panelBorder = (uiBackdrop != nullptr) ? uiBackdrop->panelBorderColor() : kPanelBorder;
     if (uiBackdrop != nullptr)

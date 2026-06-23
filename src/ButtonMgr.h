@@ -15,7 +15,7 @@ namespace testgame
     {
         public:
         ButtonMgr(Rectangle _buttonBox, Font buttonFont, Font boldButtonFont);
-        virtual ~ButtonMgr();
+        ~ButtonMgr();
         void update();
         void draw() const;
         void setAvailability(const MovementStruct& movement, const ActionStruct& actions);
@@ -98,7 +98,7 @@ namespace testgame
         double activePressStartTime = 0.0;
         bool activePressClickFired = false;
         bool mouseWasDownLastFrame = false;
-        float clickHoldDurationSeconds = 0.1f;
+        float clickHoldDurationSeconds = 0.08f;
 
         Rectangle buttonBox;
         Rectangle healthBarBounds;

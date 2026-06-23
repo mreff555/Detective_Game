@@ -1,5 +1,5 @@
-#ifndef LOCATION_H
-#define LOCATION_H
+#ifndef GAME_SESSION_H
+#define GAME_SESSION_H
 
 #include <AudioManager.h>
 #include <ConversationManager.h>
@@ -22,6 +22,12 @@
 #include <LocationStruct.h>
 #include <ButtonMgr.h>
 #include <SceneLoader.h>
+#include <NarrativeNotebook.h>
+#include <ProgressionService.h>
+#include <SaveGameService.h>
+#include <SceneController.h>
+#include <UiCoordinator.h>
+#include <WorldState.h>
 #include <raylib.h>
 #include <map>
 #include <set>
@@ -30,30 +36,10 @@
 namespace testgame
 {
 
-struct NarrativeChoiceHitArea
-{
-    std::string id;
-    Rectangle bounds;
-};
-
-struct NarrativeSketchPlacement
-{
-    std::string path;
-    float yOffset = 0.0f;
-    float width = 0.0f;
-    float height = 0.0f;
-};
-
-enum class NotebookPage
-{
-    CaseNotes,
-    Todo
-};
-
-class Location
+class GameSession
 {
     public:
-    Location(
+    GameSession(
         const LocationStruct& locationStruct,
         Vector2 screenSize,
         SceneDatabase& sceneDatabase,
@@ -66,7 +52,7 @@ class Location
         const std::string& sceneId,
         const std::string& configPath = "resources/game_config.json");
 
-    virtual ~Location();
+    ~GameSession();
 
     bool shouldQuit() const { return quitRequested; }
     void applyDisplayConfig();
@@ -95,6 +81,8 @@ class Location
     void handleSaveLoadMenuInput();
     void handleQuickSaveInput();
     void relayoutForScreenSize(int width, int height);
+    void syncNarrativeContext();
+    void syncFromActiveScene();
     SavedGameState captureSaveState() const;
     bool applySaveState(const SavedGameState& state);
     bool quickSaveToDisk();
@@ -121,29 +109,13 @@ class Location
     std::vector<ConversationChoiceDef> filterAvailableChoices(
         const std::vector<ConversationChoiceDef>& choices) const;
     void appendNarrativeSketch(const std::string& sketchPath);
-    bool isNarrativeSketchLine(const std::string& line) const;
-    std::string narrativeSketchPathFromLine(const std::string& line) const;
-    float getNarrativeSketchHeight(const std::string& sketchPath) const;
-    float getNarrativeSketchDisplaySize(const Texture2D& texture, float& outWidth, float& outHeight) const;
-    Texture2D getOrLoadNarrativeSketchTexture(const std::string& sketchPath) const;
-    void layoutNarrativeSketch(const std::string& sketchPath, float& textOffsetY) const;
-    void drawNarrativeSketches() const;
-    std::string normalizeNarrativeLine(std::string line) const;
-    void scrollToPendingDialogChoices();
-    void stripDialogChoiceLinesFromNarrative(
-        const std::vector<ConversationChoiceDef>& choices,
-        const std::string& keepLineText = "");
     void applyLucidityCollapseRestart();
     void evaluateMilestones();
-    bool isDialogChoiceLine(const std::string& line) const;
-    Color narrativeLineColor(const std::string& line) const;
     void applyLocationStruct(const LocationStruct& locationStruct, const std::string& fromRoom = "");
+    void transitionToScene(const std::string& sceneId);
     void tryMove(const std::string& direction);
-    bool hasLightSourceInInventory() const;
-    bool canUseExit(const std::string& direction, std::string& outBlockedDetails) const;
     void appendBlockedMovementMessage(const std::string& details);
     void trimNarrativeBuffer();
-    void rebuildNarrativeLayout() const;
     void handleNarrativeScrollInput();
     void handleInventoryExamineScrollInput();
     void updateInventoryLayout();
@@ -154,7 +126,6 @@ class Location
     void processPendingInteractions();
     void applyInteraction(const SceneInteractionDef& interaction);
     void applyDirectUse();
-    void transitionToScene(const std::string& sceneId);
     std::vector<SceneInteractionDef> getAvailableInteractions() const;
     std::string interactionKey(const std::string& interactionId) const;
     void handleInventoryDropInput();
@@ -181,7 +152,6 @@ class Location
     void handleNotebookNavInput();
     void handleTodoScrollInput();
     bool canUseNotebookNav() const;
-    void ensureNotebookPaperTexture() const;
     Rectangle getMainImageBounds() const;
     Rectangle getDialogBounds() const;
     Rectangle getInventoryPanelBounds() const;
@@ -190,20 +160,14 @@ class Location
     bool tryApplyStatusEffect(const StatusEffect& effect, bool allowRepeat);
     void scrollNarrativeToHeader(const char* header);
     void scrollNarrativeToLine(const std::string& lineText, bool lastOccurrence);
-    void rebuildNarrativeChoiceHitAreas() const;
-    float getNarrativeLineOffsetY(const std::string& lineText, bool lastOccurrence) const;
-    Rectangle getNotebookContentBounds() const;
-    float getNarrativeVisibleHeight() const;
-    float getNarrativeLineHeight() const;
-    float getNarrativeWrapWidth() const;
-    void layoutWrappedParagraph(const char* text, Font font, float paragraphFontSize, float& textOffsetY, bool draw, float scrollY, Color lineColor) const;
-    bool isBoldNarrativeHeader(const std::string& line) const;
-    bool isBoldNarrativeLine(const std::string& line) const;
+    void rebuildNarrativeLayout() const;
+    void stripDialogChoiceLinesFromNarrative(
+        const std::vector<ConversationChoiceDef>& choices,
+        const std::string& keepLineText = "");
     bool hasExaminedScene(const std::string& sceneId) const;
     bool canUseInCurrentScene() const;
-
-    static const int kMaxNarrativeLines = 500;
-    static const float kScrollbarWidth;
+    void openUiMode(UiMode mode);
+    void closeAllUiPanels();
 
     int screenWidth;
     int screenHeight;
@@ -220,14 +184,11 @@ class Location
     DropConfirmMgr dropConfirmMgr;
     std::string gameConfigPath;
     bool quitRequested = false;
-    std::string currentSceneId;
-    
-    Texture2D locationImage;
-    bool ownsLocationImage = true;
+
+    Texture2D locationImage{};
+    bool ownsLocationImage = false;
     bool isUnderConstruction = false;
-    std::string previousSceneId;
     std::string baseDescription;
-    std::string narrativeText;
     std::string examineDetails;
     std::string examineFlag;
     std::string speakDetails;
@@ -247,37 +208,7 @@ class Location
     bool backward;
     bool left;
     bool right;
-    bool hasSpokenInCurrentScene = false;
-    bool hasUsedInCurrentScene = false;
-    std::set<std::string> examinedSceneIds;
-    std::set<std::string> usedSceneIds;
-    std::set<std::string> committedPlayerDialogLines;
     ConversationManager conversationMgr;
-    mutable std::vector<NarrativeChoiceHitArea> narrativeChoiceHitAreas;
-
-    float health = 90.0f;
-    float energy = 20.0f;
-    float resolve = 50.0f;
-    float lucidity = 30.0f;
-    float charisma = 50.0f;
-    float walletCash = 20.0f;
-    std::set<std::string> consumedStatusActions;
-    std::set<std::string> storyFlags;
-
-    float fontSize = 32.0f;
-    const bool wordWrap = true;
-    const int spacing = 3;
-    const Color textColor = {32, 42, 68, 255};
-    const int xOffset = 78;
-    const float notebookHeaderReserve = 52.0f;
-    const float notebookContentBottomPad = 18.0f;
-    const float notebookHeaderFontSize = 22.0f;
-
-    NotebookPage notebookPage = NotebookPage::CaseNotes;
-    float todoScrollY = 0.0f;
-    bool todoScrollbarDragging = false;
-    float todoScrollbarDragOffsetY = 0.0f;
-    mutable float todoContentHeight = 0.0f;
 
     Rectangle textBox;
     Rectangle buttonBox;
@@ -286,32 +217,20 @@ class Location
     InventoryMgr inventoryMgr;
     TakeMgr takeMgr;
     InteractionMgr interactionMgr;
-    std::set<std::string> takenItemKeys;
-    std::set<std::string> usedInteractionKeys;
-    std::map<std::string, std::vector<TakeableItemDef>> droppedItemsByScene;
-
-    float narrativeScrollY = 0.0f;
-    float inventoryExamineScrollY = 0.0f;
-    mutable float inventoryExamineContentHeight = 0.0f;
-    bool inventoryExamineScrollbarDragging = false;
-    float inventoryExamineScrollbarDragOffsetY = 0.0f;
-    mutable bool narrativeLayoutDirty = true;
-    bool scrollbarDragging = false;
-    float scrollbarDragOffsetY = 0.0f;
-
-    mutable float narrativeContentHeight = 0.0f;
-
-    mutable Texture2D notebookPaperTexture{};
-    mutable bool notebookPaperTextureReady = false;
-    mutable std::map<std::string, Texture2D> narrativeSketchTextures;
-    mutable std::vector<NarrativeSketchPlacement> narrativeSketchPlacements;
 
     bool deferInitialRoomAudio = true;
     bool initialFrameComplete = false;
     std::string transientMessage;
     float transientMessageTimer = 0.0f;
+
+    mutable WorldState worldState;
+    SceneController sceneController;
+    SaveGameService saveGameService;
+    ProgressionService progressionService;
+    UiCoordinator uiCoordinator;
+    NarrativeNotebook narrativeNotebook;
 };
 
 }
 
-#endif /* LOCATION_H */
+#endif /* GAME_SESSION_H */

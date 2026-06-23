@@ -2,6 +2,7 @@
 #define SAVE_LOAD_MENU_MGR_H
 
 #include <Button.h>
+#include <ModalPanel.h>
 #include <SaveGame.h>
 #include <UiBackdrop.h>
 #include <raylib.h>
@@ -10,6 +11,8 @@
 
 namespace testgame
 {
+
+class SaveGameService;
 
 enum class SaveLoadMenuMode
 {
@@ -32,6 +35,7 @@ class SaveLoadMenuMgr
     void openLoadMenu();
     void closeMenu();
     void refreshLoadList();
+    void setSaveGameService(const SaveGameService* service) { saveGameService = service; }
 
     void update();
     void draw() const;
@@ -75,6 +79,8 @@ class SaveLoadMenuMgr
     bool namedSaveRequested = false;
     bool loadSlotRequested = false;
     std::string pendingLoadPath;
+    ModalPanel modalPanel;
+    const SaveGameService* saveGameService = nullptr;
 };
 
 }

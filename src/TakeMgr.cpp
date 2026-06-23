@@ -1,6 +1,7 @@
 #include <TakeMgr.h>
 #include <RaylibCompat.h>
 #include <SceneLoader.h>
+#include <SidePanel.h>
 #include <algorithm>
 
 namespace testgame
@@ -195,13 +196,7 @@ std::vector<TakeableItemDef> TakeMgr::takeAll()
 
 Rectangle TakeMgr::getCloseButtonBounds() const
 {
-    const float pad = 14.0f;
-    return {
-        panelBounds.x + panelBounds.width - pad - kCloseButtonSize,
-        panelBounds.y + pad,
-        kCloseButtonSize,
-        kCloseButtonSize
-    };
+    return SidePanelChrome::getCloseButtonBounds(panelBounds, kCloseButtonSize);
 }
 
 Rectangle TakeMgr::getTakeAllButtonBounds() const

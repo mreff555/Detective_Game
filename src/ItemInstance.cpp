@@ -1,5 +1,6 @@
 #include "ItemInstance.h"
 
+#include <ItemDatabase.h>
 #include <algorithm>
 #include <cmath>
 
@@ -73,6 +74,27 @@ float computeContainerTotalWeightLb(
             continue;
 
         total += computeContainerTotalWeightLb(*childDef, child, resolveDef);
+    }
+
+    return roundItemWeightLb(total);
+}
+
+float computeContainerTotalWeightLb(
+    const ItemDef& def,
+    const ItemInstance& instance,
+    const ItemDatabase& database)
+{
+    float total = computeItemWeightLb(def, instance);
+    if (!def.container.isContainer)
+        return total;
+
+    for (const ItemInstance& child : instance.contents)
+    {
+        const ItemDef* childDef = database.getDef(child.defId);
+        if (childDef == nullptr)
+            continue;
+
+        total += computeContainerTotalWeightLb(*childDef, child, database);
     }
 
     return roundItemWeightLb(total);

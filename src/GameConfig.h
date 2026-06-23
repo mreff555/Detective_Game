@@ -24,7 +24,7 @@ struct DisplayConfig
 
 struct InputConfig
 {
-    float clickHoldSeconds = 0.1f;
+    float clickHoldSeconds = 0.08f;
     bool skipDropConfirmation = false;
 };
 

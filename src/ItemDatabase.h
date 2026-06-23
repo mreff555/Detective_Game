@@ -52,10 +52,7 @@ class ItemDatabase
         const ItemDefOverrides& overrides = {}) const;
 
     private:
-    static const ItemDef* resolveDefCallback(const std::string& defId);
-
     std::map<std::string, ItemDef> items;
-    static ItemDatabase* activeDatabase;
 };
 
 }

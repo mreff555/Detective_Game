@@ -28,7 +28,7 @@ class Button
 {
     public:
     Button(const char* text, Vector2 position, Vector2 size, Font font, const ButtonStyle& style);
-    virtual ~Button();
+    ~Button();
 
     void draw() const;
     bool isClicked() const;

@@ -3,6 +3,7 @@
 
 #include <Button.h>
 #include <GameConfig.h>
+#include <ModalPanel.h>
 #include <UiBackdrop.h>
 #include <functional>
 #include <raylib.h>
@@ -124,6 +125,7 @@ class PauseMenuMgr
 
     int activeSliderIndex = -1;
     float configScrollY = 0.0f;
+    ModalPanel modalPanel;
 };
 
 }
