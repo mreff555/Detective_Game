@@ -535,10 +535,6 @@ void ButtonMgr::draw() const
     drawSectionLabel("ACTIONS", buttonBox.x + pad + buttonBox.width * 0.32f, buttonBox.y + pad);
     drawSectionLabel("STATUS", healthBarBounds.x, buttonBox.y + pad);
 
-    const float inventoryHeight = 52.0f;
-    const float inventoryY = buttonBox.y + buttonBox.height - pad - inventoryHeight;
-    drawSectionLabel("INVENTORY", buttonBox.x + pad, inventoryY - 24.0f);
-
     drawStatusBar("Health", healthBarBounds, healthPercent);
     drawStatusBar("Energy", energyBarBounds, energyPercent);
     drawStatusBar("Resolve", resolveBarBounds, resolvePercent);
