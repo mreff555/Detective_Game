@@ -1561,17 +1561,6 @@ namespace
             DrawRectangleRounded(panel, 0.2f, 8, {28, 26, 34, 230});
         DrawRoundedBorder(panel, 0.2f, 8, 2.0f, panelBorder);
 
-        const Rectangle accentBar = {
-            panel.x + 8.0f,
-            panel.y + 8.0f,
-            panel.width - 16.0f,
-            3.0f
-        };
-        if (uiBackdrop.isActive())
-            uiBackdrop.drawAccentBar(accentBar);
-        else
-            DrawRectangleRounded(accentBar, 1.0f, 4, {96, 78, 48, 255});
-
         DrawTextEx(
             descriptionFont,
             transientMessage.c_str(),
@@ -1783,6 +1772,17 @@ namespace
             if (buttonMgr.consumeBackwardButtonClick() && inventoryMgr.isExaminingItem())
             {
                 clearItemExamineAudio();
+                const InventoryItem* examinedItem = inventoryMgr.getSelectedItem();
+                if (examinedItem != nullptr)
+                {
+                    const ItemDef* examinedDef = itemDatabase.getDef(examinedItem->id);
+                    if (examinedDef != nullptr && !examinedDef->examineRevealFlag.empty())
+                    {
+                        inventoryMgr.applyExamineRevealFlag(
+                            examinedItem->id,
+                            examinedDef->examineRevealFlag);
+                    }
+                }
                 inventoryMgr.returnToItemList();
                 narrativeNotebook.resetInventoryExamineScroll();
                 updateActionAvailability();

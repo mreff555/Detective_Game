@@ -54,6 +54,7 @@ class InventoryMgr
     bool canExtractFromExaminedItem(const ItemDatabase& database) const;
     bool extractFromExaminedItem(const ItemDatabase& database, InventoryItem& outExtracted);
     void refreshItemFromDatabase(const std::string& id);
+    bool applyExamineRevealFlag(const std::string& itemId, const std::string& flag);
     const InventoryItem* getSelectedItem() const;
     const InventoryItem* getItemById(const std::string& id) const;
     bool hasItem(const std::string& id) const;

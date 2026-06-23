@@ -199,6 +199,9 @@ bool parseItemDef(const std::string& id, const nlohmann::json& json, ItemDef& ou
     parseItemContainer(json.value("container", nlohmann::json::object()), out.container);
     parseItemQuantity(json.value("quantity", nlohmann::json::object()), out.quantity);
     out.lightSource = json.value("lightSource", json.value("light_source", false));
+    out.examineRevealFlag = json.value(
+        "examineRevealFlag",
+        json.value("examine_reveal_flag", ""));
 
     return !out.id.empty() && !out.name.empty();
 }

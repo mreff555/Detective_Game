@@ -81,7 +81,7 @@
     },
     "straight_razor": {
       "name": "Straight Razor",
-      "description": "This Straignt razor was make by an experienced crafstment.  The french point, hollow-ground blade is made carbon steel, polished to a mirror finish and completed with the manufacturer's logo artisticaly etched on the tang.  The scale, made of Padauk wood was meticulously shaped and smoothed to both accomodate the blade and feel natural in hand. Finished with multiple coats of tounge oil.  The brass pins were installed with precision.  Peen marks are symmetrical and nearly non-existant.  The blade is sharp enough to split a hair without complaint."
+      "description": "This Straignt razor was make by an experienced crafstment.  The french point, hollow-ground blade is made carbon steel, polished to a mirror finish and completed with the manufacturer's logo artisticaly etched on the tang.  The scale, made of Padauk wood was meticulously shaped and smoothed to both accomodate the blade and feel natural in hand. Finished with multiple coats of tounge oil.  The brass pins were installed with precision.  Peen marks are symmetrical and nearly non-existant.  The blade is sharp enough to split a hair without complaint.",
       "weightLb": 0.22,
       "visuals": {
         "image": "resources/images/straight_razor_examine.png"
@@ -311,6 +311,22 @@
       },
       "icons": {
         "icon": "resources/icons/crude_lantern_icon.png"
+      }
+    },
+    "independence_hall_locket": {
+      "name": "Independence Hall Locket",
+      "description": "An oval souvenir locket of tarnished silver plate over brass, the sort sold to travelers who want memory made portable. Independence Hall is worked in relief across the face, with 1776 arched above the cupola. The hinge is stiff with age and the catch holds fast. Whatever was kept inside has not seen daylight in some time.",
+      "alternateDescription": "The locket lies open in your palm, both halves spread wide in a way no chain would permit. Inside the right compartment, an oval scrap of yellowed paper has been cut to fit the cavity. On it, in a child's careful pencil, a mother and a girl of about eight stand hand in hand. The lines are wobbly and earnest, the faces simple circles with happy mouths. Someone loved them enough to carry the drawing where a photograph might have gone.",
+      "alternateDescriptionFlag": "open",
+      "examineRevealFlag": "open",
+      "weightLb": 0.11,
+      "visuals": {
+        "image": "resources/images/locket_closed_examine.png",
+        "alternateImage": "resources/images/locket_open_examine.png",
+        "alternateImageFlag": "open"
+      },
+      "icons": {
+        "icon": "resources/icons/locket_icon.png"
       }
     }
   }

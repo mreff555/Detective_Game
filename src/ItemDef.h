@@ -88,6 +88,7 @@ struct ItemDef
     ItemContainerDef container;
     ItemQuantityDef quantity;
     bool lightSource = false;
+    std::string examineRevealFlag;
 };
 
 float roundItemWeightLb(float weightLb);

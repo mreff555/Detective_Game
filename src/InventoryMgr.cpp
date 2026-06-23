@@ -1,4 +1,5 @@
 #include <InventoryMgr.h>
+#include <ItemInstance.h>
 #include <RaylibCompat.h>
 #include <SceneLoader.h>
 #include <algorithm>
@@ -388,6 +389,28 @@ void InventoryMgr::refreshItemFromDatabase(const std::string& id)
     refreshed.icon = icon;
     refreshed.examineImage = examineImage;
     *item = refreshed;
+}
+
+bool InventoryMgr::applyExamineRevealFlag(const std::string& itemId, const std::string& flag)
+{
+    if (flag.empty())
+        return false;
+
+    InventoryItem* item = findMutableItem(itemId);
+    if (item == nullptr || hasItemFlag(item->instance.activeFlags, flag))
+        return false;
+
+    item->instance.activeFlags.push_back(flag);
+
+    if (item->examineImage.id != 0 && IsTextureValid(item->examineImage))
+    {
+        UnloadTexture(item->examineImage);
+        item->examineImage = Texture2D{};
+    }
+
+    refreshItemFromDatabase(itemId);
+    ensureItemExamineImageLoaded(*item);
+    return true;
 }
 
 int InventoryMgr::findItemIndex(const std::string& id) const
