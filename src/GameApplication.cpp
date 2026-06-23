@@ -2,6 +2,7 @@
 
 #include <GameConfig.h>
 #include <LocationStruct.h>
+#include <PlatformPath.h>
 #include <XaiTtsClient.h>
 #include <raylib.h>
 #include <cstdlib>
@@ -56,7 +57,7 @@ bool GameApplication::locateGameResources()
         if (directory.empty())
             return false;
 
-        const std::string scenesPath = directory + "/resources/scenes.json";
+        const std::string scenesPath = pathJoin(directory, "resources/scenes.json");
         if (!FileExists(scenesPath.c_str()))
             return false;
 
@@ -72,7 +73,7 @@ bool GameApplication::locateGameResources()
         if (tryDirectory(executableDirectory))
             return true;
 
-        const std::string parentDirectory = executableDirectory + "/..";
+        const std::string parentDirectory = pathJoin(executableDirectory, "..");
         if (tryDirectory(parentDirectory))
             return true;
     }
