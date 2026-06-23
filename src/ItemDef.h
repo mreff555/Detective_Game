@@ -88,6 +88,10 @@ struct ItemDef
     ItemContainerDef container;
     ItemQuantityDef quantity;
     bool lightSource = false;
+    // Two-stage examine/use items: examineRevealFlag on back from examine;
+    // useRequiresFlag gates Use from the list (examining counts as satisfied);
+    // useRevealFlag + visuals.alternateImage swap the examine image in place;
+    // back still returns to the item list.
     std::string examineRevealFlag;
     std::string useRequiresFlag;
     std::string useRevealFlag;

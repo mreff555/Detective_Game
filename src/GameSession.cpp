@@ -564,9 +564,7 @@ namespace
 
     bool GameSession::canUseSelectedInventoryItem() const
     {
-        if (!inventoryMgr.isOpen()
-            || inventoryMgr.isExaminingItem()
-            || !inventoryMgr.hasSelectedItem())
+        if (!inventoryMgr.isOpen() || !inventoryMgr.hasSelectedItem())
         {
             return false;
         }
@@ -583,7 +581,8 @@ namespace
             return false;
 
         if (!def->useRequiresFlag.empty()
-            && !hasItemFlag(item->instance.activeFlags, def->useRequiresFlag))
+            && !hasItemFlag(item->instance.activeFlags, def->useRequiresFlag)
+            && !inventoryMgr.isExaminingItem())
         {
             return false;
         }
@@ -601,8 +600,12 @@ namespace
         if (def == nullptr)
             return;
 
+        const bool alreadyExamining = inventoryMgr.isExaminingItem();
+
         inventoryMgr.applyExamineRevealFlag(itemId, def->useRevealFlag);
-        inventoryMgr.examineSelectedItem();
+
+        if (!alreadyExamining)
+            inventoryMgr.examineSelectedItem();
 
         const InventoryItem* examinedItem = inventoryMgr.getSelectedItem();
         if (examinedItem != nullptr)
@@ -1325,6 +1328,8 @@ namespace
                 movement.backward = true;
                 if (canTakeFromExaminedItem())
                     actions.take = true;
+                if (canUseSelectedInventoryItem())
+                    actions.use = true;
             }
             else if (canUseSelectedInventoryItem())
                 actions.use = true;
