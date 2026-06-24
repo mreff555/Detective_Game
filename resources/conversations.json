@@ -1349,5 +1349,18 @@
         ]
       }
     ]
+  },
+  "white_baptist_church_vestry" : {
+    "speakPhases" : [
+      {
+        "id" : "minister_followup",
+        "actorId" : "minister",
+        "actorName" : "Minister",
+        "type" : "once",
+        "resetOnSceneEnter" : false,
+        "requiresFlag" : "white_baptist_church_vestry:greeting_done",
+        "text" : "He sets the pen down carefully and folds his hands over the journal.\n\n\"The congregation has gone home,\" he says. \"But the church remains open to those who need it. Was there something you wished to ask, or only a quiet room before you continued on your way?\""
+      }
+    ]
   }
 }

@@ -1999,6 +1999,28 @@ namespace
         return true;
     }
 
+    void GameSession::maybeTriggerVestryMinisterGreeting()
+    {
+        if (worldState.currentSceneId != "white_baptist_church_vestry")
+            return;
+
+        if (worldState.storyFlags.count("white_baptist_church_vestry:greeting_done") > 0)
+            return;
+
+        const std::string details =
+            "He turns to you and smiles.\n\n"
+            "\"You are about an hour too late...\"\n\n"
+            "He pauses a moment.\n\n"
+            "\"Mass ended about an hour ago.\"";
+
+        appendNarrativeSection("Speaking:", details);
+        worldState.storyFlags.insert("white_baptist_church_vestry:greeting_done");
+        narrativeNotebook.getNarrativeText() = worldState.narrativeText;
+        evaluateMilestones();
+        updateActionAvailability();
+        worldState.recordAction();
+    }
+
     bool GameSession::maybeRevealCottonwoodMeadowDeparture(const std::string& direction)
     {
         if (worldState.currentSceneId != "cottonwood_meadow" || direction != "backward")
@@ -2013,10 +2035,11 @@ namespace
 
         const std::string details =
             "You push yourself up from the cottonwood's shade, brushing grass from your coat. "
-            "As you stand, one detail catches your eye that the mountains had distracted you from: "
-            "a patch of ground roughly ten feet from the tree's trunk, greener and thicker than "
-            "the grass around it, as though something beneath the soil feeds that spot what the "
-            "rest of the meadow only wishes for.";
+            "Your gaze returns to that unnaturally green patch you noticed earlier, roughly ten "
+            "feet from the trunk. From here the difference is plainer still - and uglier. The "
+            "sod has been disturbed recently. Edges are raw where turf was lifted and pressed "
+            "back wrong. Darker soil shows through in a shape too deliberate for weather or "
+            "cattle. Someone has been digging in this meadow within the last few days.";
 
         appendNarrativeSection("Examining:", details);
         worldState.storyFlags.insert("cottonwood_meadow:departure_noted");
@@ -2124,6 +2147,8 @@ namespace
 
         conversationMgr.onEnterScene(worldState.currentSceneId, sceneDatabase.getSpeakConfig(worldState.currentSceneId));
         audioManager.onRoomEnter(sceneDatabase.getSceneAudio(worldState.currentSceneId), fromRoom);
+
+        maybeTriggerVestryMinisterGreeting();
 
         narrativeNotebook.resetNarrativeScroll();
         narrativeNotebook.invalidateLayout();

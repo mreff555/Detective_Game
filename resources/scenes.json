@@ -1230,8 +1230,8 @@
     "cottonwood_meadow": {
       "start": false,
       "image": "resources/images/cottonwood_meadow.png",
-      "description": "The path opens into a meadow so green it feels borrowed from another country. Lush grass rolls in a slow swell toward a ravine cut thirty feet from the trunk of an enormous cottonwood. The tree spreads its shade wide, its bark silver-white in the sun, its lowest limb an invitation to sit and stay awhile. Beyond the meadow, mountain after mountain stacks against the sky - blue-gray ridges fading into distance without end.",
-      "examineDetails": "You study the mountains the way a man studies a problem he cannot yet name.\n\nThe nearest peaks are timbered to the line, dark spruce giving way to bare rock and late snow in the highest cols. Farther out, the ranges fold into one another, each ridge stealing depth from the next until the horizon is only atmosphere and silhouette. No city smoke. No rail cut. Only wilderness layered to the edge of sight.\n\nThe ravine beside the cottonwood drops sharply, its walls stitched with willow and chokecherry, a thin thread of water audible below though you cannot see it from here.\n\nThe cottonwood itself is old - trunk thick enough that two men could not span it, roots gripping the meadow edge where the ground begins to fall away. The grass beneath it is trampled flat in a rough circle, as though generations of travelers have paused here and never quite agreed to leave.",
+      "description": "The path opens onto grassy hills so green they feel borrowed from another country. An enormous cottonwood rises from the slope ahead, its silver-white bark bright in the sun, its limbs spread wide over rolling turf. The land lifts and swells around the tree like a natural amphitheater. Roughly thirty feet beyond the trunk the plateau ends without warning, dropping away in a sharp edge that turns grass into empty air. Past that brink, mountain after mountain stacks against the sky - blue-gray ridges fading into distance without end.",
+      "examineDetails": "You study the mountains the way a man studies a problem he cannot yet name.\n\nThe nearest peaks are timbered to the line, dark spruce giving way to bare rock and late snow in the highest cols. Farther out, the ranges fold into one another, each ridge stealing depth from the next until the horizon is only atmosphere and silhouette. No city smoke. No rail cut. Only wilderness layered to the edge of sight.\n\nThe cottonwood stands on the breast of the hill, trunk thick enough that two men could not span it, roots buried deep in the living turf. About thirty feet out from the tree the grassy plateau simply stops. The ground falls away fast - not a gradual slope but a hard break, as though the mountain shrugged off its shoulder and left this shelf behind.\n\nOne patch of grass catches your eye before anything else does: a stretch roughly ten feet from the trunk, greener and thicker than the grass around it, vivid enough to feel wrong in all this open light. The grass beneath the tree itself is trampled flat in a rough circle, as though generations of travelers have paused here and never quite agreed to leave.",
       "useDetails": "",
       "interactions": [
         {
@@ -1282,9 +1282,99 @@
     },
     "white_baptist_church": {
       "start": false,
-      "image": "resources/images/scene_under_construction.png",
-      "description": "The white Baptist church sits plain and patient on its rise, paint weathered to the color of old bone. The path ends at a low gate. The building has not been fully mapped yet.",
-      "examineDetails": "",
+      "image": "resources/images/white_baptist_church.png",
+      "description": "The white Baptist church sits plain and patient on its rise, paint weathered to the color of old bone. Clapboard siding has gone chalky with sun and winter, corners softened, steeple standing honest against the sky without pretension. The path ends at a low gate. To the right, a small cemetery spreads over the slope in weathered stones and wooden crosses. The building looks worn from the outside - frontier modesty, mountain weather, decades of wind - but not abandoned. The walk is swept. The sanctuary doors stand slightly ajar. No voices carry from within. Whatever service was held here today has already ended.",
+      "examineDetails": "You study the church the way you would a man who keeps his grief in order.\n\nThe exterior tells one story: humble white clapboard, modest steeple, paint gone thin at the eaves, nail heads rusted through in places where the ridge has worked its slow argument with timber. Window frames are sound but not new. The steps are worn hollow at the center where Sunday shoes have passed for years.\n\nAnd yet the place is tended. Weeds have been cut back from the path. The gate latch closes clean. To the right, the cemetery rows climb the slope in weathered stone and leaning crosses, some plots fresh enough to show recent grief. Through the open sanctuary doors you catch interior wood glowing warm with fresh oil, and colored light from stained glass that has not been allowed to go dark. No congregation remains. Whoever maintains this church does it without display. The building is worn on the outside because mountains wear everything. Inside, someone is still fighting back.",
+      "useDetails": "",
+      "movement": {
+        "forward": true,
+        "backward": true,
+        "left": false,
+        "right": true
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "forward": "white_baptist_church_interior",
+        "backward": "winding_alpine_path",
+        "right": "white_baptist_church_cemetery"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.22,
+            "fade_in": 2.0,
+            "fade_out": 2.0,
+            "loop": true
+          },
+          {
+            "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
+            "volume": 0.18,
+            "fade_in": 2.5,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
+      }
+    },
+    "white_baptist_church_interior": {
+      "start": false,
+      "image": "resources/images/white_baptist_church_interior.png",
+      "description": "You step inside and the room opens upward like a held breath released. The sanctuary is far more beautiful than the weathered shell outside promised - soaring timber trusses, a vaulted ceiling cut by craftsmen who understood proportion and prayer in equal measure. Rows of pews run down a wide central aisle toward a plain altar and a raised pulpit. Stained glass throws cobalt, amber, and ruby light across the floor in slow moving patches. Every wooden surface glows with recent linseed oil - pews, rail, beams, window frames - warm and resin-sweet in the nostrils. The building is old. The room is not neglected. But the church is not in service now. The congregation has gone. Hymnals wait in the racks. Brass lamps are trimmed. Dust motes drift in the colored light with no boots to stir them.",
+      "examineDetails": "You take the measure of the room the way you would a letter written in a hand you almost recognize.\n\nThe architecture first. This is not frontier slap carpentry dressed up for Sunday. Hammer-beam trusses lift the ceiling with real engineering and real grace. Posts and braces meet in joints cut to shame a barn rafter. The proportions are deliberate - wide nave, lifted chancel, sightlines that draw the eye to the altar without shouting. Whoever built this church expected God and congregation to meet in the same breath.\n\nThe stained glass is the surprise. You expected cracked panes and sun-faded saints. Instead the windows are intact, colors true, lead came straight and honest. Cobalt blues, amber golds, ruby reds - biblical scenes rendered with enough skill to hold a man's attention even if he has forgotten the verses. Light through them falls in clean jeweled shapes across the boards, moving as the day moves.\n\nThe woodwork tells the rest. Pews, altar rail, pulpit, ceiling beams - all of it recently coated with linseed oil. You can smell it, warm and resinous, the particular sweetness of fresh maintenance. The surfaces gleam without varnish flash. Whoever did the work knew how to feed old timber instead of burying it under gloss. The floorboards show wear at the aisle center and along the front row, but the room is swept, the hymnals aligned, the lamp chimneys cleaned. A braided rug before the altar is faded but not filthy.\n\nA narrow door at the left of the chancel leads to the vestry. No sound comes from behind it now except the faint scratch of pen on paper.\n\nOutside, the church looks tired. Inside, it looks kept. Not restored to newness - preserved in use. The congregation has gone for today, but someone still shows up with oil, lamp wick, and a broom.",
+      "useDetails": "",
+      "movement": {
+        "forward": false,
+        "backward": true,
+        "left": true,
+        "right": false
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "backward": "white_baptist_church",
+        "left": "white_baptist_church_vestry"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.08,
+            "fade_in": 2.5,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ],
+        "sfx": [
+          {
+            "path": "resources/audio/sfx/door_open.mp3",
+            "trigger": "on_enter",
+            "from_room": "white_baptist_church",
+            "volume": 0.75
+          },
+          {
+            "path": "resources/audio/sfx/door_close.mp3",
+            "trigger": "on_exit",
+            "to_room": "white_baptist_church",
+            "volume": 0.75
+          }
+        ]
+      }
+    },
+    "white_baptist_church_vestry": {
+      "start": false,
+      "image": "resources/images/white_baptist_church_vestry.png",
+      "description": "You push through the narrow door at the side of the chancel into the vestry - a modest paneled room that smells of ink, lamp oil, and old wool. Vestments hang from a peg beside a shelf crowded with ledgers, hymnals, and church records. A single window throws soft daylight across a worn desk where an aging man in religious garments bends over an open journal, pen moving in careful strokes.",
+      "examineDetails": "The vestry is the church's working heart, smaller than the sanctuary but kept with the same stubborn care.\n\nThe desk dominates the room: scarred pine, ink stains in the grain, a journal open to a page of tight clerical hand, an iron nib resting in a ceramic tray. Beside it sit a ledger of baptisms and burials, a bottle of ink, and a kerosene lamp trimmed for evening work.\n\nThe minister's garments on the peg are plain black, brushed clean, collar pressed with the patience of a man who still believes presentation is part of devotion. His face, when he looks up, is weathered and kind - silver hair, deep lines, eyes that have buried more ridge settlers than he cares to count aloud.\n\nThe wood here, like the nave outside, carries the recent sheen of linseed oil. Whoever tends this church does the unglamorous work as faithfully as the visible work.",
       "useDetails": "",
       "movement": {
         "forward": false,
@@ -1293,13 +1383,78 @@
         "right": false
       },
       "actions": {
-        "examine": false,
+        "examine": true,
+        "speak": true,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "backward": "white_baptist_church_interior"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.06,
+            "fade_in": 2.0,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ],
+        "sfx": [
+          {
+            "path": "resources/audio/sfx/door_open.mp3",
+            "trigger": "on_enter",
+            "from_room": "white_baptist_church_interior",
+            "volume": 0.65
+          },
+          {
+            "path": "resources/audio/sfx/door_close.mp3",
+            "trigger": "on_exit",
+            "to_room": "white_baptist_church_interior",
+            "volume": 0.65
+          }
+        ]
+      }
+    },
+    "white_baptist_church_cemetery": {
+      "start": false,
+      "image": "resources/images/white_baptist_church_cemetery.png",
+      "description": "The cemetery spreads over the church rise in uneven rows, the dead laid out with frontier practicality and mountain weather for company. Headstones lean where frost has heaved the soil. Wooden crosses gray with age stand beside newer granite markers cut plain and honest. Wild grass and alpine flowers push up between the plots. Beyond the low fence, the mountains hold their distance - blue-gray ridges under a quiet sky. The church stands at your back, white paint gone chalky, steeple still pointing upward as though argument with death were worth continuing.",
+      "examineDetails": "You walk the rows the way a man walks a ledger he is not yet ready to sign.\n\nThe oldest markers are wood, names weathered to ghosts. A few granite stones carry dates from the seventies and eighties - company men, infants, mothers lost in winter, a prospector who lasted one season and not two. Some plots are tended: weeds cut, pebbles laid flat, a jar of wildflowers gone dry but recent enough to mean someone still comes.\n\nOthers have surrendered to the ridge. Sink-holes at the feet of crosses. Names split by frost. A child's stone no larger than a Bible, tilted so far the grass has nearly claimed it.\n\nThe cemetery is not large. It is persistent. Highline buries its own because Graysmill is a long descent and the mountain prefers to keep what it takes within sight of the living.",
+      "useDetails": "",
+      "movement": {
+        "forward": false,
+        "backward": true,
+        "left": false,
+        "right": false
+      },
+      "actions": {
+        "examine": true,
         "speak": false,
         "hit": false,
         "use": false
       },
       "exits": {
-        "backward": "winding_alpine_path"
+        "backward": "white_baptist_church"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.28,
+            "fade_in": 2.0,
+            "fade_out": 2.0,
+            "loop": true
+          },
+          {
+            "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
+            "volume": 0.12,
+            "fade_in": 2.5,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
       }
     },
     "saloon_kitchen": {

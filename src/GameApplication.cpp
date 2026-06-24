@@ -104,7 +104,10 @@ bool GameApplication::loadDatabases()
         sceneDatabase.load("resources/scenes.json", ".") ||
         sceneDatabase.load("../resources/scenes.json", "..");
     if (!scenesLoaded)
+    {
+        TraceLog(LOG_ERROR, "Failed to load scenes from resources/scenes.json");
         return false;
+    }
 
     const bool milestonesLoaded =
         milestoneDatabase.load("resources/milestones.json") ||
@@ -145,12 +148,13 @@ int GameApplication::run(int argc, char* argv[])
 
     if (!locateGameResources())
     {
-        TraceLog(LOG_WARNING, "Could not locate resources/scenes.json next to executable or working directory");
+        TraceLog(LOG_ERROR, "Could not locate resources/scenes.json next to executable or working directory");
+        std::cerr << "Could not find game resources (resources/scenes.json).\n"
+                  << "Run the game from the build directory, e.g. ./build/Highline\\ Ridge\n"
+                  << "or rebuild so resources are synced: cmake --build build\n";
         if (!commandLine.refreshVoicesApiKey.empty())
-        {
             std::cerr << "Cannot refresh voices without game resources.\n";
-            return 1;
-        }
+        return 1;
     }
 
     if (!loadGameConfig(gameConfigPath, gameConfig))
@@ -182,6 +186,8 @@ int GameApplication::run(int argc, char* argv[])
 
     if (!loadDatabases())
     {
+        TraceLog(LOG_ERROR, "Failed to load game databases (scenes, conversations, or fonts)");
+        std::cerr << "Failed to load game data. Check the log above for the scene or conversation that failed to parse.\n";
         shutdown();
         return 1;
     }

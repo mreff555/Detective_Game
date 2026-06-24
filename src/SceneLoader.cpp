@@ -509,10 +509,16 @@ bool applyConversationOverlays(
     {
         std::map<std::string, SceneData>::iterator sceneIt = scenes.find(it.key());
         if (sceneIt == scenes.end())
+        {
+            TraceLog(LOG_ERROR, "Conversation overlay references unknown scene '%s'", it.key().c_str());
             return false;
+        }
 
         if (!parseSpeakConfig(it.value(), sceneIt->second.speakConfig))
+        {
+            TraceLog(LOG_ERROR, "Failed to parse speak config for scene '%s'", it.key().c_str());
             return false;
+        }
     }
 
     return true;
@@ -930,7 +936,10 @@ bool SceneDatabase::load(const std::string& configPath, const std::string& asset
 
     std::ifstream file(configPath.c_str());
     if (!file.is_open())
+    {
+        TraceLog(LOG_ERROR, "Could not open scene config: %s", configPath.c_str());
         return false;
+    }
 
     nlohmann::json config;
     try
@@ -939,23 +948,33 @@ bool SceneDatabase::load(const std::string& configPath, const std::string& asset
     }
     catch (const nlohmann::json::exception&)
     {
+        TraceLog(LOG_ERROR, "Invalid JSON in scene config: %s", configPath.c_str());
         return false;
     }
 
     if (!config.is_object() || !config.contains("scenes") || !config["scenes"].is_object())
+    {
+        TraceLog(LOG_ERROR, "Scene config is missing a top-level 'scenes' object: %s", configPath.c_str());
         return false;
+    }
 
     const std::string fontPath = config.value("font", "");
     const std::string boldFontPath = config.value("boldFont", fontPath);
     const std::string uiFontPath = config.value("uiFont", "");
     if (fontPath.empty())
+    {
+        TraceLog(LOG_ERROR, "Scene config is missing required 'font' entry: %s", configPath.c_str());
         return false;
+    }
 
     if (!fontsLoaded)
     {
         descriptionFont = loadGameFont(assetRoot, fontPath);
         if (descriptionFont.texture.id == 0)
+        {
+            TraceLog(LOG_ERROR, "Failed to load game font: %s", fontPath.c_str());
             return false;
+        }
 
         boldFont = loadGameFont(assetRoot, boldFontPath);
         if (boldFont.texture.id == 0)
@@ -979,7 +998,10 @@ bool SceneDatabase::load(const std::string& configPath, const std::string& asset
     {
         SceneData scene;
         if (!parseScene(it.key(), it.value(), scene))
+        {
+            TraceLog(LOG_ERROR, "Failed to parse scene '%s' in %s", it.key().c_str(), configPath.c_str());
             return false;
+        }
 
         scenes[scene.id] = scene;
     }
@@ -987,7 +1009,10 @@ bool SceneDatabase::load(const std::string& configPath, const std::string& asset
     if (config.contains("conversations"))
     {
         if (!applyConversationOverlays(config["conversations"], scenes))
+        {
+            TraceLog(LOG_ERROR, "Failed to apply inline conversation overlays in %s", configPath.c_str());
             return false;
+        }
     }
     else
     {
@@ -1002,11 +1027,15 @@ bool SceneDatabase::load(const std::string& configPath, const std::string& asset
             }
             catch (const nlohmann::json::exception&)
             {
+                TraceLog(LOG_ERROR, "Failed to parse conversations file: %s", conversationsPath.c_str());
                 return false;
             }
 
             if (!applyConversationOverlays(conversationsConfig, scenes))
+            {
+                TraceLog(LOG_ERROR, "Failed to apply conversation overlays from %s", conversationsPath.c_str());
                 return false;
+            }
         }
     }
 
