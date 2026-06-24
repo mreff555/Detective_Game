@@ -503,7 +503,7 @@
         "use": false
       },
       "exits": {
-        "backward": "ice_house"
+        "backward": "steep_mountain_trail"
       },
       "audio": {
         "music": {
@@ -1201,7 +1201,7 @@
       "examineDetails": "The main track bends with the contour of the slope, drainage ditches cut on the uphill side to keep spring melt from washing the road away. Tire ruts and hoof prints overlap in the dust - this route is still used, if lightly.\n\nLeft, the church path is foot-worn and steeper, switchbacking once before it reaches the little white building. No bell rope visible from here. No smoke from a chimney. It looks tended but quiet.\n\nRight, the meadow path follows a gentler grade through young pines and opens on green so vivid it almost hurts the eye after the dust and stone of the ridge road.",
       "useDetails": "",
       "movement": {
-        "forward": false,
+        "forward": true,
         "backward": true,
         "left": true,
         "right": true
@@ -1213,6 +1213,7 @@
         "use": false
       },
       "exits": {
+        "forward": "steep_mountain_trail",
         "backward": "ice_house",
         "left": "white_baptist_church",
         "right": "cottonwood_meadow"
@@ -1229,6 +1230,251 @@
           {
             "path": "resources/audio/ambient/wind.mp3",
             "volume": 0.28,
+            "fade_in": 2.5,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
+      }
+    },
+    "steep_mountain_trail": {
+      "start": false,
+      "image": "resources/images/steep_mountain_trail.png",
+      "description": "Beyond the winding track the slope steepens into a narrow mountain trail where the air turns thin and cold enough to bite. Snow lies deep along the shoulders of the path and in every lee the mountain offers, crusted white over rock and frozen earth. The footing is steep dirt switchbacks cut straight into the slope, every step earned. Ahead, the main trail keeps climbing in hard zigs toward the peak. To the left, a lesser path diverges onto a small snowy plateau where a cabin sits in good repair. To the right, another branch ascends toward the cliffs that rise like a wall above the valley.",
+      "examineDetails": "You pause and let your lungs adjust to the altitude. The cold here has a different quality than the ice house damp below - dry, thin, and absolute. Snow is not a accent at this height. It is the ground's second language.\n\nForward, the switchbacks dominate the view: worn dirt treads punched into the mountainside, boot prints breaking the crust, the line climbing in steep patient zigs toward the summit. This is the main way up.\n\nLeft, a branch path breaks away to a small plateau where a log cabin waits - modest, well kept, smokeless chimney, the look of a place someone built within the last decade and still maintains through winter.\n\nRight, a separate track climbs toward the cliff line where the rock opens onto height and weather. Different kind of climb. Different kind of appointment.",
+      "useDetails": "",
+      "movement": {
+        "forward": true,
+        "backward": true,
+        "left": true,
+        "right": true
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "backward": "winding_alpine_path",
+        "forward": "ridge_cabin_switchbacks",
+        "left": "ridge_cabin_exterior",
+        "right": "private_overlook"
+      },
+      "audio": {
+        "music": {
+          "path": "resources/audio/music/mountain_wind.mp3",
+          "volume": 0.32,
+          "fade_in": 4.0,
+          "fade_out": 2.5,
+          "loop": true
+        },
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.48,
+            "fade_in": 2.0,
+            "fade_out": 2.0,
+            "loop": true
+          },
+          {
+            "path": "resources/audio/ambient/cliff_wind_gusts.mp3",
+            "volume": 0.18,
+            "fade_in": 3.0,
+            "fade_out": 2.5,
+            "loop": true
+          }
+        ]
+      }
+    },
+    "ridge_cabin_switchbacks": {
+      "start": false,
+      "image": "resources/images/ridge_cabin_switchbacks.png",
+      "description": "The switchbacks climb the mountainside in long patient turns, each leg punched through snow into frozen dirt where the slope wants to slide. The air grows thinner with every rise. Boot prints break the crust in the shaded corners of the tread. Above the last visible bend the trail keeps rising toward the peak, the main line up the mountain.",
+      "examineDetails": "You study the path the way you would a witness who does not know he is talking.\n\nThis is not timber staging or plank bridges - only dirt switchbacks cut into the grade and kept open by whoever still has business above the snow line. The steepest pitches show stone kicked through for footing. Drifts lean against the uphill shoulder. Someone has maintained the route recently: a sapling cut back, a slide scraped clear, fresh prints over older ones.\n\nBelow you the switchbacks drop away toward the steep mountain trail, the cabin plateau, and the cliff path you left behind. You came up the forward route. The mountain does not encourage hurry up here.",
+      "useDetails": "",
+      "movement": {
+        "forward": false,
+        "backward": true,
+        "left": false,
+        "right": false
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "backward": "steep_mountain_trail"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.42,
+            "fade_in": 2.0,
+            "fade_out": 2.0,
+            "loop": true
+          },
+          {
+            "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
+            "volume": 0.12,
+            "fade_in": 2.5,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
+      }
+    },
+    "ridge_cabin_exterior": {
+      "start": false,
+      "image": "resources/images/ridge_cabin_exterior.png",
+      "description": "The left-hand path opens onto a small snowy plateau where a cabin looks no older than ten years and far better made than most ridge construction. Squared timber walls rise from a stone foundation, corners tight, roof metal and true. A covered porch faces the valley with two rockers and a braided rug. Windows are clean. The chimney is swept. The place is quaint without being precious - the work of someone who knew how to build and did not need to boast about it.",
+      "examineDetails": "You walk the perimeter slowly, reading the details the way you read a room.\n\nThe logs are dressed and fitted, not the slap-and-chink work of a mining camp. Chinking is neat. The foundation is river stone set in mortar, level on the plateau despite the mountain's tilt all around it. A brass house number - 7 - is nailed beside the door with a carpenter's straightness. The porch boards are recent, still pale where sun has not yet darkened them. Two rockers sit under the eave, cushions faded but dry. A braided rug lies square on the boards as though someone straightened it before leaving.\n\nNo name on the mailbox. No horse in a lean-to. No wash on the line. And yet the cabin is not abandoned: window glass unbroken, door hardware oiled, a faint scent of woodsmoke in the stone chimney though no fire burns now. Whoever lives here keeps a small, orderly life above the fog line.\n\nThe branch path drops away behind you toward the steep mountain trail below. Ahead, the front door stands closed and well hung. This feels like a different kind of appointment - private, domestic, recently chosen.",
+      "useDetails": "",
+      "movement": {
+        "forward": true,
+        "backward": true,
+        "left": false,
+        "right": false
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "forward": "ridge_cabin_main_room",
+        "backward": "steep_mountain_trail"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.30,
+            "fade_in": 2.0,
+            "fade_out": 2.0,
+            "loop": true
+          },
+          {
+            "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
+            "volume": 0.10,
+            "fade_in": 2.5,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
+      }
+    },
+    "ridge_cabin_main_room": {
+      "start": false,
+      "image": "resources/images/ridge_cabin_main_room.png",
+      "description": "The front door opens on a single main room that feels larger than the cabin's modest exterior promised. Dressed log walls glow with lamplight. A compact fieldstone hearth holds a low banked fire. A braided rug covers the plank floor. Built-in shelves carry books, tinware, and a few framed photographs turned slightly away from the door, as though privacy were a habit here. The room is warm, orderly, and recently lived in.",
+      "examineDetails": "You take the room in the way you would a witness who does not know he is being questioned.\n\nThe craftsmanship continues inside: log courses fitted tight, chinking smooth, corners true. The hearth is fieldstone set clean, a copper kettle hanging from the crane, ash raked neat. The furniture is plain but good - a settle by the fire, a small table with two chairs, a sideboard with a wash basin and mirror. Kerosene lamps stand trimmed and filled.\n\nOn the shelves, books outnumber ornaments: Dickens, a medical almanac, a ledger with a hardware-store stamp. One photograph shows mountains in summer; another is turned face down. No name on the mail, no initials on the towels - but the room knows its occupant. Boots by the hearth are dried and brushed. A wool coat hangs on a peg near the door you entered.\n\nA narrow doorway at the far end leads deeper into the cabin. The switchback trail and the valley lie behind you through the front door.",
+      "useDetails": "",
+      "movement": {
+        "forward": true,
+        "backward": true,
+        "left": false,
+        "right": false
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "forward": "ridge_cabin_bedroom",
+        "backward": "ridge_cabin_exterior"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/fireplace.mp3",
+            "volume": 0.35,
+            "fade_in": 2.0,
+            "fade_out": 2.0,
+            "loop": true
+          },
+          {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.12,
+            "fade_in": 2.5,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
+      }
+    },
+    "ridge_cabin_bedroom": {
+      "start": false,
+      "image": "resources/images/ridge_cabin_bedroom.png",
+      "description": "A small bedroom tucked under the cabin's roofline, the ceiling following the pitch close enough that a tall man would mind his head. A narrow bed with a patchwork quilt stands against the wall. A chest at its foot. A single window looks out over the valley through plain muslin curtains. The air smells of cedar, wool, and soap.",
+      "examineDetails": "The bedroom is spare and deliberate, the second room of a house built for one life rather than company.\n\nThe bed is made tight, quilt folded square, pillow smooth - not staged for guests, but kept by habit. On the chest sit a straight razor in a dish, a hairbrush, and a pocket watch that has been wound recently. The window latch works clean. Through the glass you catch the valley far below and, very faint, the line of the alpine road.\n\nA peg rail holds one good coat and a felt hat. No wardrobe excess. No woman's comb or perfume. Whoever sleeps here lives alone and keeps the fact without apology.\n\nThe doorway behind you leads back to the main room and, beyond it, the porch, the switchbacks, and the mountain.",
+      "useDetails": "",
+      "movement": {
+        "forward": false,
+        "backward": true,
+        "left": false,
+        "right": false
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "backward": "ridge_cabin_main_room"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.18,
+            "fade_in": 2.0,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
+      }
+    },
+    "ridge_doctors_practice": {
+      "start": false,
+      "image": "resources/images/ridge_doctors_practice.png",
+      "description": "A small doctor's practice sits on a bench of the mountain road, white clapboard gone chalky with sun and winter, green trim at the windows and porch rail. A painted shingle hangs from the eave: DR. E. HALSTROM - PHYSICIAN & SURGEON. The front steps are swept. A brass knocker is polished. The building looks no older than the century's turn and maintained by someone who still believes patients may arrive on foot.",
+      "examineDetails": "You read the practice the way you would a man's credentials before you trust him with a wound.\n\nThe exterior is modest frontier medicine, not city charity. Clapboard siding, double-hung windows with clean glass, a narrow porch wide enough for a chair and a waiting patient. The shingle is hand-lettered and recently touched up. Beside the door, a slate board lists office hours in chalk that has been rewritten more than once.\n\nThrough the front window you catch a glimpse of the waiting room: two hard chairs, a side table with journals, a glass carafe of water, and a cabinet of instruments behind a curtain. No blood on the steps. No abandoned stretcher. Whoever Halstrom is, he keeps a professional face even this far above the valley.\n\nBehind you the steep mountain trail climbs toward the switchbacks and the cabin on the higher bench. The alpine road continues below toward the wider settlement.",
+      "useDetails": "",
+      "movement": {
+        "forward": false,
+        "backward": true,
+        "left": false,
+        "right": false
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false
+      },
+      "exits": {
+        "backward": "steep_mountain_trail"
+      },
+      "audio": {
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.22,
+            "fade_in": 2.0,
+            "fade_out": 2.0,
+            "loop": true
+          },
+          {
+            "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
+            "volume": 0.14,
             "fade_in": 2.5,
             "fade_out": 2.0,
             "loop": true
