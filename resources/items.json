@@ -277,6 +277,17 @@
         "icon": "resources/icons/box_of_nails_icon.png"
       }
     },
+    "bent_nails": {
+      "name": "Bent Nails",
+      "description": "Two ten-penny cut nails, iron gone dull with ridge damp. Both are bent a few degrees below the head where a hammer glanced wrong and someone pried them free rather than drive them true. The points are still sharp. Whoever lost them was in a hurry.",
+      "weightLb": 0.04,
+      "visuals": {
+        "image": "resources/images/bent_nails_examine.png"
+      },
+      "icons": {
+        "icon": "resources/icons/bent_nails_icon.png"
+      }
+    },
     "copper_wire_spool": {
       "name": "Spool of Copper Wire",
       "description": "A small spool of bare eighteen-gauge copper wire wound tight on a turned wooden core. The strand is fine as a pencil lead, rose-bright and springy, the sort of wire used for lantern leads, telegraph repairs, and the small electrical improvisations men make when the valley is too far below. The spool is light in the hand and the coils sit close, kept dry against mountain damp.",

@@ -383,8 +383,17 @@
       "start": false,
       "image": "resources/images/ice_house.png",
       "description": "The stakes give way to a dug-out slope where someone cut a root cellar into the mountain itself. Timber frames a low doorway set into the earth, cold air breathing out even in daylight. An ice house, or what remains of one - the kind of structure that kept meat through summer before the railroad brought upcity ice. The door hangs open. Iron hooks are visible in the gloom within. The silence has weight.",
-      "examineDetails": "The structure is half-buried in the slope, earth and stone packed against the outer walls as though the mountain meant to swallow it. Split pine braces the lintel. The door hangs ajar on leather hinges gone stiff with damp.\n\nCold exhales from the interior even at midday - not the clean cold of winter, but the held cold of deep earth and old blood remembered in timber. Meat hooks show against the ceiling beam, dark curves against darker shadow.\n\nTo your left, a narrow passage opens into the ice house proper. Ahead, a winding track continues along the slope, wide enough for a small wagon. Whatever was stored here was meant to stay off the ridge's ledger.",
+      "examineDetails": "The structure is half-buried in the slope, earth and stone packed against the outer walls as though the mountain meant to swallow it. Split pine braces the lintel. The door hangs ajar on leather hinges gone stiff with damp.\n\nNear the threshold, in packed earth scuffed by boots, two ten-penny nails lie discarded. Both are slightly bent below the head, as though someone struck off-center and had to wrest them back out of the timber rather than drive them true.\n\nCold exhales from the interior even at midday - not the clean cold of winter, but the held cold of deep earth and old blood remembered in timber. Meat hooks show against the ceiling beam, dark curves against darker shadow.\n\nTo your left, a narrow passage opens into the ice house proper. Ahead, a winding track continues along the slope, wide enough for a small wagon. Whatever was stored here was meant to stay off the ridge's ledger.",
       "useDetails": "",
+      "takeables": [
+        {
+          "id": "bent_nails",
+          "name": "Bent Nails",
+          "icon": "resources/icons/bent_nails_icon.png",
+          "examineImage": "resources/images/bent_nails_examine.png",
+          "examineText": "Two ten-penny cut nails, iron gone dull with ridge damp. Both are bent a few degrees below the head where a hammer glanced wrong and someone pried them free rather than drive them true. The points are still sharp. Whoever lost them was in a hurry."
+        }
+      ],
       "movement": {
         "forward": true,
         "backward": true,
