@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace testgame
+namespace highline_ridge
 {
 
 struct NarrativeChoiceHitArea

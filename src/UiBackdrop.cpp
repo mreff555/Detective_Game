@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace testgame
+namespace highline_ridge
 {
 
 const float UiBackdrop::kTileDisplayWidth = 280.0f;

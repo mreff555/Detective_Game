@@ -4,7 +4,7 @@
 #include <UiBackdrop.h>
 #include <string>
 
-namespace testgame
+namespace highline_ridge
 {
 
 struct AudioVolumeConfig

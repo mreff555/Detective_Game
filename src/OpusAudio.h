@@ -3,7 +3,7 @@
 
 #include <raylib.h>
 
-namespace testgame
+namespace highline_ridge
 {
 
 bool decodeOpusBytesToWave(const unsigned char* data, int dataSize, Wave& outWave);

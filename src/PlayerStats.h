@@ -5,7 +5,7 @@
 #include <set>
 #include <string>
 
-namespace testgame
+namespace highline_ridge
 {
 
 struct PlayerStatPercents

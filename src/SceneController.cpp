@@ -6,7 +6,7 @@
 #include <TakeMgr.h>
 #include <WorldState.h>
 
-namespace testgame
+namespace highline_ridge
 {
 
 SceneController::SceneController(

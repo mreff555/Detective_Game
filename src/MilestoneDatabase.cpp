@@ -3,7 +3,7 @@
 #include <nlohmann/json.hpp>
 #include <raylib.h>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

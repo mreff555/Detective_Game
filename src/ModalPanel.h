@@ -3,7 +3,7 @@
 
 #include <raylib.h>
 
-namespace testgame
+namespace highline_ridge
 {
 
 struct ModalPanelStyle

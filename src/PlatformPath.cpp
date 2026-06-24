@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace fs = std::filesystem;

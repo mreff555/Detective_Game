@@ -8,7 +8,7 @@
 #include <SpeakTargetMgr.h>
 #include <TakeMgr.h>
 
-namespace testgame
+namespace highline_ridge
 {
 
 void UiCoordinator::open(

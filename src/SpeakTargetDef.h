@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace testgame
+namespace highline_ridge
 {
 
 struct SpeakTargetDef

@@ -9,7 +9,7 @@
 #include <set>
 #include <string>
 
-namespace testgame
+namespace highline_ridge
 {
 
 class GameContext

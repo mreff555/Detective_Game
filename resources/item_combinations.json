@@ -29,6 +29,20 @@
       ]
     },
     {
+      "id": "lamp_oil_polish_ranger_badge",
+      "itemA": "lamp_oil",
+      "itemB": "texas_ranger_badge",
+      "requirements": {
+        "texas_ranger_badge": {
+          "notFlags": ["polished"]
+        }
+      },
+      "effects": [
+        { "addFlag": { "item": "texas_ranger_badge", "flag": "polished" } }
+      ],
+      "narrative": "You uncork the mason jar and wet a fold of cloth with lamp oil. Working in small circles, you lift the tarnish from the brass until the Texas Ranger star catches the light again - sharp, deliberate, and recently cared for, as though someone polished it before hiding it here and the mountain only half forgot.\n\nThe badge looks the same in every line and curve. Only the surface has changed: dull bloom traded for a bright, honest mirror of whoever holds it."
+    },
+    {
       "id": "oil_wick_lantern",
       "itemA": "lamp_oil",
       "itemB": "wick",

@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace testgame
+namespace highline_ridge
 {
 
 struct TtsVoiceEntry
@@ -13,6 +13,15 @@ struct TtsVoiceEntry
     std::string audioPath;
     std::string text;
     std::string voiceId;
+    std::string storedTextSha256;
+};
+
+struct VoiceBundleResult
+{
+    bool success = false;
+    bool skipped = false;
+    bool regenerated = false;
+    std::string textSha256;
 };
 
 class XaiTtsClient
@@ -37,11 +46,16 @@ class XaiTtsClient
         const std::string& voiceId,
         const std::string& outputPath);
 
-    static bool bundleVoiceFile(
+    static VoiceBundleResult bundleVoiceFile(
         const std::string& apiKey,
         const TtsVoiceEntry& entry,
-        const std::string& assetRoot,
-        bool forceRefresh);
+        const std::string& assetRoot);
+
+    static bool persistVoiceTextSha256(
+        const std::string& conversationsPath,
+        const std::string& scenesPath,
+        const std::string& audioPath,
+        const std::string& textSha256);
 };
 
 void printGameHelp(const char* executableName);

@@ -9,7 +9,7 @@
 #include <cstdio>
 #include <sstream>
 
-namespace testgame
+namespace highline_ridge
 {
 
 const float NarrativeNotebook::kScrollbarWidth = 16.0f;

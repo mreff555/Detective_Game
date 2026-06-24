@@ -5,7 +5,7 @@
 #include <MilestoneStruct.h>
 #include <vector>
 
-namespace testgame
+namespace highline_ridge
 {
 
 class MilestoneManager

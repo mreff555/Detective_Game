@@ -45,6 +45,7 @@ set(SOURCES
     src/SaveLoadMenuMgr.cpp
     src/DropConfirmMgr.cpp
     src/SaveGame.cpp
+    src/TextDigest.cpp
     src/XaiTtsClient.cpp
     src/ItemInstance.cpp
     src/ItemDatabase.cpp

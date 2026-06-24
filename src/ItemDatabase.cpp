@@ -3,7 +3,7 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 
-namespace testgame
+namespace highline_ridge
 {
 
 

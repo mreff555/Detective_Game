@@ -1,7 +1,7 @@
 #include "WorldState.h"
 
 #include <InventoryMgr.h>
-namespace testgame
+namespace highline_ridge
 {
 
 SavedGameState WorldState::snapshot(

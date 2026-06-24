@@ -1,6 +1,6 @@
 #include "SceneVisitTracker.h"
 
-namespace testgame
+namespace highline_ridge
 {
 
 void SceneVisitTracker::resetForNewScene()

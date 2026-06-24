@@ -2,7 +2,7 @@
 #include <RaylibCompat.h>
 #include <cstdio>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

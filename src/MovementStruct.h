@@ -1,7 +1,7 @@
 #ifndef MOVEMENT_STRUCT_H
 #define MOVEMENT_STRUCT_H
 
-namespace testgame
+namespace highline_ridge
 {
     struct MovementStruct
     {

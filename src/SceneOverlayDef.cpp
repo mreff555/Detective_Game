@@ -2,7 +2,7 @@
 
 #include <nlohmann/json.hpp>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

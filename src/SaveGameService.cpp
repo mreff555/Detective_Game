@@ -1,6 +1,6 @@
 #include "SaveGameService.h"
 
-namespace testgame
+namespace highline_ridge
 {
 
 bool SaveGameService::quickSave(const SavedGameState& state) const

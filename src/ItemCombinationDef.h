@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace testgame
+namespace highline_ridge
 {
 
 struct ItemCombineRequirements
@@ -35,11 +35,13 @@ struct ItemCombineRecipe
     ItemCombineRequirements requirementsA;
     ItemCombineRequirements requirementsB;
     std::vector<ItemCombineEffect> effects;
+    std::string narrative;
 };
 
 struct ItemCombineApplication
 {
     bool success = false;
+    std::string narrative;
     std::vector<std::string> removeItemIds;
     std::vector<std::pair<std::string, std::string>> addFlags;
     std::vector<std::string> grantItemIds;

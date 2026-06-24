@@ -382,13 +382,13 @@
     "ice_house": {
       "start": false,
       "image": "resources/images/ice_house.png",
-      "description": "The stakes give way to a dug-out slope where someone cut a root cellar into the mountain itself. Timber frames a low doorway set into the earth, cold air breathing out even in daylight. An ice house, or what remains of one - the kind of structure that kept meat through summer before the railroad brought upcity ice. The door hangs open. The hooks inside are empty. The silence has weight.",
-      "examineDetails": "You duck beneath the timber lintel. The walls are packed earth reinforced with split pine, sweat-dark where hands once braced the cuts. Iron meat hooks line the ceiling in a row, most of them bare, rust blooming at the curves. One hook is not empty.\n\nA strip of burgundy silk hangs from it, hem weighted with lead shot - the same weighting you saw on the faded velvet curtain in the saloon's side passage. The fabric is torn, not cut cleanly. As though it was ripped free in a hurry and left here because there was no time to burn it with the papers in the charcoal ring.\n\nThe floor is packed clay, scuffed by boots. No ice remains. No meat. Only the cold that lives in earth dug deep into a slope, and the silk, and the feeling that you are standing in a room meant to store things the ridge did not want found in town.",
+      "description": "The stakes give way to a dug-out slope where someone cut a root cellar into the mountain itself. Timber frames a low doorway set into the earth, cold air breathing out even in daylight. An ice house, or what remains of one - the kind of structure that kept meat through summer before the railroad brought upcity ice. The door hangs open. Iron hooks are visible in the gloom within. The silence has weight.",
+      "examineDetails": "The structure is half-buried in the slope, earth and stone packed against the outer walls as though the mountain meant to swallow it. Split pine braces the lintel. The door hangs ajar on leather hinges gone stiff with damp.\n\nCold exhales from the interior even at midday - not the clean cold of winter, but the held cold of deep earth and old blood remembered in timber. Meat hooks show against the ceiling beam, dark curves against darker shadow.\n\nTo your left, a narrow passage opens into the ice house proper. Whatever was stored here was meant to stay off the ridge's ledger.",
       "useDetails": "",
       "movement": {
         "forward": true,
         "backward": true,
-        "left": false,
+        "left": true,
         "right": false
       },
       "actions": {
@@ -399,7 +399,8 @@
       },
       "exits": {
         "forward": "private_overlook",
-        "backward": "survey_stake_line"
+        "backward": "survey_stake_line",
+        "left": "ice_house_interior"
       },
       "audio": {
         "ambient": [
@@ -407,6 +408,66 @@
             "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
             "volume": 0.85,
             "fade_in": 1.0,
+            "fade_out": 2.0,
+            "loop": true
+          }
+        ]
+      }
+    },
+    "ice_house_interior": {
+      "start": false,
+      "image": "resources/images/ice_house_interior.png",
+      "description": "A small stone chamber, no more than ten feet by fifteen. Fieldstone walls, packed dirt floor, air held cold and stale. Hay covers the ground in a thick layer, stained dark in places. Iron hooks hang from the ceiling beams. A torn burgundy scarf dangles from one of them. The room looks to have been abandoned for some time.",
+      "examineDetails": "The walls are fieldstone - river cobbles set in mortar, sweating damp. Hand-hewn beams cross the ceiling, timbers blackened with age. Forged iron hooks hang from the wood, most of them empty.\n\nHay is spread across the floor, old and matted. Some of it is stained crimson where it meets the dirt.\n\nFrom the center hook hangs a burgundy silk scarf, torn and ruined. You step closer. Jasmine and sandalwood rise from the fabric. You recognize the scent. You do not know why. As you take it in, a strange comfort settles over you that you cannot explain.",
+      "examineLucidityDelta": 5,
+      "examineLucidityOncePerDay": true,
+      "useDetails": "",
+      "takeables": [
+        {
+          "id": "texas_ranger_badge",
+          "name": "Texas Ranger Badge",
+          "icon": "resources/icons/texas_ranger_badge_icon.png",
+          "examineImage": "resources/images/texas_ranger_badge_examine.png",
+          "examineText": "A small circular brass badge, the Texas Ranger star stamped at the center. The metal is tarnished along the rim but the star still reads clear. The pin back is bent where it was torn from cloth. It is lighter than it looks, and does not seem to have been here long.",
+          "requiresStoryFlag": "ice_house_interior:ranger_badge_revealed"
+        }
+      ],
+      "movement": {
+        "forward": false,
+        "backward": false,
+        "left": false,
+        "right": true
+      },
+      "actions": {
+        "examine": true,
+        "speak": false,
+        "hit": false,
+        "use": false,
+        "take": true
+      },
+      "exits": {
+        "right": "ice_house"
+      },
+      "audio": {
+        "music": {
+          "path": "resources/audio/music/cabin_theme.mp3",
+          "volume": 0.08,
+          "fade_in": 3.0,
+          "fade_out": 2.5,
+          "loop": true
+        },
+        "ambient": [
+          {
+            "path": "resources/audio/ambient/wind.mp3",
+            "volume": 0.42,
+            "fade_in": 2.0,
+            "fade_out": 2.0,
+            "loop": true
+          },
+          {
+            "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
+            "volume": 0.18,
+            "fade_in": 2.5,
             "fade_out": 2.0,
             "loop": true
           }

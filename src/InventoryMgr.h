@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace testgame
+namespace highline_ridge
 {
 
 enum class InventoryViewState
@@ -65,6 +65,7 @@ class InventoryMgr
 
     std::string consumePendingDropItemId();
     bool consumeItemCombinationApplied();
+    std::string consumePendingCombinationNarrative();
 
     private:
     void createDefaultItems();
@@ -117,6 +118,7 @@ class InventoryMgr
     Vector2 pressStartPos{};
     bool isDraggingItem = false;
     bool pendingItemCombinationApplied = false;
+    std::string pendingCombinationNarrative;
 
     ScrollPanel inventoryScroll;
     mutable float inventoryContentHeight = 0.0f;

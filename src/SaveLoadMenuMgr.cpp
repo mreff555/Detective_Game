@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

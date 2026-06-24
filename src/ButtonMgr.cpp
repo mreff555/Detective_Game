@@ -5,7 +5,7 @@
 #include <cstdio>
 #include <vector>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

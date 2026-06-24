@@ -3,7 +3,7 @@
 #include <ImageCompression.h>
 #include <RaylibCompat.h>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

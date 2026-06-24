@@ -14,7 +14,7 @@
 #include <set>
 #include <string>
 
-namespace testgame
+namespace highline_ridge
 {
 
 bool loadResourceTexture(const std::string& assetRoot, const std::string& relativePath, Texture2D& outTexture);
@@ -29,6 +29,8 @@ struct SceneData
     std::string description;
     std::string examineDetails;
     std::string examineFlag;
+    float examineLucidityDelta = 0.0f;
+    bool examineLucidityOncePerDay = false;
     std::string speakDetails;
     std::string useDetails;
     float useHealthDelta = 0.0f;

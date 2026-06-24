@@ -9,7 +9,7 @@
 #include <ctime>
 #include <iostream>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

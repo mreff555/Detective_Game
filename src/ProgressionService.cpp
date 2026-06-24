@@ -2,7 +2,7 @@
 
 #include <GameContext.h>
 
-namespace testgame
+namespace highline_ridge
 {
 
 ProgressionService::ProgressionService(MilestoneManager& milestoneMgr_)

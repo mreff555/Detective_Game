@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace testgame
+namespace highline_ridge
 {
 
 std::string pathJoin(const std::string& base, const std::string& relative);

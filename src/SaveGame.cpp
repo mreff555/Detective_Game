@@ -10,7 +10,7 @@
 #include <fstream>
 #include <map>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

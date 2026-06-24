@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

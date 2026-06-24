@@ -1,6 +1,6 @@
 #include "GameContext.h"
 
-namespace testgame
+namespace highline_ridge
 {
 
 MilestoneEventContext GameContext::makeMilestoneContext(

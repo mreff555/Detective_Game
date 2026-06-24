@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace testgame
+namespace highline_ridge
 {
 
 bool PlayerStats::apply(const StatusEffect& effect, bool allowRepeat)

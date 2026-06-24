@@ -9,7 +9,7 @@
 #include <sstream>
 #include <unordered_set>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

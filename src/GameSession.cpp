@@ -10,7 +10,7 @@
 #include <cstdlib>
 #include <ctime>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace
@@ -208,6 +208,8 @@ namespace
       
       examineDetails(locationStruct.examineDetails),
       examineFlag(locationStruct.examineFlag),
+      examineLucidityDelta(locationStruct.examineLucidityDelta),
+      examineLucidityOncePerDay(locationStruct.examineLucidityOncePerDay),
       speakDetails(locationStruct.speakDetails),
       useDetails(locationStruct.useDetails),
       useHealthDelta(locationStruct.useHealthDelta),
@@ -575,6 +577,10 @@ namespace
             if (item.requiresExamine && !hasExaminedScene(worldState.currentSceneId))
                 continue;
 
+            if (!item.requiresStoryFlag.empty()
+                && worldState.storyFlags.count(item.requiresStoryFlag) == 0)
+                continue;
+
             available.push_back(item);
         }
 
@@ -922,6 +928,17 @@ namespace
         appendNarrativeSection("Examining:", details);
         if (!examineFlag.empty())
             worldState.storyFlags.insert(examineFlag);
+
+        if (examineLucidityDelta != 0.0f)
+        {
+            StatusEffect examineEffect;
+            examineEffect.key = worldState.currentSceneId + ":examine:lucidity";
+            if (examineLucidityOncePerDay)
+                examineEffect.key += ":day:" + std::to_string(worldState.day);
+            examineEffect.lucidity = examineLucidityDelta;
+            tryApplyStatusEffect(examineEffect, false);
+        }
+
         worldState.sceneVisits.examinedSceneIds.insert(worldState.currentSceneId);
         evaluateMilestones();
         updateActionAvailability();
@@ -1619,12 +1636,15 @@ namespace
 
         StatusEffect useEffect;
         useEffect.key = interactionKey(interaction.id);
+        if (interaction.oncePerDay)
+            useEffect.key += ":day:" + std::to_string(worldState.day);
         useEffect.health = interaction.useHealthDelta;
         useEffect.energy = interaction.useEnergyDelta;
         useEffect.resolve = interaction.useResolveDelta;
         useEffect.lucidity = interaction.useLucidityDelta;
         useEffect.charisma = interaction.useCharismaDelta;
-        tryApplyStatusEffect(useEffect, interaction.repeat);
+        const bool allowStatusRepeat = interaction.repeat && !interaction.oncePerDay;
+        tryApplyStatusEffect(useEffect, allowStatusRepeat);
 
         if (!interaction.repeat)
             worldState.usedInteractionKeys.insert(interactionKey(interaction.id));
@@ -1950,8 +1970,39 @@ namespace
         scrollNarrativeToLine(details, true);
     }
 
+    bool GameSession::maybeRevealIceHouseInteriorDeparture(const std::string& direction)
+    {
+        if (worldState.currentSceneId != "ice_house_interior" || direction != "right")
+            return false;
+
+        if (!hasExaminedScene(worldState.currentSceneId))
+            return false;
+
+        if (worldState.storyFlags.count("ice_house_interior:ranger_badge_revealed") > 0)
+            return false;
+
+        const std::string details =
+            "You finish examining the room and turn toward the door. As you do, a single ray of "
+            "sunshine punches through a gap in the timber frame and strikes the floor where the "
+            "hay lies thickest.\n\n"
+            "Something answers the light - a brief, hard glint, too deliberate to be ice.\n\n"
+            "You kneel. Your fingers close around a small circle of brass half-buried in the "
+            "packed earth: a Texas Ranger badge, tarnished at the edges but not forgotten. Whoever "
+            "left it here did not mean for it to stay hidden forever.";
+
+        appendNarrativeSection("Examining:", details);
+        worldState.storyFlags.insert("ice_house_interior:ranger_badge_revealed");
+        evaluateMilestones();
+        updateActionAvailability();
+        worldState.recordAction();
+        return true;
+    }
+
     void GameSession::tryMove(const std::string& direction)
     {
+        if (maybeRevealIceHouseInteriorDeparture(direction))
+            return;
+
         std::string blockedDetails;
         if (!sceneController.tryMove(
                 direction,
@@ -2008,6 +2059,8 @@ namespace
         baseDescription = locationStruct.locationDescription;
         examineDetails = locationStruct.examineDetails;
         examineFlag = locationStruct.examineFlag;
+        examineLucidityDelta = locationStruct.examineLucidityDelta;
+        examineLucidityOncePerDay = locationStruct.examineLucidityOncePerDay;
         speakDetails = locationStruct.speakDetails;
         useDetails = locationStruct.useDetails;
         useHealthDelta = locationStruct.useHealthDelta;
@@ -2525,7 +2578,12 @@ namespace
         {
             inventoryMgr.update();
             if (inventoryMgr.consumeItemCombinationApplied())
+            {
+                const std::string narrative = inventoryMgr.consumePendingCombinationNarrative();
+                if (!narrative.empty())
+                    appendNarrativeSection("Using:", narrative);
                 worldState.recordAction();
+            }
             handleInventoryDropInput();
 
             if (buttonMgr.consumeBackwardButtonClick() && inventoryMgr.isExaminingItem())

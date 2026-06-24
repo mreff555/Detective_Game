@@ -1,7 +1,7 @@
 #ifndef UI_COORDINATOR_H
 #define UI_COORDINATOR_H
 
-namespace testgame
+namespace highline_ridge
 {
 
 class DropConfirmMgr;

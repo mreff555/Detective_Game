@@ -4,7 +4,7 @@
 #include <SceneLoader.h>
 #include <algorithm>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace
@@ -624,6 +624,7 @@ bool InventoryMgr::applyItemCombination(const ItemCombineApplication& applicatio
         addItem(granted);
     }
 
+    pendingCombinationNarrative = application.narrative;
     pendingItemCombinationApplied = true;
     return true;
 }
@@ -925,7 +926,16 @@ bool InventoryMgr::consumeItemCombinationApplied()
 {
     const bool applied = pendingItemCombinationApplied;
     pendingItemCombinationApplied = false;
+    if (!applied)
+        pendingCombinationNarrative.clear();
     return applied;
+}
+
+std::string InventoryMgr::consumePendingCombinationNarrative()
+{
+    const std::string narrative = pendingCombinationNarrative;
+    pendingCombinationNarrative.clear();
+    return narrative;
 }
 
 std::vector<InventoryItem> InventoryMgr::exportItemSnapshots() const

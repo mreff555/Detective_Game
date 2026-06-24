@@ -6,7 +6,7 @@
 #include <raylib.h>
 #include <string>
 
-namespace testgame
+namespace highline_ridge
 {
 
 struct LocationStruct
@@ -17,6 +17,8 @@ struct LocationStruct
     std::string locationDescription;
     std::string examineDetails;
     std::string examineFlag;
+    float examineLucidityDelta = 0.0f;
+    bool examineLucidityOncePerDay = false;
     std::string speakDetails;
     std::string useDetails;
     float useHealthDelta = 0.0f;

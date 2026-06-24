@@ -37,7 +37,7 @@
 #include <set>
 #include <string>
 #include <vector>
-namespace testgame
+namespace highline_ridge
 {
 
 class GameSession
@@ -126,6 +126,7 @@ class GameSession
     void applyLocationStruct(const LocationStruct& locationStruct, const std::string& fromRoom = "");
     void transitionToScene(const std::string& sceneId);
     void tryMove(const std::string& direction);
+    bool maybeRevealIceHouseInteriorDeparture(const std::string& direction);
     void appendBlockedMovementMessage(const std::string& details);
     void trimNarrativeBuffer();
     void handleNarrativeScrollInput();
@@ -217,6 +218,8 @@ class GameSession
     std::string baseDescription;
     std::string examineDetails;
     std::string examineFlag;
+    float examineLucidityDelta = 0.0f;
+    bool examineLucidityOncePerDay = false;
     std::string speakDetails;
     std::string useDetails;
     float useHealthDelta = 0.0f;

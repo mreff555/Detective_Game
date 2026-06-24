@@ -4,7 +4,7 @@
 #include <SceneOverlayDef.h>
 #include <string>
 
-namespace testgame
+namespace highline_ridge
 {
 
 struct SceneInteractionDef
@@ -19,6 +19,7 @@ struct SceneInteractionDef
     float useLucidityDelta = 0.0f;
     float useCharismaDelta = 0.0f;
     bool repeat = false;
+    bool oncePerDay = false;
     bool requiresExamine = true;
     bool advancesDay = false;
     std::vector<OverlaySequenceStep> overlaySequence;

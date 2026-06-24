@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace testgame
+namespace highline_ridge
 {
 
 std::string resolveAssetPath(const std::string& assetRoot, const std::string& path);

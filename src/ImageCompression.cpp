@@ -10,7 +10,7 @@
 #include <jpeglib.h>
 #include <lzma.h>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

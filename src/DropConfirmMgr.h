@@ -7,7 +7,7 @@
 #include <raylib.h>
 #include <string>
 
-namespace testgame
+namespace highline_ridge
 {
 
 class DropConfirmMgr

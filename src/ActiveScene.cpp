@@ -2,7 +2,7 @@
 
 #include <SceneLoader.h>
 
-namespace testgame
+namespace highline_ridge
 {
 
 ActiveScene::ActiveScene()

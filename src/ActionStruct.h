@@ -1,7 +1,7 @@
 #ifndef ACTION_STRUCT_H
 #define ACTION_STRUCT_H
 
-namespace testgame
+namespace highline_ridge
 {
     struct ActionStruct
     {

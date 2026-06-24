@@ -313,6 +313,21 @@
         "icon": "resources/icons/crude_lantern_icon.png"
       }
     },
+    "texas_ranger_badge": {
+      "name": "Texas Ranger Badge",
+      "description": "A small circular brass badge with the Texas Ranger star stamped at the center. The metal is tarnished along the rim but the star still reads clear. The pin back is bent where it was torn from cloth. It is lighter than it looks in your palm.",
+      "alternateDescription": "A small circular brass badge with the Texas Ranger star stamped at the center. The metal has been polished bright, catching light along every edge. The pin back is still bent from its hasty removal.",
+      "alternateDescriptionFlag": "polished",
+      "weightLb": 0.09,
+      "visuals": {
+        "image": "resources/images/texas_ranger_badge_examine.png",
+        "alternateImage": "resources/images/texas_ranger_badge_polished_examine.png",
+        "alternateImageFlag": "polished"
+      },
+      "icons": {
+        "icon": "resources/icons/texas_ranger_badge_icon.png"
+      }
+    },
     "independence_hall_locket": {
       "name": "Independence Hall Locket",
       "description": "An oval souvenir locket of tarnished silver plate over brass, the sort sold to travelers who want memory made portable. Independence Hall is worked in relief across the face, with 1776 arched above the cupola. The hinge is stiff with age and the catch holds fast. Whatever was kept inside has not seen daylight in some time.",

@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace testgame
+namespace highline_ridge
 {
 
 struct TakeableItemDef
@@ -14,6 +14,7 @@ struct TakeableItemDef
     std::string examineImagePath;
     std::string examineText;
     bool requiresExamine = true;
+    std::string requiresStoryFlag;
 
     bool hasOverrides() const
     {

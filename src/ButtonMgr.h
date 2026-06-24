@@ -8,7 +8,7 @@
 #include <raylib.h>
 #include <vector>
 
-namespace testgame
+namespace highline_ridge
 {
 
     class ButtonMgr

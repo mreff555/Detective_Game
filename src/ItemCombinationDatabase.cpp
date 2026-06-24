@@ -3,7 +3,7 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace
@@ -94,6 +94,7 @@ bool parseRecipe(const nlohmann::json& json, ItemCombineRecipe& out)
         parseRequirements(requirements.value(out.itemB, nlohmann::json::object()), out.requirementsB);
     }
 
+    out.narrative = json.value("narrative", "");
     out.effects.clear();
     const nlohmann::json& effects = json.value("effects", nlohmann::json::array());
     if (!effects.is_array())
@@ -202,6 +203,7 @@ bool ItemCombinationDatabase::tryCombine(
             continue;
 
         outApplication.success = true;
+        outApplication.narrative = recipe.narrative;
         for (const ItemCombineEffect& effect : recipe.effects)
         {
             switch (effect.type)

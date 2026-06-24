@@ -10,7 +10,7 @@
 #include <raylib.h>
 #include <vector>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace
@@ -717,6 +717,7 @@ bool parseTakeableItem(const nlohmann::json& item, TakeableItemDef& out)
     out.examineImagePath = item.value("examineImage", "");
     out.examineText = item.value("examineText", "");
     out.requiresExamine = item.value("requiresExamine", true);
+    out.requiresStoryFlag = item.value("requiresStoryFlag", "");
 
     return !out.id.empty();
 }
@@ -753,6 +754,7 @@ bool parseInteraction(const nlohmann::json& interaction, SceneInteractionDef& ou
     out.useLucidityDelta = interaction.value("useLucidityDelta", 0.0f);
     out.useCharismaDelta = interaction.value("useCharismaDelta", 0.0f);
     out.repeat = interaction.value("repeat", false);
+    out.oncePerDay = interaction.value("oncePerDay", false);
     out.requiresExamine = interaction.value("requiresExamine", true);
     out.advancesDay = interaction.value("advancesDay", false);
 
@@ -805,6 +807,8 @@ bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneDat
     out.description = sceneJson.value("description", "");
     out.examineDetails = sceneJson.value("examineDetails", "");
     out.examineFlag = sceneJson.value("examineFlag", "");
+    out.examineLucidityDelta = sceneJson.value("examineLucidityDelta", 0.0f);
+    out.examineLucidityOncePerDay = sceneJson.value("examineLucidityOncePerDay", false);
     out.speakDetails = sceneJson.value("speakDetails", "");
     out.useDetails = sceneJson.value("useDetails", "");
     out.useHealthDelta = sceneJson.value("useHealthDelta", 0.0f);
@@ -1106,6 +1110,8 @@ bool SceneDatabase::buildLocationStruct(const SceneData& scene, LocationStruct& 
     outLocation.locationDescription = scene.description;
     outLocation.examineDetails = scene.examineDetails;
     outLocation.examineFlag = scene.examineFlag;
+    outLocation.examineLucidityDelta = scene.examineLucidityDelta;
+    outLocation.examineLucidityOncePerDay = scene.examineLucidityOncePerDay;
     outLocation.speakDetails = scene.speakDetails;
     outLocation.useDetails = scene.useDetails;
     outLocation.useHealthDelta = scene.useHealthDelta;

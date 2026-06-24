@@ -3,7 +3,7 @@
 #include <cstring>
 #include <cstdlib>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

@@ -1,7 +1,7 @@
 #include <MilestoneManager.h>
 #include <SaveGame.h>
 
-namespace testgame
+namespace highline_ridge
 {
 
 namespace

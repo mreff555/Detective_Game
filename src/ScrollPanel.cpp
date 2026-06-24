@@ -3,7 +3,7 @@
 #include <RaylibCompat.h>
 #include <algorithm>
 
-namespace testgame
+namespace highline_ridge
 {
 
 const float ScrollPanel::kDefaultScrollbarWidth = 16.0f;
