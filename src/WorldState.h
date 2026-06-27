@@ -7,6 +7,7 @@
 #include <PlayerStats.h>
 #include <SaveGame.h>
 #include <SceneVisitTracker.h>
+#include <SceneInventory.h>
 #include <TakeableItemDef.h>
 #include <map>
 #include <set>
@@ -23,7 +24,9 @@ class WorldState
 {
     public:
     std::string currentSceneId;
+    std::string activeSubSceneId;
     std::string previousSceneId;
+    std::string previousSubSceneId;
     std::string narrativeText;
     PlayerStats playerStats;
     SceneVisitTracker sceneVisits;
@@ -33,6 +36,7 @@ class WorldState
     std::set<std::string> committedPlayerDialogLines;
     std::set<std::string> knownActorIds;
     std::map<std::string, std::vector<TakeableItemDef>> droppedItemsByScene;
+    SceneInventoryState sceneInventories;
     int day = 1;
     int actionCount = 0;
     int saloonRoomPurchasedDay = 0;

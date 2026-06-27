@@ -1,4 +1,5 @@
 #include "SceneLoader.h"
+#include "MaskEvaluator.h"
 #include "SceneOverlayDef.h"
 #include "ImageCompression.h"
 #include <PlatformPath.h>
@@ -686,11 +687,32 @@ bool parseExitRequirement(const nlohmann::json& requirement, ExitRequirementDef&
     out.requiresRoomPurchasedToday = requirement.value(
         "requiresRoomPurchasedToday",
         requirement.value("requires_room_purchased_today", false));
+    out.requiresInventoryItem = requirement.value(
+        "requiresInventoryItem",
+        requirement.value("requires_inventory_item", ""));
+    out.requiresInventoryItems.clear();
+    const nlohmann::json inventoryItems = requirement.value(
+        "requiresInventoryItems",
+        requirement.value("requires_inventory_items", nlohmann::json::array()));
+    if (inventoryItems.is_array())
+    {
+        for (const nlohmann::json& itemId : inventoryItems)
+        {
+            if (itemId.is_string())
+                out.requiresInventoryItems.push_back(itemId.get<std::string>());
+        }
+    }
+    out.requiresStoryFlag = requirement.value(
+        "requiresStoryFlag",
+        requirement.value("requires_story_flag", ""));
     out.blockedDetails = requirement.value(
         "blockedDetails",
         requirement.value("blocked_details", ""));
     return out.requiresLightSource
         || out.requiresRoomPurchasedToday
+        || !out.requiresInventoryItem.empty()
+        || !out.requiresInventoryItems.empty()
+        || !out.requiresStoryFlag.empty()
         || !out.blockedDetails.empty();
 }
 
@@ -755,6 +777,8 @@ bool parseInteraction(const nlohmann::json& interaction, SceneInteractionDef& ou
     out.label = interaction.value("label", "");
     out.useDetails = interaction.value("useDetails", "");
     out.exitSceneId = interaction.value("exitSceneId", "");
+    out.useFlag = interaction.value("useFlag", "");
+    out.hideWhenStoryFlag = interaction.value("hideWhenStoryFlag", "");
     out.useHealthDelta = interaction.value("useHealthDelta", 0.0f);
     out.useEnergyDelta = interaction.value("useEnergyDelta", 0.0f);
     out.useResolveDelta = interaction.value("useResolveDelta", 0.0f);
@@ -764,6 +788,21 @@ bool parseInteraction(const nlohmann::json& interaction, SceneInteractionDef& ou
     out.oncePerDay = interaction.value("oncePerDay", false);
     out.requiresExamine = interaction.value("requiresExamine", true);
     out.advancesDay = interaction.value("advancesDay", false);
+    out.requiresAnyInventoryItems.clear();
+    const nlohmann::json anyInventoryItems = interaction.value(
+        "requiresAnyInventoryItems",
+        nlohmann::json::array());
+    if (anyInventoryItems.is_array())
+    {
+        for (const nlohmann::json& itemId : anyInventoryItems)
+        {
+            if (itemId.is_string())
+                out.requiresAnyInventoryItems.push_back(itemId.get<std::string>());
+        }
+    }
+
+    if (!parseGrantedInventoryItem(interaction.value("grantItem", nlohmann::json::object()), out.grantItem))
+        return false;
 
     if (!parseOverlaySequence(interaction.value("overlaySequence", nlohmann::json::array()), out.overlaySequence))
         return false;
@@ -783,6 +822,34 @@ bool parseInteraction(const nlohmann::json& interaction, SceneInteractionDef& ou
     return !out.id.empty() && !out.label.empty();
 }
 
+bool parseAlternateImage(const nlohmann::json& alternate, AlternateImageDef& out)
+{
+    if (!alternate.is_object())
+        return false;
+
+    out.imagePath = alternate.value("image", "");
+    out.flag = alternate.value("flag", "");
+    out.untilPhase = alternate.value("untilPhase", alternate.value("until_phase", ""));
+    return !out.imagePath.empty();
+}
+
+bool parseAlternateImages(const nlohmann::json& alternates, std::vector<AlternateImageDef>& out)
+{
+    out.clear();
+    if (!alternates.is_array())
+        return true;
+
+    for (const nlohmann::json& alternate : alternates)
+    {
+        AlternateImageDef parsed;
+        if (!parseAlternateImage(alternate, parsed))
+            return false;
+        out.push_back(parsed);
+    }
+
+    return true;
+}
+
 bool parseInteractions(const nlohmann::json& interactions, std::vector<SceneInteractionDef>& out)
 {
     out.clear();
@@ -800,6 +867,543 @@ bool parseInteractions(const nlohmann::json& interactions, std::vector<SceneInte
     return true;
 }
 
+bool movementStructIsEmpty(const MovementStruct& movement)
+{
+    return !movement.up && !movement.down && !movement.forward
+        && !movement.backward && !movement.left && !movement.right;
+}
+
+bool actionStructIsEmpty(const ActionStruct& actions)
+{
+    return !actions.examine && !actions.speak && !actions.hit && !actions.use && !actions.take;
+}
+
+MaskCondition maskConditionFromFlag(const std::string& flag)
+{
+    MaskCondition condition;
+    condition.type = MaskConditionType::Flag;
+    condition.value = flag;
+    return condition;
+}
+
+bool parseMaskConditionNode(const nlohmann::json& node, MaskCondition& out)
+{
+    if (!node.is_object())
+        return false;
+
+    if (node.contains("all") && node["all"].is_array())
+    {
+        out.type = MaskConditionType::All;
+        for (const nlohmann::json& child : node["all"])
+        {
+            MaskCondition parsed;
+            if (!parseMaskConditionNode(child, parsed))
+                return false;
+            out.children.push_back(parsed);
+        }
+        return true;
+    }
+
+    if (node.contains("any") && node["any"].is_array())
+    {
+        out.type = MaskConditionType::Any;
+        for (const nlohmann::json& child : node["any"])
+        {
+            MaskCondition parsed;
+            if (!parseMaskConditionNode(child, parsed))
+                return false;
+            out.children.push_back(parsed);
+        }
+        return true;
+    }
+
+    if (node.contains("flag"))
+    {
+        out.type = MaskConditionType::Flag;
+        out.value = node.value("flag", "");
+        return !out.value.empty();
+    }
+
+    if (node.contains("playerHasItem"))
+    {
+        out.type = MaskConditionType::PlayerHasItem;
+        out.value = node.value("playerHasItem", "");
+        return !out.value.empty();
+    }
+
+    if (node.contains("playerHasItemFlag"))
+    {
+        out.type = MaskConditionType::PlayerHasItemFlag;
+        out.value = node.value("playerHasItemFlag", "");
+        return !out.value.empty();
+    }
+
+    if (node.contains("milestoneStarted"))
+    {
+        out.type = MaskConditionType::MilestoneStarted;
+        out.value = node.value("milestoneStarted", "");
+        return !out.value.empty();
+    }
+
+    if (node.contains("milestoneComplete"))
+    {
+        out.type = MaskConditionType::MilestoneComplete;
+        out.value = node.value("milestoneComplete", "");
+        return !out.value.empty();
+    }
+
+    if (node.contains("milestoneFailed"))
+    {
+        out.type = MaskConditionType::MilestoneFailed;
+        out.value = node.value("milestoneFailed", "");
+        return !out.value.empty();
+    }
+
+    if (node.contains("subScene"))
+    {
+        out.type = MaskConditionType::SubSceneActive;
+        out.value = node.value("subScene", "");
+        return !out.value.empty();
+    }
+
+    return false;
+}
+
+bool parseMaskConditionField(const nlohmann::json& node, const char* field, MaskCondition& out)
+{
+    if (!node.contains(field))
+        return true;
+
+    return parseMaskConditionNode(node[field], out);
+}
+
+MilestoneStatus parseMilestoneWhen(const std::string& when)
+{
+    if (when == "started")
+        return MilestoneStatus::Started;
+    if (when == "failed")
+        return MilestoneStatus::Failed;
+    return MilestoneStatus::Complete;
+}
+
+bool parseMilestoneMaskHook(const nlohmann::json& node, MilestoneMaskHook& out)
+{
+    if (!node.is_object())
+        return false;
+
+    out.milestoneId = node.value("milestone", "");
+    out.when = parseMilestoneWhen(node.value("when", "complete"));
+    return !out.milestoneId.empty();
+}
+
+bool parseMovementMapping(const nlohmann::json& node, MovementMappingDef& out)
+{
+    if (!node.is_object())
+        return false;
+
+    out.id = node.value("id", "");
+    const std::string target = node.value("target", "");
+    out.target = parseMovementTarget(target);
+    out.defaultMasked = node.value("masked", node.value("defaultMasked", false));
+    out.exclusiveGroup = node.value("exclusiveGroup", "");
+
+    if (!parseMaskConditionField(node, "unmaskWhen", out.unmaskWhen))
+        return false;
+
+    out.onMilestoneEnable.clear();
+    const nlohmann::json enableNode = node.value(
+        "onMilestoneEnable",
+        node.value("on_milestone_enable", nlohmann::json()));
+    if (enableNode.is_object())
+    {
+        MilestoneMaskHook hook;
+        if (parseMilestoneMaskHook(enableNode, hook))
+            out.onMilestoneEnable.push_back(hook);
+    }
+    else if (enableNode.is_array())
+    {
+        for (const nlohmann::json& entry : enableNode)
+        {
+            MilestoneMaskHook hook;
+            if (!parseMilestoneMaskHook(entry, hook))
+                return false;
+            out.onMilestoneEnable.push_back(hook);
+        }
+    }
+
+    out.onMilestoneDisable.clear();
+    const nlohmann::json disableNode = node.value(
+        "onMilestoneDisable",
+        node.value("on_milestone_disable", nlohmann::json()));
+    if (disableNode.is_object())
+    {
+        MilestoneMaskHook hook;
+        if (parseMilestoneMaskHook(disableNode, hook))
+            out.onMilestoneDisable.push_back(hook);
+    }
+    else if (disableNode.is_array())
+    {
+        for (const nlohmann::json& entry : disableNode)
+        {
+            MilestoneMaskHook hook;
+            if (!parseMilestoneMaskHook(entry, hook))
+                return false;
+            out.onMilestoneDisable.push_back(hook);
+        }
+    }
+
+    if (out.id.empty())
+        out.id = target;
+
+    return !out.id.empty() && !out.target.empty();
+}
+
+bool parseMovementExits(
+    const nlohmann::json& movementExits,
+    std::map<std::string, std::vector<MovementMappingDef>>& out)
+{
+    out.clear();
+    if (!movementExits.is_object())
+        return true;
+
+    for (auto it = movementExits.begin(); it != movementExits.end(); ++it)
+    {
+        std::vector<MovementMappingDef> mappings;
+        if (it.value().is_array())
+        {
+            for (const nlohmann::json& entry : it.value())
+            {
+                MovementMappingDef parsed;
+                if (!parseMovementMapping(entry, parsed))
+                    return false;
+                mappings.push_back(parsed);
+            }
+        }
+        else if (it.value().is_object())
+        {
+            MovementMappingDef parsed;
+            if (!parseMovementMapping(it.value(), parsed))
+                return false;
+            mappings.push_back(parsed);
+        }
+
+        if (!mappings.empty())
+            out[it.key()] = mappings;
+    }
+
+    return true;
+}
+
+bool parseSubScene(
+    const std::string& id,
+    const nlohmann::json& node,
+    SubSceneDef& out)
+{
+    if (!node.is_object())
+        return false;
+
+    out.id = id;
+    out.imagePath = node.value("image", "");
+    out.description = node.value("description", "");
+    out.examineDetails = node.value("examineDetails", "");
+    out.examineFlag = node.value("examineFlag", "");
+    out.examineLucidityDelta = node.value("examineLucidityDelta", 0.0f);
+    out.examineLucidityOncePerDay = node.value("examineLucidityOncePerDay", false);
+    out.speakDetails = node.value("speakDetails", "");
+    out.useDetails = node.value("useDetails", "");
+    out.useHealthDelta = node.value("useHealthDelta", 0.0f);
+    out.useEnergyDelta = node.value("useEnergyDelta", 0.0f);
+    out.useRepeatStatus = node.value("useRepeatStatus", false);
+    out.useRequiresExamine = node.value("useRequiresExamine", true);
+    out.useAdvancesDay = node.value("advancesDay", false);
+    out.useExit = node.value("useExit", "");
+
+    if (!parseMovement(node.value("movement", nlohmann::json::object()), out.movement))
+        return false;
+
+    if (!parseActions(node.value("actions", nlohmann::json::object()), out.actions))
+        return false;
+
+    const nlohmann::json blanketNode = node.value(
+        "movementMask",
+        node.value("movementBlanket", nlohmann::json::object()));
+    if (!parseMovement(blanketNode, out.movementBlanket))
+        return false;
+
+    if (!parseRoomAudio(node.value("audio", nlohmann::json::object()), out.audio))
+        return false;
+
+    out.flags.clear();
+    const nlohmann::json flagsNode = node.value("flags", nlohmann::json::array());
+    if (flagsNode.is_array())
+    {
+        for (const nlohmann::json& flag : flagsNode)
+        {
+            if (flag.is_string())
+                out.flags.push_back(flag.get<std::string>());
+        }
+    }
+
+    out.actorsPresent.clear();
+    const nlohmann::json actorsNode = node.value(
+        "actorsPresent",
+        node.value("actors_present", nlohmann::json::array()));
+    if (actorsNode.is_array())
+    {
+        for (const nlohmann::json& actor : actorsNode)
+        {
+            if (actor.is_string())
+                out.actorsPresent.push_back(actor.get<std::string>());
+        }
+    }
+
+    if (!parseInteractions(node.value("interactions", nlohmann::json::array()), out.interactions))
+        return false;
+
+    return true;
+}
+
+bool parseSubScenes(const nlohmann::json& subScenes, std::map<std::string, SubSceneDef>& out)
+{
+    out.clear();
+    if (!subScenes.is_object())
+        return true;
+
+    for (auto it = subScenes.begin(); it != subScenes.end(); ++it)
+    {
+        SubSceneDef parsed;
+        if (!parseSubScene(it.key(), it.value(), parsed))
+            return false;
+        out[it.key()] = parsed;
+    }
+
+    return true;
+}
+
+bool parseSubSceneRules(const nlohmann::json& rules, std::vector<SubSceneRuleDef>& out)
+{
+    out.clear();
+    if (!rules.is_array())
+        return true;
+
+    for (const nlohmann::json& rule : rules)
+    {
+        if (!rule.is_object())
+            return false;
+
+        SubSceneRuleDef parsed;
+        parsed.subSceneId = rule.value("subScene", "");
+        parsed.isDefault = rule.value("default", false);
+        parsed.untilPhase = rule.value("untilPhase", rule.value("until_phase", ""));
+        parsed.applyOnEnter = rule.value("applyOnEnter", rule.value("apply_on_enter", true));
+        if (!parseMaskConditionField(rule, "when", parsed.when))
+            return false;
+
+        if (parsed.subSceneId.empty())
+            return false;
+
+        out.push_back(parsed);
+    }
+
+    return true;
+}
+
+bool parseSceneInventory(
+    const nlohmann::json& inventory,
+    std::vector<SceneInventoryEntryDef>& out)
+{
+    out.clear();
+    if (!inventory.is_array())
+        return true;
+
+    for (const nlohmann::json& entry : inventory)
+    {
+        if (!entry.is_object())
+            return false;
+
+        SceneInventoryEntryDef parsed;
+        parsed.instance.defId = entry.value("defId", entry.value("id", ""));
+        parsed.instance.instanceId = entry.value("instanceId", parsed.instance.defId);
+        parsed.instance.quantity = entry.value("quantity", 1);
+        parsed.instance.usedFraction = entry.value("usedFraction", 0.0f);
+        parsed.infiniteQuantity = entry.value("infiniteQuantity", false);
+
+        if (parsed.instance.defId.empty())
+            return false;
+
+        if (!parseMaskConditionField(entry, "unmaskWhen", parsed.unmaskWhen))
+            return false;
+
+        out.push_back(parsed);
+    }
+
+    return true;
+}
+
+void copyMovementBlanketDefaults(SubSceneDef& subScene)
+{
+    if (movementStructIsEmpty(subScene.movementBlanket))
+        subScene.movementBlanket = subScene.movement;
+}
+
+void buildDefaultSubScene(SceneData& scene)
+{
+    SubSceneDef subScene;
+    subScene.id = "default";
+    subScene.imagePath = scene.imagePath;
+    subScene.description = scene.description;
+    subScene.examineDetails = scene.examineDetails;
+    subScene.examineFlag = scene.examineFlag;
+    subScene.examineLucidityDelta = scene.examineLucidityDelta;
+    subScene.examineLucidityOncePerDay = scene.examineLucidityOncePerDay;
+    subScene.speakDetails = scene.speakDetails;
+    subScene.useDetails = scene.useDetails;
+    subScene.useHealthDelta = scene.useHealthDelta;
+    subScene.useEnergyDelta = scene.useEnergyDelta;
+    subScene.useRepeatStatus = scene.useRepeatStatus;
+    subScene.useRequiresExamine = scene.useRequiresExamine;
+    subScene.useAdvancesDay = scene.useAdvancesDay;
+    subScene.useExit = scene.useExit;
+    subScene.movement = scene.movement;
+    subScene.actions = scene.actions;
+    subScene.movementBlanket = scene.movement;
+    subScene.audio = scene.audio;
+    subScene.interactions = scene.interactions;
+
+    scene.subScenes[subScene.id] = subScene;
+    if (scene.defaultSubSceneId.empty())
+        scene.defaultSubSceneId = subScene.id;
+}
+
+void buildMovementExitsFromLegacyExits(SceneData& scene)
+{
+    if (!scene.movementExits.empty())
+        return;
+
+    for (std::map<std::string, std::string>::const_iterator it = scene.exits.begin();
+         it != scene.exits.end();
+         ++it)
+    {
+        MovementMappingDef mapping;
+        mapping.id = it->first + "_to_" + it->second;
+        mapping.target = parseMovementTarget(it->second);
+        mapping.defaultMasked = false;
+
+        std::map<std::string, ExitRequirementDef>::const_iterator requirementIt =
+            scene.exitRequirements.find(it->first);
+        if (requirementIt != scene.exitRequirements.end())
+        {
+            const ExitRequirementDef& requirement = requirementIt->second;
+            if (!requirement.requiresStoryFlag.empty())
+            {
+                mapping.defaultMasked = true;
+                mapping.unmaskWhen = maskConditionFromFlag(requirement.requiresStoryFlag);
+            }
+            else if (requirement.requiresLightSource)
+            {
+                mapping.defaultMasked = true;
+                MaskCondition lightCondition;
+                lightCondition.type = MaskConditionType::PlayerHasItemFlag;
+                lightCondition.value = "light_source";
+                mapping.unmaskWhen = lightCondition;
+            }
+            else if (!requirement.requiresInventoryItem.empty())
+            {
+                mapping.defaultMasked = true;
+                MaskCondition itemCondition;
+                itemCondition.type = MaskConditionType::PlayerHasItem;
+                itemCondition.value = requirement.requiresInventoryItem;
+                mapping.unmaskWhen = itemCondition;
+            }
+        }
+
+        scene.movementExits[it->first].push_back(mapping);
+    }
+}
+
+void buildSubScenesFromAlternates(SceneData& scene)
+{
+    if (scene.alternateImages.empty() || scene.subScenes.size() > 1)
+        return;
+
+    bool hasDefaultRule = false;
+    for (const SubSceneRuleDef& rule : scene.subSceneRules)
+    {
+        if (rule.isDefault)
+            hasDefaultRule = true;
+    }
+
+    if (!hasDefaultRule)
+    {
+        SubSceneRuleDef defaultRule;
+        defaultRule.subSceneId = scene.defaultSubSceneId;
+        defaultRule.isDefault = true;
+        scene.subSceneRules.push_back(defaultRule);
+    }
+
+    for (const AlternateImageDef& alternate : scene.alternateImages)
+    {
+        if (alternate.flag.empty() || alternate.imagePath.empty())
+            continue;
+
+        const std::string subSceneId = "alt_" + alternate.flag;
+        if (scene.subScenes.count(subSceneId) > 0)
+            continue;
+
+        SubSceneDef alternateSubScene = scene.subScenes[scene.defaultSubSceneId];
+        alternateSubScene.id = subSceneId;
+        alternateSubScene.imagePath = alternate.imagePath;
+        scene.subScenes[subSceneId] = alternateSubScene;
+
+        SubSceneRuleDef rule;
+        rule.subSceneId = subSceneId;
+        rule.when = maskConditionFromFlag(alternate.flag);
+        scene.subSceneRules.push_back(rule);
+    }
+}
+
+void migrateTakeablesToSceneInventory(SceneData& scene)
+{
+    if (!scene.sceneInventory.empty() || scene.takeables.empty())
+        return;
+
+    for (const TakeableItemDef& takeable : scene.takeables)
+    {
+        SceneInventoryEntryDef entry;
+        entry.instance.defId = takeable.id;
+        entry.instance.instanceId = takeable.id;
+        if (!takeable.requiresStoryFlag.empty())
+            entry.unmaskWhen = maskConditionFromFlag(takeable.requiresStoryFlag);
+        scene.sceneInventory.push_back(entry);
+    }
+}
+
+void compileSceneData(SceneData& scene)
+{
+    if (scene.subScenes.empty())
+        buildDefaultSubScene(scene);
+
+    if (scene.defaultSubSceneId.empty())
+        scene.defaultSubSceneId = "default";
+
+    for (std::map<std::string, SubSceneDef>::iterator it = scene.subScenes.begin();
+         it != scene.subScenes.end();
+         ++it)
+    {
+        if (movementStructIsEmpty(it->second.movement))
+            it->second.movement = scene.movement;
+
+        copyMovementBlanketDefaults(it->second);
+
+        if (movementStructIsEmpty(it->second.movementBlanket))
+            it->second.movementBlanket = it->second.movement;
+    }
+
+    buildMovementExitsFromLegacyExits(scene);
+    buildSubScenesFromAlternates(scene);
+    migrateTakeablesToSceneInventory(scene);
+}
+
 bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneData& out)
 {
     if (!sceneJson.is_object())
@@ -807,10 +1411,23 @@ bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneDat
 
     out.id = id;
     out.isStart = sceneJson.value("start", false);
+    out.highAltitude = sceneJson.value("highAltitude", sceneJson.value("high_altitude", false));
     out.imagePath = sceneJson.value("image", "");
     out.alternateImagePath = sceneJson.value("alternateImage", "");
     out.alternateImageFlag = sceneJson.value("alternateImageFlag", "");
     out.alternateImageUntilPhase = sceneJson.value("alternateImageUntilPhase", "");
+    if (!parseAlternateImages(sceneJson.value("alternateImages", nlohmann::json::array()), out.alternateImages))
+        return false;
+
+    if (!out.alternateImagePath.empty() && !out.alternateImageFlag.empty())
+    {
+        AlternateImageDef legacyAlternate;
+        legacyAlternate.imagePath = out.alternateImagePath;
+        legacyAlternate.flag = out.alternateImageFlag;
+        legacyAlternate.untilPhase = out.alternateImageUntilPhase;
+        out.alternateImages.push_back(legacyAlternate);
+    }
+
     out.description = sceneJson.value("description", "");
     out.examineDetails = sceneJson.value("examineDetails", "");
     out.examineFlag = sceneJson.value("examineFlag", "");
@@ -859,6 +1476,21 @@ bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneDat
     if (!parseSceneOverlays(sceneJson.value("overlays", nlohmann::json::array()), out.overlays))
         return false;
 
+    out.defaultSubSceneId = sceneJson.value("defaultSubScene", "");
+
+    if (!parseSubScenes(sceneJson.value("subScenes", nlohmann::json::object()), out.subScenes))
+        return false;
+
+    if (!parseSubSceneRules(sceneJson.value("subSceneRules", nlohmann::json::array()), out.subSceneRules))
+        return false;
+
+    if (!parseMovementExits(sceneJson.value("movementExits", nlohmann::json::object()), out.movementExits))
+        return false;
+
+    if (!parseSceneInventory(sceneJson.value("inventory", nlohmann::json::array()), out.sceneInventory))
+        return false;
+
+    compileSceneData(out);
     return true;
 }
 
@@ -1006,6 +1638,9 @@ bool SceneDatabase::load(const std::string& configPath, const std::string& asset
         scenes[scene.id] = scene;
     }
 
+    for (std::map<std::string, SceneData>::iterator it = scenes.begin(); it != scenes.end(); ++it)
+        compileSceneData(it->second);
+
     if (config.contains("conversations"))
     {
         if (!applyConversationOverlays(config["conversations"], scenes))
@@ -1135,38 +1770,63 @@ Texture2D SceneDatabase::createOwnedPlaceholderTexture() const
     return texture;
 }
 
-bool SceneDatabase::buildLocationStruct(const SceneData& scene, LocationStruct& outLocation) const
+bool SceneDatabase::buildLocationStruct(
+    const SceneData& scene,
+    const std::string& subSceneId,
+    LocationStruct& outLocation) const
 {
-    outLocation.locationDescription = scene.description;
-    outLocation.examineDetails = scene.examineDetails;
-    outLocation.examineFlag = scene.examineFlag;
-    outLocation.examineLucidityDelta = scene.examineLucidityDelta;
-    outLocation.examineLucidityOncePerDay = scene.examineLucidityOncePerDay;
-    outLocation.speakDetails = scene.speakDetails;
-    outLocation.useDetails = scene.useDetails;
-    outLocation.useHealthDelta = scene.useHealthDelta;
-    outLocation.useEnergyDelta = scene.useEnergyDelta;
-    outLocation.useRepeatStatus = scene.useRepeatStatus;
-    outLocation.useRequiresExamine = scene.useRequiresExamine;
-    outLocation.useAdvancesDay = scene.useAdvancesDay;
-    outLocation.useExit = scene.useExit;
+    const SubSceneDef* subScene = getSubScene(scene.id, subSceneId);
+    if (subScene == nullptr)
+        return false;
+
+    outLocation.locationDescription = !subScene->description.empty()
+        ? subScene->description
+        : scene.description;
+    outLocation.examineDetails = !subScene->examineDetails.empty()
+        ? subScene->examineDetails
+        : scene.examineDetails;
+    outLocation.examineFlag = !subScene->examineFlag.empty()
+        ? subScene->examineFlag
+        : scene.examineFlag;
+    outLocation.examineLucidityDelta = subScene->examineLucidityDelta;
+    outLocation.examineLucidityOncePerDay = subScene->examineLucidityOncePerDay;
+    outLocation.speakDetails = !subScene->speakDetails.empty()
+        ? subScene->speakDetails
+        : scene.speakDetails;
+    outLocation.useDetails = !subScene->useDetails.empty()
+        ? subScene->useDetails
+        : scene.useDetails;
+    outLocation.useHealthDelta = subScene->useHealthDelta;
+    outLocation.useEnergyDelta = subScene->useEnergyDelta;
+    outLocation.useRepeatStatus = subScene->useRepeatStatus;
+    outLocation.useRequiresExamine = subScene->useRequiresExamine;
+    outLocation.useAdvancesDay = subScene->useAdvancesDay;
+    outLocation.useExit = !subScene->useExit.empty() ? subScene->useExit : scene.useExit;
     outLocation.descriptionFont = descriptionFont;
     outLocation.boldFont = boldFont;
     outLocation.uiFont = uiFont;
-    outLocation.movementFilter = scene.movement;
-    outLocation.actionFilter = scene.actions;
+    outLocation.movementFilter = movementStructIsEmpty(subScene->movement)
+        ? scene.movement
+        : subScene->movement;
+    outLocation.actionFilter = actionStructIsEmpty(subScene->actions)
+        ? scene.actions
+        : subScene->actions;
     outLocation.ownsLocationImage = true;
     outLocation.isUnderConstruction = false;
 
+    const std::string imagePath = !subScene->imagePath.empty()
+        ? subScene->imagePath
+        : scene.imagePath;
+
     Texture2D sceneTexture{};
-    if (tryLoadSceneImage(scene.imagePath, sceneTexture))
+    if (tryLoadSceneImage(imagePath, sceneTexture))
     {
         outLocation.locationImage = sceneTexture;
         return true;
     }
 
-    if (!scene.imagePath.empty())
-        TraceLog(LOG_WARNING, "Scene '%s' image unavailable (%s); using under-construction placeholder", scene.id.c_str(), scene.imagePath.c_str());
+    if (!imagePath.empty())
+        TraceLog(LOG_WARNING, "Scene '%s' image unavailable (%s); using under-construction placeholder", scene.id.c_str(), imagePath.c_str());
     else
         TraceLog(LOG_INFO, "Scene '%s' has no image; using under-construction placeholder", scene.id.c_str());
 
@@ -1196,7 +1856,19 @@ bool SceneDatabase::loadScene(const std::string& sceneId, LocationStruct& outLoc
     if (it == scenes.end())
         return false;
 
-    return buildLocationStruct(it->second, outLocation);
+    return buildLocationStruct(it->second, it->second.defaultSubSceneId, outLocation);
+}
+
+bool SceneDatabase::loadScene(
+    const std::string& sceneId,
+    const std::string& subSceneId,
+    LocationStruct& outLocation) const
+{
+    std::map<std::string, SceneData>::const_iterator it = scenes.find(sceneId);
+    if (it == scenes.end())
+        return false;
+
+    return buildLocationStruct(it->second, subSceneId, outLocation);
 }
 
 const SceneSpeakConfig& SceneDatabase::getSpeakConfig(const std::string& sceneId) const
@@ -1211,13 +1883,37 @@ const SceneSpeakConfig& SceneDatabase::getSpeakConfig(const std::string& sceneId
 
 std::vector<SceneActorDef> SceneDatabase::getSceneActors(const std::string& sceneId) const
 {
+    return getSceneActors(sceneId, "");
+}
+
+std::vector<SceneActorDef> SceneDatabase::getSceneActors(
+    const std::string& sceneId,
+    const std::string& subSceneId) const
+{
     std::vector<SceneActorDef> actors;
     std::map<std::string, SceneData>::const_iterator it = scenes.find(sceneId);
     if (it == scenes.end())
         return actors;
 
     collectSceneActorsFromConfig(it->second.speakConfig, actors);
-    return actors;
+
+    const SubSceneDef* subScene = getSubScene(sceneId, subSceneId);
+    if (subScene == nullptr || subScene->actorsPresent.empty())
+        return actors;
+
+    std::vector<SceneActorDef> filtered;
+    for (const SceneActorDef& actor : actors)
+    {
+        if (std::find(
+                subScene->actorsPresent.begin(),
+                subScene->actorsPresent.end(),
+                actor.id) != subScene->actorsPresent.end())
+        {
+            filtered.push_back(actor);
+        }
+    }
+
+    return filtered;
 }
 
 const RoomAudioConfig& SceneDatabase::getSceneAudio(const std::string& sceneId) const
@@ -1228,6 +1924,17 @@ const RoomAudioConfig& SceneDatabase::getSceneAudio(const std::string& sceneId) 
         return kEmptyConfig;
 
     return it->second.audio;
+}
+
+const RoomAudioConfig& SceneDatabase::getSceneAudio(
+    const std::string& sceneId,
+    const std::string& subSceneId) const
+{
+    const SubSceneDef* subScene = getSubScene(sceneId, subSceneId);
+    if (subScene != nullptr && subScene->audio.hasMusic)
+        return subScene->audio;
+
+    return getSceneAudio(sceneId);
 }
 
 const std::vector<TakeableItemDef>& SceneDatabase::getTakeables(const std::string& sceneId) const
@@ -1248,6 +1955,89 @@ const std::vector<SceneInteractionDef>& SceneDatabase::getInteractions(const std
         return kEmptyInteractions;
 
     return it->second.interactions;
+}
+
+const std::vector<SceneInteractionDef>& SceneDatabase::getInteractions(
+    const std::string& sceneId,
+    const std::string& subSceneId) const
+{
+    const SubSceneDef* subScene = getSubScene(sceneId, subSceneId);
+    if (subScene != nullptr && !subScene->interactions.empty())
+        return subScene->interactions;
+
+    return getInteractions(sceneId);
+}
+
+const SubSceneDef* SceneDatabase::getSubScene(
+    const std::string& sceneId,
+    const std::string& subSceneId) const
+{
+    std::map<std::string, SceneData>::const_iterator sceneIt = scenes.find(sceneId);
+    if (sceneIt == scenes.end())
+        return nullptr;
+
+    std::map<std::string, SubSceneDef>::const_iterator subSceneIt =
+        sceneIt->second.subScenes.find(subSceneId);
+    if (subSceneIt == sceneIt->second.subScenes.end())
+        return nullptr;
+
+    return &subSceneIt->second;
+}
+
+std::string SceneDatabase::resolveActiveSubSceneId(
+    const SceneData& scene,
+    const std::set<std::string>& storyFlags,
+    const std::string& requestedSubSceneId,
+    SubSceneResolveMode mode,
+    const std::function<bool(const std::string& phaseId)>& isPhaseComplete) const
+{
+    if (!requestedSubSceneId.empty()
+        && scene.subScenes.count(requestedSubSceneId) > 0)
+    {
+        return requestedSubSceneId;
+    }
+
+    MaskEvalContext context;
+    context.storyFlags = &storyFlags;
+    context.activeSubSceneId = requestedSubSceneId;
+
+    for (const SubSceneRuleDef& rule : scene.subSceneRules)
+    {
+        if (rule.isDefault)
+            continue;
+
+        if (mode == SubSceneResolveMode::OnEnter && !rule.applyOnEnter)
+            continue;
+
+        if (!isMaskConditionMet(rule.when, context))
+            continue;
+
+        if (!rule.untilPhase.empty()
+            && isPhaseComplete
+            && isPhaseComplete(rule.untilPhase))
+        {
+            continue;
+        }
+
+        return rule.subSceneId;
+    }
+
+    for (const SubSceneRuleDef& rule : scene.subSceneRules)
+    {
+        if (!rule.isDefault)
+            continue;
+
+        return rule.subSceneId;
+    }
+
+    if (!scene.defaultSubSceneId.empty()
+        && scene.subScenes.count(scene.defaultSubSceneId) > 0)
+        return scene.defaultSubSceneId;
+
+    if (!scene.subScenes.empty())
+        return scene.subScenes.begin()->first;
+
+    return "default";
 }
 
 const std::vector<SceneOverlayDef>& SceneDatabase::getOverlays(const std::string& sceneId) const
@@ -1300,23 +2090,76 @@ const SceneData* SceneDatabase::getScene(const std::string& sceneId) const
     return &it->second;
 }
 
+bool SceneDatabase::isHighAltitudeScene(const std::string& sceneId) const
+{
+    const SceneData* scene = getScene(sceneId);
+    return scene != nullptr && scene->highAltitude;
+}
+
 std::string SceneDatabase::resolveSceneImagePath(
     const SceneData& scene,
+    const std::string& subSceneId,
     const std::set<std::string>& storyFlags,
     const std::function<bool(const std::string& phaseId)>& isPhaseComplete) const
 {
-    if (!scene.alternateImagePath.empty()
-        && !scene.alternateImageFlag.empty()
-        && storyFlags.count(scene.alternateImageFlag) > 0)
+    const std::string activeSubSceneId = resolveActiveSubSceneId(
+        scene,
+        storyFlags,
+        subSceneId,
+        SubSceneResolveMode::InScene,
+        isPhaseComplete);
+    const SubSceneDef* subScene = getSubScene(scene.id, activeSubSceneId);
+    if (subScene != nullptr && !subScene->imagePath.empty())
+        return subScene->imagePath;
+
+    for (const AlternateImageDef& alternate : scene.alternateImages)
     {
-        if (scene.alternateImageUntilPhase.empty()
-            || !isPhaseComplete(scene.alternateImageUntilPhase))
-        {
-            return scene.alternateImagePath;
-        }
+        if (alternate.flag.empty())
+            continue;
+
+        if (storyFlags.count(alternate.flag) == 0)
+            continue;
+
+        if (!alternate.untilPhase.empty() && isPhaseComplete(alternate.untilPhase))
+            continue;
+
+        return alternate.imagePath;
     }
 
     return scene.imagePath;
+}
+
+std::vector<std::string> SceneDatabase::collectSceneImagePaths(const SceneData& scene) const
+{
+    std::vector<std::string> paths;
+
+    for (std::map<std::string, SubSceneDef>::const_iterator it = scene.subScenes.begin();
+         it != scene.subScenes.end();
+         ++it)
+    {
+        if (it->second.imagePath.empty())
+            continue;
+
+        if (std::find(paths.begin(), paths.end(), it->second.imagePath) == paths.end())
+            paths.push_back(it->second.imagePath);
+    }
+
+    if (!scene.imagePath.empty()
+        && std::find(paths.begin(), paths.end(), scene.imagePath) == paths.end())
+    {
+        paths.push_back(scene.imagePath);
+    }
+
+    for (const AlternateImageDef& alternate : scene.alternateImages)
+    {
+        if (alternate.imagePath.empty())
+            continue;
+
+        if (std::find(paths.begin(), paths.end(), alternate.imagePath) == paths.end())
+            paths.push_back(alternate.imagePath);
+    }
+
+    return paths;
 }
 
 bool SceneDatabase::loadSceneTexture(const std::string& imagePath, Texture2D& outTexture) const

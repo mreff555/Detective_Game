@@ -3,7 +3,10 @@
 
 #include <ActiveScene.h>
 #include <AudioManager.h>
+#include <MaskEvaluator.h>
+#include <MovementResolver.h>
 #include <SceneLoader.h>
+#include <functional>
 #include <string>
 
 namespace highline_ridge
@@ -12,6 +15,7 @@ namespace highline_ridge
 class InventoryMgr;
 class InteractionMgr;
 class ItemDatabase;
+class MilestoneManager;
 class TakeMgr;
 class WorldState;
 
@@ -26,12 +30,17 @@ class SceneController
     ActiveScene& getActiveScene() { return activeScene; }
     const std::string& getCurrentSceneId() const { return activeScene.getId(); }
 
-    bool loadInitialScene(const std::string& sceneId);
+    bool loadInitialScene(const std::string& sceneId, WorldState& worldState);
     bool transitionToScene(
         const std::string& nextSceneId,
+        const std::string& nextSubSceneId,
         WorldState& worldState,
         TakeMgr& takeMgr,
-        InteractionMgr& interactionMgr);
+        InteractionMgr& interactionMgr,
+        InventoryMgr& inventoryMgr,
+        const ItemDatabase& itemDatabase,
+        const MilestoneManager& milestoneMgr,
+        const std::function<bool(const std::string& phaseId)>& isPhaseComplete = nullptr);
     bool tryMove(
         const std::string& direction,
         WorldState& worldState,
@@ -39,19 +48,22 @@ class SceneController
         InteractionMgr& interactionMgr,
         InventoryMgr& inventoryMgr,
         const ItemDatabase& itemDatabase,
-        std::string& outBlockedDetails);
-    bool canUseExit(
+        const MilestoneManager& milestoneMgr,
+        const std::function<bool(const std::string& phaseId)>& isPhaseComplete = nullptr);
+    bool isDirectionAvailable(
         const std::string& direction,
         const WorldState& worldState,
         const InventoryMgr& inventoryMgr,
         const ItemDatabase& itemDatabase,
-        std::string& outBlockedDetails) const;
+        const MilestoneManager& milestoneMgr) const;
+
+    MaskEvalContext buildMaskContext(
+        const WorldState& worldState,
+        const InventoryMgr& inventoryMgr,
+        const ItemDatabase& itemDatabase,
+        const MilestoneManager& milestoneMgr) const;
 
     private:
-    bool hasLightSourceInInventory(
-        const InventoryMgr& inventoryMgr,
-        const ItemDatabase& itemDatabase) const;
-
     bool applySceneStruct(
         const LocationStruct& locationStruct,
         const std::string& fromRoom,

@@ -1,7 +1,8 @@
 #include "ItemDatabase.h"
 
-#include <nlohmann/json.hpp>
+#include <cmath>
 #include <fstream>
+#include <nlohmann/json.hpp>
 
 namespace highline_ridge
 {
@@ -455,6 +456,42 @@ InventoryItem ItemDatabase::buildInventoryItem(
     item.iconPath = overrides.iconPath;
     item.examineImagePath = overrides.examineImagePath;
     return item;
+}
+
+int ItemDatabase::walletCashRoundedDown(float walletCash)
+{
+    return std::max(0, static_cast<int>(std::floor(walletCash)));
+}
+
+std::string ItemDatabase::formatWalletCashIconLabel(float walletCash)
+{
+    return "$" + std::to_string(walletCashRoundedDown(walletCash));
+}
+
+std::string ItemDatabase::appendWalletCashDescription(
+    const std::string& baseDescription,
+    float walletCash)
+{
+    const int dollars = walletCashRoundedDown(walletCash);
+    std::string result = baseDescription;
+
+    if (!result.empty())
+        result += "\n\n";
+
+    if (dollars <= 0)
+    {
+        result += "You count what it holds. Nothing but lint and a scrap of paper. "
+            "No credit cards. No identification. The pockets are otherwise empty.";
+        return result;
+    }
+
+    result += "You count what it holds. ";
+    result += std::to_string(dollars);
+    result += dollars == 1 ? " dollar" : " dollars";
+    result += " in worn notes, nothing more. No credit cards. No identification. "
+        "The pockets are otherwise empty.";
+
+    return result;
 }
 
 }

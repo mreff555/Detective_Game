@@ -2,6 +2,7 @@
 #define SAVE_GAME_H
 
 #include <InventoryItem.h>
+#include <ItemInstance.h>
 #include <MilestoneStruct.h>
 #include <TakeableItemDef.h>
 #include <map>
@@ -23,7 +24,9 @@ struct ConversationPersistState
 struct SavedGameState
 {
     std::string sceneId;
+    std::string activeSubSceneId;
     std::string previousSceneId;
+    std::string previousSubSceneId;
     std::string narrativeText;
     float health = 90.0f;
     float energy = 20.0f;
@@ -42,6 +45,7 @@ struct SavedGameState
     std::set<std::string> committedPlayerDialogLines;
     std::vector<InventoryItem> inventoryItems;
     std::map<std::string, std::vector<TakeableItemDef>> droppedItemsByScene;
+    std::map<std::string, std::vector<ItemInstance>> sceneInventories;
     ConversationPersistState conversation;
     MilestonePersistState milestones;
     int day = 1;

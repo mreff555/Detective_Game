@@ -3,6 +3,7 @@
 #include <InventoryMgr.h>
 #include <InteractionMgr.h>
 #include <ItemDatabase.h>
+#include <SceneInventory.h>
 #include <TakeMgr.h>
 #include <WorldState.h>
 
@@ -17,14 +18,47 @@ SceneController::SceneController(
 {
 }
 
-bool SceneController::loadInitialScene(const std::string& sceneId)
+bool SceneController::loadInitialScene(const std::string& sceneId, WorldState& worldState)
 {
+    const SceneData* scene = sceneDatabase.getScene(sceneId);
+    if (scene == nullptr)
+        return false;
+
+    worldState.activeSubSceneId = sceneDatabase.resolveActiveSubSceneId(
+        *scene,
+        worldState.storyFlags,
+        "",
+        SubSceneResolveMode::OnEnter);
+
     LocationStruct locationStruct;
-    if (!sceneDatabase.loadScene(sceneId, locationStruct))
+    if (!sceneDatabase.loadScene(sceneId, worldState.activeSubSceneId, locationStruct))
         return false;
 
     activeScene.loadFromStruct(sceneId, locationStruct);
     return true;
+}
+
+MaskEvalContext SceneController::buildMaskContext(
+    const WorldState& worldState,
+    const InventoryMgr& inventoryMgr,
+    const ItemDatabase& itemDatabase,
+    const MilestoneManager& milestoneMgr) const
+{
+    MaskEvalContext context;
+    context.storyFlags = &worldState.storyFlags;
+    context.milestoneMgr = &milestoneMgr;
+    context.inventoryMgr = &inventoryMgr;
+    context.itemDatabase = &itemDatabase;
+    context.activeSubSceneId = worldState.activeSubSceneId;
+    context.sceneInventoryHasItem = [&](const std::string& defId)
+    {
+        return sceneInventoryHasItem(worldState.sceneInventories, worldState.currentSceneId, defId);
+    };
+    context.sceneInventoryHasItemFlag = [&](const std::string&)
+    {
+        return false;
+    };
+    return context;
 }
 
 bool SceneController::applySceneStruct(
@@ -36,82 +70,104 @@ bool SceneController::applySceneStruct(
     worldState.narrativeText = locationStruct.locationDescription;
     worldState.sceneVisits.resetForNewScene();
     worldState.committedPlayerDialogLines.clear();
-    audioManager.onRoomEnter(sceneDatabase.getSceneAudio(worldState.currentSceneId), fromRoom);
+    audioManager.onRoomEnter(
+        sceneDatabase.getSceneAudio(worldState.currentSceneId, worldState.activeSubSceneId),
+        fromRoom);
     return true;
 }
 
 bool SceneController::transitionToScene(
     const std::string& nextSceneId,
+    const std::string& nextSubSceneId,
     WorldState& worldState,
     TakeMgr& takeMgr,
-    InteractionMgr& interactionMgr)
+    InteractionMgr& interactionMgr,
+    InventoryMgr& inventoryMgr,
+    const ItemDatabase& itemDatabase,
+    const MilestoneManager& milestoneMgr,
+    const std::function<bool(const std::string& phaseId)>& isPhaseComplete)
 {
     if (nextSceneId.empty())
         return false;
 
+    const SceneData* nextScene = sceneDatabase.getScene(nextSceneId);
+    if (nextScene == nullptr)
+        return false;
+
+    const std::string resolvedSubSceneId = sceneDatabase.resolveActiveSubSceneId(
+        *nextScene,
+        worldState.storyFlags,
+        nextSubSceneId,
+        SubSceneResolveMode::OnEnter,
+        isPhaseComplete);
+
     LocationStruct nextLocation;
-    if (!sceneDatabase.loadScene(nextSceneId, nextLocation))
+    if (!sceneDatabase.loadScene(nextSceneId, resolvedSubSceneId, nextLocation))
         return false;
 
     activeScene.unloadOwnedImage();
 
     const std::string fromSceneId = worldState.currentSceneId;
-    audioManager.onRoomExit(sceneDatabase.getSceneAudio(fromSceneId), nextSceneId);
+    const std::string fromSubSceneId = worldState.activeSubSceneId;
+    audioManager.onRoomExit(
+        sceneDatabase.getSceneAudio(fromSceneId, fromSubSceneId),
+        nextSceneId);
+
     worldState.previousSceneId = fromSceneId;
+    worldState.previousSubSceneId = fromSubSceneId;
     worldState.currentSceneId = nextSceneId;
+    worldState.activeSubSceneId = resolvedSubSceneId;
+
+    const MaskEvalContext context = buildMaskContext(
+        worldState,
+        inventoryMgr,
+        itemDatabase,
+        milestoneMgr);
+
+    ensureSceneInventoryInitialized(
+        worldState.sceneInventories,
+        nextSceneId,
+        nextScene->sceneInventory,
+        context);
 
     applySceneStruct(nextLocation, fromSceneId, worldState);
 
     if (!nextLocation.isUnderConstruction)
+    {
         worldState.previousSceneId.clear();
+        worldState.previousSubSceneId.clear();
+    }
 
     interactionMgr.close();
     takeMgr.close();
     return true;
 }
 
-bool SceneController::hasLightSourceInInventory(
-    const InventoryMgr& inventoryMgr,
-    const ItemDatabase& itemDatabase) const
-{
-    for (const InventoryItem& item : inventoryMgr.exportItemSnapshots())
-    {
-        const ItemDef* def = itemDatabase.getDef(item.id);
-        if (def != nullptr && def->lightSource)
-            return true;
-    }
-    return false;
-}
-
-bool SceneController::canUseExit(
+bool SceneController::isDirectionAvailable(
     const std::string& direction,
     const WorldState& worldState,
     const InventoryMgr& inventoryMgr,
     const ItemDatabase& itemDatabase,
-    std::string& outBlockedDetails) const
+    const MilestoneManager& milestoneMgr) const
 {
-    ExitRequirementDef requirement;
-    if (!sceneDatabase.getExitRequirement(activeScene.getId(), direction, requirement))
-        return true;
-
-    if (requirement.requiresLightSource && !hasLightSourceInInventory(inventoryMgr, itemDatabase))
-    {
-        outBlockedDetails = requirement.blockedDetails;
+    const SceneData* scene = sceneDatabase.getScene(worldState.currentSceneId);
+    if (scene == nullptr)
         return false;
-    }
 
-    if (requirement.requiresRoomPurchasedToday)
-    {
-        const bool roomValidToday = worldState.saloonRoomPurchasedDay > 0
-            && worldState.saloonRoomPurchasedDay == worldState.day;
-        if (!roomValidToday)
-        {
-            outBlockedDetails = requirement.blockedDetails;
-            return false;
-        }
-    }
+    const MaskEvalContext context = buildMaskContext(
+        worldState,
+        inventoryMgr,
+        itemDatabase,
+        milestoneMgr);
 
-    return true;
+    const MovementResolution resolution = MovementResolver::resolveDirection(
+        sceneDatabase,
+        *scene,
+        worldState.activeSubSceneId,
+        direction,
+        context);
+
+    return resolution.available;
 }
 
 bool SceneController::tryMove(
@@ -121,7 +177,8 @@ bool SceneController::tryMove(
     InteractionMgr& interactionMgr,
     InventoryMgr& inventoryMgr,
     const ItemDatabase& itemDatabase,
-    std::string& outBlockedDetails)
+    const MilestoneManager& milestoneMgr,
+    const std::function<bool(const std::string& phaseId)>& isPhaseComplete)
 {
     const LocationStruct& view = activeScene.getView();
 
@@ -130,29 +187,48 @@ bool SceneController::tryMove(
         if (direction != "backward" || worldState.previousSceneId.empty())
             return false;
 
-        LocationStruct previousLocation;
-        if (!sceneDatabase.loadScene(worldState.previousSceneId, previousLocation))
-            return false;
-
-        activeScene.unloadOwnedImage();
-
-        const std::string exitSceneId = worldState.currentSceneId;
-        const std::string returnSceneId = worldState.previousSceneId;
-        audioManager.onRoomExit(sceneDatabase.getSceneAudio(worldState.currentSceneId), returnSceneId);
-        worldState.previousSceneId.clear();
-        worldState.currentSceneId = returnSceneId;
-        applySceneStruct(previousLocation, exitSceneId, worldState);
-        return true;
+        return transitionToScene(
+            worldState.previousSceneId,
+            worldState.previousSubSceneId,
+            worldState,
+            takeMgr,
+            interactionMgr,
+            inventoryMgr,
+            itemDatabase,
+            milestoneMgr,
+            isPhaseComplete);
     }
 
-    const std::string nextSceneId = sceneDatabase.getExitSceneId(worldState.currentSceneId, direction);
-    if (nextSceneId.empty())
+    const SceneData* scene = sceneDatabase.getScene(worldState.currentSceneId);
+    if (scene == nullptr)
         return false;
 
-    if (!canUseExit(direction, worldState, inventoryMgr, itemDatabase, outBlockedDetails))
+    const MaskEvalContext context = buildMaskContext(
+        worldState,
+        inventoryMgr,
+        itemDatabase,
+        milestoneMgr);
+
+    const MovementResolution resolution = MovementResolver::resolveDirection(
+        sceneDatabase,
+        *scene,
+        worldState.activeSubSceneId,
+        direction,
+        context);
+
+    if (!resolution.available || resolution.target.empty())
         return false;
 
-    return transitionToScene(nextSceneId, worldState, takeMgr, interactionMgr);
+    return transitionToScene(
+        resolution.target.sceneId,
+        resolution.target.subSceneId,
+        worldState,
+        takeMgr,
+        interactionMgr,
+        inventoryMgr,
+        itemDatabase,
+        milestoneMgr,
+        isPhaseComplete);
 }
 
 }

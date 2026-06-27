@@ -11,7 +11,9 @@ SavedGameState WorldState::snapshot(
 {
     SavedGameState state;
     state.sceneId = currentSceneId;
+    state.activeSubSceneId = activeSubSceneId;
     state.previousSceneId = previousSceneId;
+    state.previousSubSceneId = previousSubSceneId;
     state.narrativeText = narrativeText;
     state.health = playerStats.health;
     state.energy = playerStats.energy;
@@ -30,6 +32,7 @@ SavedGameState WorldState::snapshot(
     state.committedPlayerDialogLines = committedPlayerDialogLines;
     state.inventoryItems = inventoryMgr.exportItemSnapshots();
     state.droppedItemsByScene = droppedItemsByScene;
+    state.sceneInventories = sceneInventories;
     state.day = day;
     state.actionCount = actionCount;
     state.saloonRoomPurchasedDay = saloonRoomPurchasedDay;
@@ -47,7 +50,9 @@ bool WorldState::restore(
     InventoryMgr& inventoryMgr)
 {
     currentSceneId = state.sceneId;
+    activeSubSceneId = state.activeSubSceneId;
     previousSceneId = state.previousSceneId;
+    previousSubSceneId = state.previousSubSceneId;
     narrativeText = state.narrativeText;
     playerStats.health = state.health;
     playerStats.energy = state.energy;
@@ -65,6 +70,7 @@ bool WorldState::restore(
     playerStats.consumedStatusActions = state.consumedStatusActions;
     committedPlayerDialogLines = state.committedPlayerDialogLines;
     droppedItemsByScene = state.droppedItemsByScene;
+    sceneInventories = state.sceneInventories;
     day = state.day;
     actionCount = state.actionCount;
     saloonRoomPurchasedDay = state.saloonRoomPurchasedDay;

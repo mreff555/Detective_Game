@@ -13,6 +13,20 @@ from shop_utils import catalog_choices  # noqa: E402
 
 ITEMS = [
     {
+        "id": "crampons",
+        "name": "Crampons",
+        "price": 3.25,
+        "weightLb": 1.8,
+        "icon": "crampons_icon.png",
+        "examine": "crampons_examine.png",
+        "description": (
+            "A pair of forged-steel crampons with twelve front points and four rear spikes, "
+            "strapped to leather and canvas bindings sized for mountain boots. The frames are "
+            "blued against ridge damp, the points dressed sharp on a wheel. Built for glazed "
+            "snow and bare ice above timberline, where a boot alone is only a polite way to die."
+        ),
+    },
+    {
         "id": "mining_pick",
         "name": "Mining Pick",
         "price": 4.50,

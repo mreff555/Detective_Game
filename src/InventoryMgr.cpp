@@ -225,7 +225,14 @@ void InventoryMgr::createDefaultItems()
     if (itemDatabase != nullptr)
     {
         if (itemDatabase->hasDef("wallet"))
-            items.push_back(itemDatabase->buildInventoryItem(itemDatabase->createInstance("wallet")));
+        {
+            InventoryItem walletItem = itemDatabase->buildInventoryItem(
+                itemDatabase->createInstance("wallet"));
+            walletItem.examineText = ItemDatabase::appendWalletCashDescription(
+                walletItem.examineText,
+                walletCash);
+            items.push_back(walletItem);
+        }
         if (itemDatabase->hasDef("independence_hall_locket"))
         {
             items.push_back(itemDatabase->buildInventoryItem(
@@ -240,9 +247,10 @@ void InventoryMgr::createDefaultItems()
     wallet.instance.defId = "wallet";
     wallet.instance.instanceId = "wallet";
     wallet.name = "Wallet";
-    wallet.examineText =
+    wallet.examineText = ItemDatabase::appendWalletCashDescription(
         "The wallet is worked from thick full-grain leather, hand-stitched along the edges "
-        "with waxed thread the color of strong tea.";
+        "with waxed thread the color of strong tea.",
+        walletCash);
     items.push_back(wallet);
 }
 
@@ -395,6 +403,12 @@ void InventoryMgr::refreshItemFromDatabase(const std::string& id)
     InventoryItem refreshed = itemDatabase->buildInventoryItem(item->instance);
     refreshed.icon = icon;
     refreshed.examineImage = examineImage;
+    if (id == "wallet")
+    {
+        refreshed.examineText = ItemDatabase::appendWalletCashDescription(
+            refreshed.examineText,
+            walletCash);
+    }
     *item = refreshed;
 }
 
@@ -718,6 +732,55 @@ void InventoryMgr::drawCloseButton() const
         lineColor);
 }
 
+void InventoryMgr::syncWalletDisplay(float cash)
+{
+    walletCash = cash;
+
+    InventoryItem* wallet = findMutableItem("wallet");
+    if (wallet == nullptr || itemDatabase == nullptr)
+        return;
+
+    const ItemDef* def = itemDatabase->getDef("wallet");
+    if (def == nullptr)
+        return;
+
+    const std::string baseDescription = itemDatabase->resolveExamineDescription(
+        *def,
+        wallet->instance,
+        {});
+    wallet->examineText = ItemDatabase::appendWalletCashDescription(baseDescription, walletCash);
+}
+
+void InventoryMgr::drawWalletCashBadge(const Rectangle& slot) const
+{
+    if (panelFont.texture.id == 0)
+        return;
+
+    const std::string label = ItemDatabase::formatWalletCashIconLabel(walletCash);
+    const float fontSize = 13.0f;
+    const Vector2 measure = MeasureTextEx(panelFont, label.c_str(), fontSize, 1.0f);
+    const float padX = 5.0f;
+    const float padY = 2.0f;
+    const float margin = 5.0f;
+
+    const Rectangle badge = {
+        slot.x + slot.width - measure.x - padX * 2.0f - margin,
+        slot.y + slot.height - measure.y - padY * 2.0f - margin,
+        measure.x + padX * 2.0f,
+        measure.y + padY * 2.0f
+    };
+
+    DrawRectangleRounded(badge, 0.35f, 4, { 20, 18, 26, 225 });
+    DrawRoundedBorder(badge, 0.35f, 4, 1.0f, { 140, 118, 72, 255 });
+    DrawTextEx(
+        panelFont,
+        label.c_str(),
+        { badge.x + padX, badge.y + padY },
+        fontSize,
+        1.0f,
+        { 210, 178, 108, 255 });
+}
+
 void InventoryMgr::drawItemGrid() const
 {
     if (itemSlotBounds.size() != items.size())
@@ -776,6 +839,9 @@ void InventoryMgr::drawItemGrid() const
                 { 0.0f, 0.0f },
                 0.0f,
                 WHITE);
+
+            if (items[i].id == "wallet")
+                drawWalletCashBadge(slot);
         }
     }
 
@@ -829,6 +895,9 @@ void InventoryMgr::drawDragGhost() const
         { 0.0f, 0.0f },
         0.0f,
         { 255, 255, 255, 220 });
+
+    if (item->id == "wallet")
+        drawWalletCashBadge(ghostArea);
 }
 
 void InventoryMgr::drawInventoryScrollbar() const

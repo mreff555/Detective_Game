@@ -4,9 +4,13 @@
 #include <AudioTypes.h>
 #include <ConversationStruct.h>
 #include <LocationStruct.h>
+#include <AlternateImageDef.h>
 #include <ExitRequirementDef.h>
+#include <MovementMappingDef.h>
 #include <SceneInteractionDef.h>
+#include <SceneInventoryDef.h>
 #include <SceneOverlayDef.h>
+#include <SubSceneDef.h>
 #include <TakeableItemDef.h>
 #include <raylib.h>
 #include <functional>
@@ -17,15 +21,23 @@
 namespace highline_ridge
 {
 
+enum class SubSceneResolveMode
+{
+    OnEnter,
+    InScene
+};
+
 bool loadResourceTexture(const std::string& assetRoot, const std::string& relativePath, Texture2D& outTexture);
 
 struct SceneData
 {
     std::string id;
+    std::string defaultSubSceneId;
     std::string imagePath;
     std::string alternateImagePath;
     std::string alternateImageFlag;
     std::string alternateImageUntilPhase;
+    std::vector<AlternateImageDef> alternateImages;
     std::string description;
     std::string examineDetails;
     std::string examineFlag;
@@ -42,8 +54,13 @@ struct SceneData
     MovementStruct movement;
     ActionStruct actions;
     bool isStart;
+    bool highAltitude = false;
     std::map<std::string, std::string> exits;
     std::map<std::string, ExitRequirementDef> exitRequirements;
+    std::map<std::string, std::vector<MovementMappingDef>> movementExits;
+    std::map<std::string, SubSceneDef> subScenes;
+    std::vector<SubSceneRuleDef> subSceneRules;
+    std::vector<SceneInventoryEntryDef> sceneInventory;
     SceneSpeakConfig speakConfig;
     RoomAudioConfig audio;
     std::vector<TakeableItemDef> takeables;
@@ -60,6 +77,10 @@ class SceneDatabase
     bool load(const std::string& configPath, const std::string& assetRoot);
     bool loadStartScene(LocationStruct& outLocation, std::string& outSceneId) const;
     bool loadScene(const std::string& sceneId, LocationStruct& outLocation) const;
+    bool loadScene(
+        const std::string& sceneId,
+        const std::string& subSceneId,
+        LocationStruct& outLocation) const;
     std::string getExitSceneId(const std::string& sceneId, const std::string& direction) const;
     bool getExitRequirement(
         const std::string& sceneId,
@@ -67,20 +88,42 @@ class SceneDatabase
         ExitRequirementDef& outRequirement) const;
     const SceneSpeakConfig& getSpeakConfig(const std::string& sceneId) const;
     std::vector<SceneActorDef> getSceneActors(const std::string& sceneId) const;
+    std::vector<SceneActorDef> getSceneActors(
+        const std::string& sceneId,
+        const std::string& subSceneId) const;
     const RoomAudioConfig& getSceneAudio(const std::string& sceneId) const;
+    const RoomAudioConfig& getSceneAudio(
+        const std::string& sceneId,
+        const std::string& subSceneId) const;
     const std::vector<TakeableItemDef>& getTakeables(const std::string& sceneId) const;
     const std::vector<SceneInteractionDef>& getInteractions(const std::string& sceneId) const;
+    const std::vector<SceneInteractionDef>& getInteractions(
+        const std::string& sceneId,
+        const std::string& subSceneId) const;
     const std::vector<SceneOverlayDef>& getOverlays(const std::string& sceneId) const;
     const std::string& getAssetRoot() const { return assetRoot; }
     const SceneData* getScene(const std::string& sceneId) const;
-    std::string resolveSceneImagePath(
+    const SubSceneDef* getSubScene(const std::string& sceneId, const std::string& subSceneId) const;
+    bool isHighAltitudeScene(const std::string& sceneId) const;
+    std::string resolveActiveSubSceneId(
         const SceneData& scene,
         const std::set<std::string>& storyFlags,
+        const std::string& requestedSubSceneId = "",
+        SubSceneResolveMode mode = SubSceneResolveMode::InScene,
+        const std::function<bool(const std::string& phaseId)>& isPhaseComplete = nullptr) const;
+    std::string resolveSceneImagePath(
+        const SceneData& scene,
+        const std::string& subSceneId,
+        const std::set<std::string>& storyFlags,
         const std::function<bool(const std::string& phaseId)>& isPhaseComplete) const;
+    std::vector<std::string> collectSceneImagePaths(const SceneData& scene) const;
     bool loadSceneTexture(const std::string& imagePath, Texture2D& outTexture) const;
 
     private:
-    bool buildLocationStruct(const SceneData& scene, LocationStruct& outLocation) const;
+    bool buildLocationStruct(
+        const SceneData& scene,
+        const std::string& subSceneId,
+        LocationStruct& outLocation) const;
     bool tryLoadSceneImage(const std::string& imagePath, Texture2D& outTexture) const;
     void ensureUnderConstructionImage() const;
     Texture2D createOwnedPlaceholderTexture() const;

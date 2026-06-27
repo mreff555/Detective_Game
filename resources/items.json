@@ -2,7 +2,7 @@
   "items": {
     "wallet": {
       "name": "Wallet",
-      "description": "The wallet is worked from thick full-grain leather, hand-stitched along the edges with waxed thread the color of strong tea. The dye is uneven in the way of good hides, not factory perfect. A maker's stamp inside the flap is too worn to read. It sits heavy in your palm, the sort of piece a man buys once and carries for years.\n\nYou count what it holds. Twenty dollars in worn notes, nothing more. No credit cards. No identification. The pockets are otherwise empty.",
+      "description": "The wallet is worked from thick full-grain leather, hand-stitched along the edges with waxed thread the color of strong tea. The dye is uneven in the way of good hides, not factory perfect. A maker's stamp inside the flap is too worn to read. It sits heavy in your palm, the sort of piece a man buys once and carries for years.",
       "weightLb": 0.18,
       "visuals": {
         "image": "resources/images/wallet_examine.png"
@@ -291,8 +291,6 @@
     "copper_wire_spool": {
       "name": "Spool of Copper Wire",
       "description": "A small spool of bare eighteen-gauge copper wire wound tight on a turned wooden core. The strand is fine as a pencil lead, rose-bright and springy, the sort of wire used for lantern leads, telegraph repairs, and the small electrical improvisations men make when the valley is too far below. The spool is light in the hand and the coils sit close, kept dry against mountain damp.",
-      "alternateDescription": "A small spool of bare eighteen-gauge copper wire wound tight on a turned wooden core. The strand is fine as a pencil lead, rose-bright and springy, the sort of wire used for lantern leads, telegraph repairs, and the small electrical improvisations men make when the valley is too far below. The spool is light in the hand and the coils sit close, kept dry against mountain damp. Only a small length has been unwound and cut away; plenty of wire remains on the spool.",
-      "alternateDescriptionFlag": "wire_partially_used",
       "weightLb": 0.35,
       "visuals": {
         "image": "resources/images/copper_wire_spool_examine.png"
@@ -314,7 +312,7 @@
     },
     "crude_lantern": {
       "name": "Crude Lantern",
-      "description": "A makeshift lantern built from the mason jar of lamp oil, its cork stopper pierced to admit a wool-and-copper wick. No chimney, no brasswork—only glass, oil, and patience. When you strike a match to the wick, the flame catches unevenly but holds, throwing a small honest circle of light at your feet.",
+      "description": "A makeshift lantern built from the mason jar of lamp oil, its cork stopper pierced to admit a wool-and-copper wick. No chimney, no brasswork\u2014only glass, oil, and patience. When you strike a match to the wick, the flame catches unevenly but holds, throwing a small honest circle of light at your feet.",
       "weightLb": 0.68,
       "lightSource": true,
       "visuals": {
@@ -356,6 +354,28 @@
       },
       "icons": {
         "icon": "resources/icons/locket_icon.png"
+      }
+    },
+    "crampons": {
+      "name": "Crampons",
+      "description": "A pair of forged-steel crampons with twelve front points and four rear spikes, strapped to leather and canvas bindings sized for mountain boots. The frames are blued against ridge damp, the points dressed sharp on a wheel. Built for glazed snow and bare ice above timberline, where a boot alone is only a polite way to die.",
+      "weightLb": 1.8,
+      "visuals": {
+        "image": "resources/images/crampons_examine.png"
+      },
+      "icons": {
+        "icon": "resources/icons/crampons_icon.png"
+      }
+    },
+    "spent_9mm_bullet": {
+      "name": "Spent 9mm Bullet",
+      "description": "A nine-millimeter bullet retrieved from the dead man's thigh — projectile only, no brass casing attached. The round has been fired: the copper jacket is split and the lead nose is slightly mushroomed and misshapen from impact and whatever tissue it crossed before lodging against bone. Frozen blood still clings to the rifling grooves. Evidence, if you can find a laboratory above timberline.",
+      "weightLb": 0.02,
+      "visuals": {
+        "image": "resources/images/spent_9mm_bullet_examine.png"
+      },
+      "icons": {
+        "icon": "resources/icons/spent_9mm_bullet_icon.png"
       }
     }
   }

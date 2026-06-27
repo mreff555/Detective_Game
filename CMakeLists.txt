@@ -26,6 +26,11 @@ set(SOURCES
     src/Button.cpp
     src/ButtonMgr.cpp
     src/SceneLoader.cpp
+    src/SubSceneDef.cpp
+    src/MovementMappingDef.cpp
+    src/MaskEvaluator.cpp
+    src/MovementResolver.cpp
+    src/SceneInventory.cpp
     src/SceneOverlayDef.cpp
     src/SceneOverlayMgr.cpp
     src/ConversationManager.cpp

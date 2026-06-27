@@ -54,6 +54,7 @@ class InventoryMgr
     bool canExtractFromExaminedItem(const ItemDatabase& database) const;
     bool extractFromExaminedItem(const ItemDatabase& database, InventoryItem& outExtracted);
     void refreshItemFromDatabase(const std::string& id);
+    void syncWalletDisplay(float walletCash);
     bool applyExamineRevealFlag(const std::string& itemId, const std::string& flag);
     const InventoryItem* getSelectedItem() const;
     const InventoryItem* getItemById(const std::string& id) const;
@@ -84,6 +85,7 @@ class InventoryMgr
     void handleItemCombineInput();
     bool applyItemCombination(const ItemCombineApplication& application);
     void drawDragGhost() const;
+    void drawWalletCashBadge(const Rectangle& slot) const;
     int findItemSlotAtMouse() const;
     void handleCloseButtonInput();
     void handleInventoryScrollInput();
@@ -122,6 +124,7 @@ class InventoryMgr
 
     ScrollPanel inventoryScroll;
     mutable float inventoryContentHeight = 0.0f;
+    float walletCash = 20.0f;
 };
 
 }

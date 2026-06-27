@@ -51,6 +51,12 @@ class ItemDatabase
         const ItemInstance& instance,
         const ItemDefOverrides& overrides = {}) const;
 
+    static int walletCashRoundedDown(float walletCash);
+    static std::string formatWalletCashIconLabel(float walletCash);
+    static std::string appendWalletCashDescription(
+        const std::string& baseDescription,
+        float walletCash);
+
     private:
     std::map<std::string, ItemDef> items;
 };

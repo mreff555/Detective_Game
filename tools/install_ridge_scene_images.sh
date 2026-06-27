@@ -12,7 +12,7 @@ install_scene() {
 install_scene 13.jpg steep_mountain_trail.png
 install_scene 10.jpg ridge_doctors_practice.png
 install_scene 8.jpg ridge_cabin_main_room.png
-install_scene 11.jpg ridge_cabin_bedroom.png
+install_scene 14.jpg ridge_cabin_bedroom.png
 
 cd "$ROOT"
 python3 tools/compress_images.py \

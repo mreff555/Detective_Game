@@ -255,6 +255,13 @@ namespace
         if (!inventoryMgr.ensureIconAssetsLoaded())
             TraceLog(LOG_WARNING, "Some inventory icons failed to load at startup");
         worldState.currentSceneId = sceneId;
+        const SceneData* sceneData = sceneDatabase.getScene(sceneId);
+        if (sceneData != nullptr)
+        {
+            worldState.activeSubSceneId = sceneDatabase.resolveActiveSubSceneId(
+                *sceneData,
+                worldState.storyFlags);
+        }
         worldState.narrativeText = locationStruct.locationDescription;
         trimNarrativeBuffer();
         pauseMenu.setAudioManager(&audioManager);
@@ -273,7 +280,13 @@ namespace
         sceneController.getActiveScene().loadFromStruct(sceneId, locationStruct);
         syncFromActiveScene();
         updateInventoryLayout();
+        syncWalletInventoryDisplay();
         updateActionAvailability();
+    }
+
+    void GameSession::syncWalletInventoryDisplay()
+    {
+        inventoryMgr.syncWalletDisplay(worldState.playerStats.walletCash);
     }
 
     void GameSession::relayoutForScreenSize(int width, int height)
@@ -712,7 +725,7 @@ namespace
 
         narrativeNotebook.resetInventoryExamineScroll();
         updateActionAvailability();
-        worldState.recordAction();
+        recordPlayerAction();
     }
 
     void GameSession::takeFromExaminedItem()
@@ -847,17 +860,39 @@ namespace
     {
         std::vector<SceneInteractionDef> available;
         const std::vector<SceneInteractionDef>& interactions =
-            sceneDatabase.getInteractions(worldState.currentSceneId);
+            sceneDatabase.getInteractions(worldState.currentSceneId, worldState.activeSubSceneId);
 
         for (const SceneInteractionDef& interaction : interactions)
         {
             if (interaction.requiresExamine && !hasExaminedScene(worldState.currentSceneId))
                 continue;
 
+            if (!interaction.hideWhenStoryFlag.empty()
+                && worldState.storyFlags.count(interaction.hideWhenStoryFlag) > 0)
+            {
+                continue;
+            }
+
             if (!interaction.repeat &&
                 worldState.usedInteractionKeys.count(interactionKey(interaction.id)) > 0)
             {
                 continue;
+            }
+
+            if (!interaction.requiresAnyInventoryItems.empty())
+            {
+                bool hasRequiredItem = false;
+                for (const std::string& itemId : interaction.requiresAnyInventoryItems)
+                {
+                    if (inventoryMgr.hasItem(itemId))
+                    {
+                        hasRequiredItem = true;
+                        break;
+                    }
+                }
+
+                if (!hasRequiredItem)
+                    continue;
             }
 
             available.push_back(interaction);
@@ -942,7 +977,7 @@ namespace
         worldState.sceneVisits.examinedSceneIds.insert(worldState.currentSceneId);
         evaluateMilestones();
         updateActionAvailability();
-        worldState.recordAction();
+        recordPlayerAction();
     }
 
     void GameSession::appendSpeakDetails()
@@ -953,7 +988,7 @@ namespace
         appendNarrativeSection("Speaking:", speakDetails);
         worldState.sceneVisits.hasSpokenInCurrentScene = true;
         updateActionAvailability();
-        worldState.recordAction();
+        recordPlayerAction();
     }
 
 
@@ -1125,7 +1160,7 @@ namespace
         if (result.action == SpeakResult::Action::None && result.narrative.empty())
             return;
 
-        worldState.recordAction();
+        recordPlayerAction();
 
         const std::string responseText = result.narrative;
         const std::vector<StatusEffect> effects = result.statusEffects;
@@ -1324,18 +1359,8 @@ namespace
 
     bool GameSession::shouldOpenSpeakPicker() const
     {
-        const SceneSpeakConfig& config = sceneDatabase.getSpeakConfig(worldState.currentSceneId);
-        const std::vector<SceneActorDef> actors = sceneDatabase.getSceneActors(worldState.currentSceneId);
-        if (actors.size() < 2 || !config.hasPhases())
-            return false;
-
-        for (const SceneActorDef& actor : actors)
-        {
-            if (worldState.isActorKnown(actor.id))
-                return true;
-        }
-
-        return hasSaloonConversationProgress(worldState, conversationMgr);
+        const std::vector<SpeakTargetDef> targets = getAvailableSpeakTargets();
+        return targets.size() >= 2;
     }
 
     void GameSession::handleSpeak()
@@ -1359,6 +1384,38 @@ namespace
                 return;
             }
 
+            const std::vector<SpeakTargetDef> directedTargets = getAvailableSpeakTargets();
+            std::vector<SpeakTargetDef> actorTargets;
+            for (const SpeakTargetDef& target : directedTargets)
+            {
+                if (!target.isWorkTheRoom)
+                    actorTargets.push_back(target);
+            }
+
+            if (actorTargets.size() == 1)
+            {
+                const SpeakTargetDef& target = actorTargets[0];
+                const ResolvedActorSpeakTarget resolved = resolveActorSpeakTarget(
+                    conversationMgr,
+                    speakConfig,
+                    target.id,
+                    worldState.storyFlags);
+                SpeakResult result = conversationMgr.handleSpeakTarget(
+                    worldState.currentSceneId,
+                    speakConfig,
+                    worldState.storyFlags,
+                    resolved.phaseId,
+                    resolved.randomLineId);
+                if (result.action != SpeakResult::Action::None
+                    || !result.narrative.empty()
+                    || !result.sketchPath.empty())
+                {
+                    recordPlayerAction();
+                }
+                processSpeakResult(result);
+                return;
+            }
+
             SpeakResult result = conversationMgr.handleSpeak(
                 worldState.currentSceneId,
                 speakConfig,
@@ -1367,7 +1424,7 @@ namespace
                 || !result.narrative.empty()
                 || !result.sketchPath.empty())
             {
-                worldState.recordAction();
+                recordPlayerAction();
             }
             processSpeakResult(result);
             return;
@@ -1410,6 +1467,7 @@ namespace
         worldState.playerStats.lucidity = 30.0f;
         worldState.playerStats.charisma = 50.0f;
         worldState.playerStats.walletCash = 20.0f;
+        syncWalletInventoryDisplay();
         narrativeNotebook.resetNarrativeScroll();
         narrativeNotebook.invalidateLayout();
         trimNarrativeBuffer();
@@ -1417,7 +1475,24 @@ namespace
         updateActionAvailability();
     }
 
+    void GameSession::recordPlayerAction()
+    {
+        worldState.recordAction();
 
+        if (!sceneDatabase.isHighAltitudeScene(worldState.currentSceneId))
+            return;
+
+        StatusEffect altitudeEffect;
+        altitudeEffect.key = "high_altitude:count:" + std::to_string(worldState.actionCount);
+        altitudeEffect.lucidity = -1.0f;
+        if (!tryApplyStatusEffect(altitudeEffect, false))
+            return;
+
+        updateActionAvailability();
+
+        if (worldState.playerStats.lucidity <= 0.0f)
+            applyLucidityCollapseRestart();
+    }
 
     bool GameSession::tryApplyStatusEffect(const StatusEffect& effect, bool allowRepeat)
     {
@@ -1432,6 +1507,9 @@ namespace
         if (effect.hasPlayerDelta())
             applied = worldState.playerStats.apply(effect, allowRepeat);
 
+        if (applied && effect.money != 0.0f)
+            syncWalletInventoryDisplay();
+
         if (effect.hasActorOpinionDelta())
         {
             worldState.applyActorOpinionDelta(effect.actor, effect.actorOpinion);
@@ -1445,12 +1523,27 @@ namespace
         return applied;
     }
 
-    void GameSession::transitionToScene(const std::string& nextSceneId)
+    void GameSession::transitionToScene(const std::string& nextSceneId, const std::string& nextSubSceneId)
     {
-        if (!sceneController.transitionToScene(nextSceneId, worldState, takeMgr, interactionMgr))
+        if (!sceneController.transitionToScene(
+                nextSceneId,
+                nextSubSceneId,
+                worldState,
+                takeMgr,
+                interactionMgr,
+                inventoryMgr,
+                itemDatabase,
+                milestoneMgr,
+                [this](const std::string& phaseId)
+                {
+                    return conversationMgr.isPhaseComplete(phaseId);
+                }))
+        {
             return;
+        }
 
         closeAllUiPanels();
+        resetDevSceneImagePreview();
         syncFromActiveScene();
         narrativeNotebook.getNarrativeText() = worldState.narrativeText;
         conversationMgr.onEnterScene(worldState.currentSceneId, sceneDatabase.getSpeakConfig(worldState.currentSceneId));
@@ -1458,6 +1551,7 @@ namespace
         narrativeNotebook.invalidateLayout();
         trimNarrativeBuffer();
         evaluateMilestones();
+        refreshSceneImage();
         updateActionAvailability();
     }
 
@@ -1517,7 +1611,7 @@ namespace
 
         closeAllUiPanels();
         updateInventoryLayout();
-        worldState.recordAction();
+        recordPlayerAction();
         updateActionAvailability();
     }
 
@@ -1580,7 +1674,7 @@ namespace
 
         closeAllUiPanels();
         updateInventoryLayout();
-        worldState.recordAction();
+        recordPlayerAction();
 
         if (!interaction.overlaySequence.empty())
         {
@@ -1650,16 +1744,29 @@ namespace
         if (!interaction.repeat)
             worldState.usedInteractionKeys.insert(interactionKey(interaction.id));
 
+        if (!interaction.useFlag.empty())
+            worldState.storyFlags.insert(interaction.useFlag);
+
+        if (interaction.grantItem.isValid())
+            grantConversationItem(interaction.grantItem);
+
         closeAllUiPanels();
         updateInventoryLayout();
 
         if (interaction.advancesDay)
             worldState.advanceDay();
 
-        worldState.recordAction();
+        recordPlayerAction();
 
         if (!interaction.overlaySequence.empty())
             triggerOverlaySequence(interaction.overlaySequence);
+
+        if (!interaction.useFlag.empty())
+        {
+            evaluateMilestones();
+            syncActiveSubScene();
+            refreshSceneImage();
+        }
 
         if (!interaction.exitSceneId.empty())
             transitionToScene(interaction.exitSceneId);
@@ -1687,7 +1794,7 @@ namespace
         if (useAdvancesDay)
             worldState.advanceDay();
 
-        worldState.recordAction();
+        recordPlayerAction();
 
         const std::string exitSceneId = useExit;
         if (!exitSceneId.empty())
@@ -1704,8 +1811,10 @@ namespace
     std::vector<SpeakTargetDef> GameSession::getAvailableSpeakTargets() const
     {
         const SceneSpeakConfig& config = sceneDatabase.getSpeakConfig(worldState.currentSceneId);
-        const std::vector<SceneActorDef> actors = sceneDatabase.getSceneActors(worldState.currentSceneId);
-        if (actors.size() < 2 || !config.hasPhases())
+        const std::vector<SceneActorDef> actors = sceneDatabase.getSceneActors(
+            worldState.currentSceneId,
+            worldState.activeSubSceneId);
+        if (!config.hasPhases())
             return {};
 
         std::vector<SpeakTargetDef> targets;
@@ -1798,7 +1907,7 @@ namespace
             || !result.narrative.empty()
             || !result.sketchPath.empty())
         {
-            worldState.recordAction();
+            recordPlayerAction();
             processSpeakResult(result);
         }
 
@@ -1825,6 +1934,16 @@ namespace
     void GameSession::appendUseDetails()
     {
         applyDirectUse();
+    }
+
+    bool GameSession::isExitDirectionAvailable(const std::string& direction) const
+    {
+        return sceneController.isDirectionAvailable(
+            direction,
+            worldState,
+            inventoryMgr,
+            itemDatabase,
+            milestoneMgr);
     }
 
     void GameSession::updateActionAvailability()
@@ -1925,6 +2044,19 @@ namespace
                 movement.right = false;
             }
 
+            if (movement.up && !isExitDirectionAvailable("up"))
+                movement.up = false;
+            if (movement.down && !isExitDirectionAvailable("down"))
+                movement.down = false;
+            if (movement.forward && !isExitDirectionAvailable("forward"))
+                movement.forward = false;
+            if (movement.backward && !isExitDirectionAvailable("backward"))
+                movement.backward = false;
+            if (movement.left && !isExitDirectionAvailable("left"))
+                movement.left = false;
+            if (movement.right && !isExitDirectionAvailable("right"))
+                movement.right = false;
+
             actions = baseActionFilter;
             const SceneSpeakConfig& speakConfig = sceneDatabase.getSpeakConfig(worldState.currentSceneId);
             if (speakConfig.hasPhases())
@@ -1933,7 +2065,7 @@ namespace
                     speakConfig,
                     baseActionFilter.speak,
                     worldState.storyFlags)
-                    || shouldOpenSpeakPicker();
+                    || !getAvailableSpeakTargets().empty();
             }
             else if (!speakDetails.empty())
                 actions.speak = !worldState.sceneVisits.hasSpokenInCurrentScene;
@@ -1995,7 +2127,7 @@ namespace
         worldState.storyFlags.insert("ice_house_interior:ranger_badge_revealed");
         evaluateMilestones();
         updateActionAvailability();
-        worldState.recordAction();
+        recordPlayerAction();
         return true;
     }
 
@@ -2018,7 +2150,7 @@ namespace
         narrativeNotebook.getNarrativeText() = worldState.narrativeText;
         evaluateMilestones();
         updateActionAvailability();
-        worldState.recordAction();
+        recordPlayerAction();
     }
 
     bool GameSession::maybeRevealCottonwoodMeadowDeparture(const std::string& direction)
@@ -2045,7 +2177,7 @@ namespace
         worldState.storyFlags.insert("cottonwood_meadow:departure_noted");
         evaluateMilestones();
         updateActionAvailability();
-        worldState.recordAction();
+        recordPlayerAction();
         return true;
     }
 
@@ -2057,7 +2189,6 @@ namespace
         if (maybeRevealCottonwoodMeadowDeparture(direction))
             return;
 
-        std::string blockedDetails;
         if (!sceneController.tryMove(
                 direction,
                 worldState,
@@ -2065,14 +2196,17 @@ namespace
                 interactionMgr,
                 inventoryMgr,
                 itemDatabase,
-                blockedDetails))
+                milestoneMgr,
+                [this](const std::string& phaseId)
+                {
+                    return conversationMgr.isPhaseComplete(phaseId);
+                }))
         {
-            if (!blockedDetails.empty())
-                appendBlockedMovementMessage(blockedDetails);
             return;
         }
 
         closeAllUiPanels();
+        resetDevSceneImagePreview();
         syncFromActiveScene();
         narrativeNotebook.getNarrativeText() = worldState.narrativeText;
         conversationMgr.onEnterScene(worldState.currentSceneId, sceneDatabase.getSpeakConfig(worldState.currentSceneId));
@@ -2080,23 +2214,78 @@ namespace
         narrativeNotebook.invalidateLayout();
         trimNarrativeBuffer();
         evaluateMilestones();
+        refreshSceneImage();
         updateActionAvailability();
-        worldState.recordAction();
+        recordPlayerAction();
     }
 
-    void GameSession::refreshSceneImage()
+    void GameSession::resetDevSceneImagePreview()
+    {
+        devSceneImagePreviewIndex = -1;
+    }
+
+    void GameSession::syncActiveSubScene()
     {
         const SceneData* scene = sceneDatabase.getScene(worldState.currentSceneId);
         if (scene == nullptr)
             return;
 
-        const std::string imagePath = sceneDatabase.resolveSceneImagePath(
+        const std::string resolvedSubSceneId = sceneDatabase.resolveActiveSubSceneId(
             *scene,
             worldState.storyFlags,
+            "",
+            SubSceneResolveMode::InScene,
             [this](const std::string& phaseId)
             {
                 return conversationMgr.isPhaseComplete(phaseId);
             });
+
+        if (resolvedSubSceneId == worldState.activeSubSceneId)
+            return;
+
+        LocationStruct locationStruct;
+        if (!sceneDatabase.loadScene(
+                worldState.currentSceneId,
+                resolvedSubSceneId,
+                locationStruct))
+        {
+            return;
+        }
+
+        worldState.activeSubSceneId = resolvedSubSceneId;
+        sceneController.getActiveScene().unloadOwnedImage();
+        sceneController.getActiveScene().loadFromStruct(worldState.currentSceneId, locationStruct);
+        syncFromActiveScene();
+        refreshSpeakTargets();
+        updateActionAvailability();
+    }
+
+    void GameSession::refreshSceneImage()
+    {
+        syncActiveSubScene();
+
+        const SceneData* scene = sceneDatabase.getScene(worldState.currentSceneId);
+        if (scene == nullptr)
+            return;
+
+        std::string imagePath;
+        const std::vector<std::string> imageCandidates = sceneDatabase.collectSceneImagePaths(*scene);
+        if (devSceneImagePreviewIndex >= 0
+            && devSceneImagePreviewIndex < (int)imageCandidates.size())
+        {
+            imagePath = imageCandidates[(size_t)devSceneImagePreviewIndex];
+        }
+        else
+        {
+            imagePath = sceneDatabase.resolveSceneImagePath(
+                *scene,
+                worldState.activeSubSceneId,
+                worldState.storyFlags,
+                [this](const std::string& phaseId)
+                {
+                    return conversationMgr.isPhaseComplete(phaseId);
+                });
+        }
 
         if (!sceneController.getActiveScene().replaceLocationImage(sceneDatabase, imagePath))
             return;
@@ -2146,13 +2335,16 @@ namespace
         narrativeNotebook.getChoiceHitAreas().clear();
 
         conversationMgr.onEnterScene(worldState.currentSceneId, sceneDatabase.getSpeakConfig(worldState.currentSceneId));
-        audioManager.onRoomEnter(sceneDatabase.getSceneAudio(worldState.currentSceneId), fromRoom);
+        audioManager.onRoomEnter(
+            sceneDatabase.getSceneAudio(worldState.currentSceneId, worldState.activeSubSceneId),
+            fromRoom);
 
         maybeTriggerVestryMinisterGreeting();
 
         narrativeNotebook.resetNarrativeScroll();
         narrativeNotebook.invalidateLayout();
         trimNarrativeBuffer();
+        resetDevSceneImagePreview();
         evaluateMilestones();
         refreshSceneImage();
         updateActionAvailability();
@@ -2167,14 +2359,33 @@ namespace
     bool GameSession::applySaveState(const SavedGameState& state)
     {
         LocationStruct locationStruct;
-        if (!sceneDatabase.loadScene(state.sceneId, locationStruct))
-            return false;
-
         const std::string fromSceneId = worldState.currentSceneId;
-        audioManager.onRoomExit(sceneDatabase.getSceneAudio(fromSceneId), state.sceneId);
+        const std::string fromSubSceneId = worldState.activeSubSceneId;
+        audioManager.onRoomExit(
+            sceneDatabase.getSceneAudio(fromSceneId, fromSubSceneId),
+            state.sceneId);
 
         if (!worldState.restore(state, conversationMgr, milestoneMgr, inventoryMgr))
             return false;
+
+        if (worldState.activeSubSceneId.empty())
+        {
+            const SceneData* sceneData = sceneDatabase.getScene(worldState.currentSceneId);
+            if (sceneData != nullptr)
+            {
+                worldState.activeSubSceneId = sceneDatabase.resolveActiveSubSceneId(
+                    *sceneData,
+                    worldState.storyFlags);
+            }
+        }
+
+        if (!sceneDatabase.loadScene(
+                worldState.currentSceneId,
+                worldState.activeSubSceneId,
+                locationStruct))
+        {
+            return false;
+        }
 
         sceneController.getActiveScene().loadFromStruct(worldState.currentSceneId, locationStruct);
         syncFromActiveScene();
@@ -2196,10 +2407,14 @@ namespace
             [this](const std::string& itemId) { return inventoryMgr.hasItem(itemId); });
         evaluateMilestones();
 
-        audioManager.onRoomEnter(sceneDatabase.getSceneAudio(worldState.currentSceneId), fromSceneId);
+        audioManager.onRoomEnter(
+            sceneDatabase.getSceneAudio(worldState.currentSceneId, worldState.activeSubSceneId),
+            fromSceneId);
         trimNarrativeBuffer();
+        resetDevSceneImagePreview();
         refreshSceneImage();
         updateInventoryLayout();
+        syncWalletInventoryDisplay();
         updateActionAvailability();
         return true;
     }
@@ -2359,19 +2574,115 @@ namespace
         devOverlayVisible = !devOverlayVisible;
     }
 
+    void GameSession::handleDevAltImageInput()
+    {
+        if (!devOverlayVisible || !IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            return;
+
+        const SceneData* scene = sceneDatabase.getScene(worldState.currentSceneId);
+        if (scene == nullptr)
+            return;
+
+        const std::vector<std::string> imageCandidates = sceneDatabase.collectSceneImagePaths(*scene);
+        if (imageCandidates.size() < 2)
+            return;
+
+        auto resolveDisplayIndex = [&]() -> int
+        {
+            if (devSceneImagePreviewIndex >= 0
+                && devSceneImagePreviewIndex < (int)imageCandidates.size())
+            {
+                return devSceneImagePreviewIndex;
+            }
+
+            const std::string activePath = sceneDatabase.resolveSceneImagePath(
+                *scene,
+                worldState.activeSubSceneId,
+                worldState.storyFlags,
+                [this](const std::string& phaseId)
+                {
+                    return conversationMgr.isPhaseComplete(phaseId);
+                });
+
+            for (size_t index = 0; index < imageCandidates.size(); ++index)
+            {
+                if (imageCandidates[index] == activePath)
+                    return (int)index;
+            }
+
+            return 0;
+        };
+
+        const Vector2 mousePos = GetMousePosition();
+        const bool prevHovered = CheckCollisionPointRec(mousePos, devAltImagePrevBounds);
+        const bool nextHovered = CheckCollisionPointRec(mousePos, devAltImageNextBounds);
+        const int displayIndex = resolveDisplayIndex();
+        const bool prevEnabled = displayIndex > 0;
+        const bool nextEnabled = displayIndex < (int)imageCandidates.size() - 1;
+
+        if (prevEnabled && prevHovered)
+        {
+            devSceneImagePreviewIndex = displayIndex - 1;
+            refreshSceneImage();
+            syncFromActiveScene();
+            return;
+        }
+
+        if (nextEnabled && nextHovered)
+        {
+            devSceneImagePreviewIndex = displayIndex + 1;
+            refreshSceneImage();
+            syncFromActiveScene();
+        }
+    }
+
     void GameSession::drawDevOverlay() const
     {
         if (!devOverlayVisible)
             return;
 
+        devAltImagePrevBounds = {};
+        devAltImageNextBounds = {};
+
         const std::string dayText = "Day: " + std::to_string(worldState.day);
         const std::string countText = "Count: " + std::to_string(worldState.actionCount);
+        const std::string sceneText = "Scene: " + worldState.currentSceneId;
+        std::string imageText = "Image: (none)";
+        const SceneData* scene = sceneDatabase.getScene(worldState.currentSceneId);
+        std::vector<std::string> imageCandidates;
+        if (scene != nullptr)
+        {
+            imageCandidates = sceneDatabase.collectSceneImagePaths(*scene);
+            std::string imagePath;
+            if (devSceneImagePreviewIndex >= 0
+                && devSceneImagePreviewIndex < (int)imageCandidates.size())
+            {
+                imagePath = imageCandidates[(size_t)devSceneImagePreviewIndex];
+            }
+            else
+            {
+                imagePath = sceneDatabase.resolveSceneImagePath(
+                    *scene,
+                    worldState.activeSubSceneId,
+                    worldState.storyFlags,
+                    [this](const std::string& phaseId)
+                    {
+                        return conversationMgr.isPhaseComplete(phaseId);
+                    });
+            }
+
+            imageText = imagePath.empty() ? "Image: (none)" : "Image: " + imagePath;
+        }
         const std::vector<SceneActorDef> sceneActors =
-            sceneDatabase.getSceneActors(worldState.currentSceneId);
+            sceneDatabase.getSceneActors(
+                worldState.currentSceneId,
+                worldState.activeSubSceneId);
 
         std::vector<std::string> overlayLines;
         overlayLines.push_back(dayText);
         overlayLines.push_back(countText);
+        overlayLines.push_back(sceneText);
+        overlayLines.push_back(imageText);
         for (const SceneActorDef& actor : sceneActors)
         {
             overlayLines.push_back(
@@ -2383,6 +2694,24 @@ namespace
         const float padX = 14.0f;
         const float padY = 10.0f;
         const float lineGap = 6.0f;
+        const bool showAltImageControls = imageCandidates.size() > 1;
+        const std::string altImageLabel = "Alt Img:";
+        const Vector2 altImageLabelSize = MeasureTextEx(
+            descriptionFont,
+            altImageLabel.c_str(),
+            fontSize,
+            spacing);
+        const float arrowFontSize = fontSize;
+        const Vector2 arrowSize = MeasureTextEx(boldFont, "<", arrowFontSize, 1.0f);
+        const float arrowButtonWidth = arrowSize.x + 6.0f;
+        const float arrowButtonHeight = arrowSize.y + 4.0f;
+        const float altImageRowWidth = showAltImageControls
+            ? altImageLabelSize.x + 8.0f + arrowButtonWidth * 2.0f + 6.0f
+            : 0.0f;
+        const float altImageRowHeight = showAltImageControls
+            ? std::max(altImageLabelSize.y, arrowButtonHeight)
+            : 0.0f;
+
         float contentWidth = 0.0f;
         float contentHeight = 0.0f;
         std::vector<Vector2> lineSizes;
@@ -2396,8 +2725,16 @@ namespace
             contentHeight += lineSize.y;
         }
 
+        if (showAltImageControls)
+        {
+            contentWidth = std::max(contentWidth, altImageRowWidth);
+            contentHeight += altImageRowHeight;
+        }
+
         if (overlayLines.size() > 1)
             contentHeight += lineGap * (float)(overlayLines.size() - 1);
+        if (showAltImageControls)
+            contentHeight += lineGap;
 
         const float panelWidth = contentWidth + padX * 2.0f;
         const float panelHeight = contentHeight + padY * 2.0f;
@@ -2430,6 +2767,88 @@ namespace
                 spacing,
                 WHITE);
             textY += lineSizes[lineIndex].y + lineGap;
+        }
+
+        if (showAltImageControls && scene != nullptr)
+        {
+            int displayIndex = devSceneImagePreviewIndex;
+            if (displayIndex < 0 || displayIndex >= (int)imageCandidates.size())
+            {
+                const std::string activePath = sceneDatabase.resolveSceneImagePath(
+                    *scene,
+                    worldState.activeSubSceneId,
+                    worldState.storyFlags,
+                    [this](const std::string& phaseId)
+                    {
+                        return conversationMgr.isPhaseComplete(phaseId);
+                    });
+                displayIndex = 0;
+                for (size_t index = 0; index < imageCandidates.size(); ++index)
+                {
+                    if (imageCandidates[index] == activePath)
+                    {
+                        displayIndex = (int)index;
+                        break;
+                    }
+                }
+            }
+
+            const bool prevEnabled = displayIndex > 0;
+            const bool nextEnabled = displayIndex < (int)imageCandidates.size() - 1;
+            const Vector2 mousePos = GetMousePosition();
+
+            DrawTextEx(
+                descriptionFont,
+                altImageLabel.c_str(),
+                { textX, textY + (altImageRowHeight - altImageLabelSize.y) / 2.0f },
+                fontSize,
+                spacing,
+                WHITE);
+
+            const float arrowsX = textX + altImageLabelSize.x + 8.0f;
+            const float arrowsY = textY + (altImageRowHeight - arrowButtonHeight) / 2.0f;
+            devAltImagePrevBounds = { arrowsX, arrowsY, arrowButtonWidth, arrowButtonHeight };
+            devAltImageNextBounds = {
+                arrowsX + arrowButtonWidth + 6.0f,
+                arrowsY,
+                arrowButtonWidth,
+                arrowButtonHeight
+            };
+
+            const bool prevHovered = prevEnabled
+                && CheckCollisionPointRec(mousePos, devAltImagePrevBounds);
+            const bool nextHovered = nextEnabled
+                && CheckCollisionPointRec(mousePos, devAltImageNextBounds);
+
+            Color prevColor = prevEnabled ? WHITE : Color{140, 140, 140, 160};
+            Color nextColor = nextEnabled ? WHITE : Color{140, 140, 140, 160};
+            if (prevEnabled && prevHovered)
+                prevColor = kChoiceHover;
+            if (nextEnabled && nextHovered)
+                nextColor = kChoiceHover;
+
+            const Vector2 prevTextSize = MeasureTextEx(boldFont, "<", arrowFontSize, 1.0f);
+            const Vector2 nextTextSize = MeasureTextEx(boldFont, ">", arrowFontSize, 1.0f);
+            DrawTextEx(
+                boldFont,
+                "<",
+                {
+                    devAltImagePrevBounds.x + (devAltImagePrevBounds.width - prevTextSize.x) / 2.0f,
+                    devAltImagePrevBounds.y + (devAltImagePrevBounds.height - prevTextSize.y) / 2.0f
+                },
+                arrowFontSize,
+                1.0f,
+                prevColor);
+            DrawTextEx(
+                boldFont,
+                ">",
+                {
+                    devAltImageNextBounds.x + (devAltImageNextBounds.width - nextTextSize.x) / 2.0f,
+                    devAltImageNextBounds.y + (devAltImageNextBounds.height - nextTextSize.y) / 2.0f
+                },
+                arrowFontSize,
+                1.0f,
+                nextColor);
         }
     }
 
@@ -2512,7 +2931,8 @@ namespace
         }
         else if (deferInitialRoomAudio)
         {
-            audioManager.onRoomEnter(sceneDatabase.getSceneAudio(worldState.currentSceneId));
+            audioManager.onRoomEnter(
+                sceneDatabase.getSceneAudio(worldState.currentSceneId, worldState.activeSubSceneId));
             deferInitialRoomAudio = false;
         }
 
@@ -2521,6 +2941,7 @@ namespace
         updateTransientMessage(GetFrameTime());
         handleQuickSaveInput();
         handleDevOverlayInput();
+        handleDevAltImageInput();
         handlePauseMenuInput();
 
         if (saveLoadMenu.isOpen())
@@ -2638,7 +3059,7 @@ namespace
                 const std::string narrative = inventoryMgr.consumePendingCombinationNarrative();
                 if (!narrative.empty())
                     appendNarrativeSection("Using:", narrative);
-                worldState.recordAction();
+                recordPlayerAction();
             }
             handleInventoryDropInput();
 
@@ -2670,7 +3091,7 @@ namespace
                     playItemExamineAudio(*examinedItem);
                 narrativeNotebook.resetInventoryExamineScroll();
                 updateActionAvailability();
-                worldState.recordAction();
+                recordPlayerAction();
             }
             if (inventoryMgr.isExaminingItem())
                 handleInventoryExamineScrollInput();

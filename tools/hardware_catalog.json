@@ -1,5 +1,33 @@
 [
   {
+    "id": "browse_crampons",
+    "label": "Crampons - $3.25",
+    "response": "\"Solid choice,\" he says. \"That'll be three dollars and twenty-five cents.\"",
+    "choices": [
+      {
+        "id": "buy_crampons",
+        "label": "I'll take it.",
+        "requiresMoney": 3.25,
+        "response": "He sets the crampons on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+        "grantItem": {
+          "id": "crampons",
+          "name": "Crampons",
+          "icon": "resources/icons/crampons_icon.png",
+          "examineImage": "resources/images/crampons_examine.png",
+          "examineText": "A pair of forged-steel crampons with twelve front points and four rear spikes, strapped to leather and canvas bindings sized for mountain boots. The frames are blued against ridge damp, the points dressed sharp on a wheel. Built for glazed snow and bare ice above timberline, where a boot alone is only a polite way to die."
+        },
+        "status": {
+          "money": -3.25
+        }
+      },
+      {
+        "id": "decline_crampons",
+        "label": "Thanks, maybe next time.",
+        "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+      }
+    ]
+  },
+  {
     "id": "browse_mining_pick",
     "label": "Mining Pick - $4.50",
     "response": "\"Solid choice,\" he says. \"That'll be four dollars and fifty cents.\"",

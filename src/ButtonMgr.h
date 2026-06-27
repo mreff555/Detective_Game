@@ -98,7 +98,7 @@ namespace highline_ridge
         double activePressStartTime = 0.0;
         bool activePressClickFired = false;
         bool mouseWasDownLastFrame = false;
-        float clickHoldDurationSeconds = 0.08f;
+        float clickHoldDurationSeconds = 0.07f;
 
         Rectangle buttonBox;
         Rectangle healthBarBounds;

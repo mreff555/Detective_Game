@@ -1,8 +1,10 @@
 #ifndef SCENE_INTERACTION_DEF_H
 #define SCENE_INTERACTION_DEF_H
 
+#include <ConversationStruct.h>
 #include <SceneOverlayDef.h>
 #include <string>
+#include <vector>
 
 namespace highline_ridge
 {
@@ -13,6 +15,8 @@ struct SceneInteractionDef
     std::string label;
     std::string useDetails;
     std::string exitSceneId;
+    std::string useFlag;
+    std::string hideWhenStoryFlag;
     float useHealthDelta = 0.0f;
     float useEnergyDelta = 0.0f;
     float useResolveDelta = 0.0f;
@@ -22,6 +26,8 @@ struct SceneInteractionDef
     bool oncePerDay = false;
     bool requiresExamine = true;
     bool advancesDay = false;
+    std::vector<std::string> requiresAnyInventoryItems;
+    GrantedInventoryItemDef grantItem;
     std::vector<OverlaySequenceStep> overlaySequence;
     bool tts = false;
     std::string ttsVoice;

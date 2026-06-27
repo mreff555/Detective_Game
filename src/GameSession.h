@@ -85,6 +85,8 @@ class GameSession
     void handleSaveLoadMenuInput();
     void handleQuickSaveInput();
     void handleDevOverlayInput();
+    void handleDevAltImageInput();
+    void resetDevSceneImagePreview();
     void drawDevOverlay() const;
     void applyGrantedStoryFlag(const std::string& flag);
     void syncKnownActorsFromProgress();
@@ -122,9 +124,11 @@ class GameSession
         const std::vector<ConversationChoiceDef>& choices) const;
     void appendNarrativeSketch(const std::string& sketchPath);
     void applyLucidityCollapseRestart();
+    void recordPlayerAction();
     void evaluateMilestones();
     void applyLocationStruct(const LocationStruct& locationStruct, const std::string& fromRoom = "");
-    void transitionToScene(const std::string& sceneId);
+    void transitionToScene(const std::string& sceneId, const std::string& subSceneId = "");
+    void syncActiveSubScene();
     void tryMove(const std::string& direction);
     bool maybeRevealIceHouseInteriorDeparture(const std::string& direction);
     bool maybeRevealCottonwoodMeadowDeparture(const std::string& direction);
@@ -134,6 +138,7 @@ class GameSession
     void handleNarrativeScrollInput();
     void handleInventoryExamineScrollInput();
     void updateInventoryLayout();
+    void syncWalletInventoryDisplay();
     void refreshTakeItems();
     void refreshInteractions();
     void refreshSpeakTargets();
@@ -184,6 +189,7 @@ class GameSession
     Rectangle getInventoryPanelBounds() const;
     void appendNarrativeSection(const char* header, const std::string& details);
     void updateActionAvailability();
+    bool isExitDirectionAvailable(const std::string& direction) const;
     bool tryApplyStatusEffect(const StatusEffect& effect, bool allowRepeat);
     void scrollNarrativeToHeader(const char* header);
     void scrollNarrativeToLine(const std::string& lineText, bool lastOccurrence);
@@ -256,6 +262,9 @@ class GameSession
     std::string transientMessage;
     float transientMessageTimer = 0.0f;
     bool devOverlayVisible = false;
+    int devSceneImagePreviewIndex = -1;
+    mutable Rectangle devAltImagePrevBounds{};
+    mutable Rectangle devAltImageNextBounds{};
 
     mutable WorldState worldState;
     SceneController sceneController;

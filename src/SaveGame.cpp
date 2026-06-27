@@ -241,6 +241,46 @@ void takeableFromJson(const nlohmann::json& entry, TakeableItemDef& outItem)
     outItem.requiresExamine = entry.value("requiresExamine", true);
 }
 
+nlohmann::json sceneInventoriesToJson(const std::map<std::string, std::vector<ItemInstance>>& sceneInventories)
+{
+    nlohmann::json root = nlohmann::json::object();
+    for (const std::pair<const std::string, std::vector<ItemInstance>>& pair : sceneInventories)
+    {
+        nlohmann::json items = nlohmann::json::array();
+        for (const ItemInstance& item : pair.second)
+            items.push_back(itemInstanceToJson(item));
+        root[pair.first] = items;
+    }
+    return root;
+}
+
+void sceneInventoriesFromJson(
+    const nlohmann::json& root,
+    std::map<std::string, std::vector<ItemInstance>>& outSceneInventories)
+{
+    outSceneInventories.clear();
+    if (!root.is_object())
+        return;
+
+    for (auto it = root.begin(); it != root.end(); ++it)
+    {
+        if (!it.value().is_array())
+            continue;
+
+        std::vector<ItemInstance> items;
+        for (const nlohmann::json& entry : it.value())
+        {
+            ItemInstance instance;
+            itemInstanceFromJson(entry, instance);
+            if (!instance.defId.empty())
+                items.push_back(instance);
+        }
+
+        if (!items.empty())
+            outSceneInventories[it.key()] = items;
+    }
+}
+
 nlohmann::json droppedItemsToJson(const std::map<std::string, std::vector<TakeableItemDef>>& droppedItems)
 {
     nlohmann::json root = nlohmann::json::object();
@@ -554,10 +594,12 @@ bool writeSaveFile(const std::string& path, const SavedGameState& state, const S
         return false;
 
     nlohmann::json root;
-    root["version"] = 8;
+    root["version"] = 9;
     root["saveMeta"] = saveMetadataToJson(metadata);
     root["sceneId"] = state.sceneId;
+    root["activeSubSceneId"] = state.activeSubSceneId;
     root["previousSceneId"] = state.previousSceneId;
+    root["previousSubSceneId"] = state.previousSubSceneId;
     root["narrativeText"] = state.narrativeText;
     root["health"] = state.health;
     root["energy"] = state.energy;
@@ -588,6 +630,7 @@ bool writeSaveFile(const std::string& path, const SavedGameState& state, const S
     }
     root["itemInstances"] = itemInstances;
     root["droppedItems"] = droppedItemsToJson(state.droppedItemsByScene);
+    root["sceneInventories"] = sceneInventoriesToJson(state.sceneInventories);
     root["conversation"] = {
         {"completedPhaseIds", setToJsonArray(state.conversation.completedPhaseIds)},
         {"completedRandomLineIds", setToJsonArray(state.conversation.completedRandomLineIds)},
@@ -642,7 +685,9 @@ bool readSaveFile(const std::string& path, SavedGameState& state, SaveSlotMetada
     }
 
     state.sceneId = root.value("sceneId", "");
+    state.activeSubSceneId = root.value("activeSubSceneId", "");
     state.previousSceneId = root.value("previousSceneId", "");
+    state.previousSubSceneId = root.value("previousSubSceneId", "");
     state.narrativeText = root.value("narrativeText", "");
     state.health = root.value("health", state.health);
     state.energy = root.value("energy", state.energy);
@@ -734,6 +779,12 @@ bool readSaveFile(const std::string& path, SavedGameState& state, SaveSlotMetada
         inventoryFromJson(root.value("inventoryItems", nlohmann::json::array()), state.inventoryItems);
     }
     droppedItemsFromJson(root.value("droppedItems", nlohmann::json::object()), state.droppedItemsByScene);
+    if (saveVersion >= 9)
+    {
+        sceneInventoriesFromJson(
+            root.value("sceneInventories", nlohmann::json::object()),
+            state.sceneInventories);
+    }
 
     const nlohmann::json& conversation = root.value("conversation", nlohmann::json::object());
     jsonArrayToSet(
