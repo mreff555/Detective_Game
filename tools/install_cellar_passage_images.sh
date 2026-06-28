@@ -24,4 +24,8 @@ python3 tools/compress_images.py \
   resources/images/cellar_passage_storage_door_open.png \
   --remove-source
 
+if [[ -f tools/hardware_sources/hector_letter_desk_source.jpg ]]; then
+  python3 tools/generate_hector_letter.py
+fi
+
 echo "Installed cellar passage scene images"

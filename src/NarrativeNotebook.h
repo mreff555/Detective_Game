@@ -53,7 +53,7 @@ class NarrativeNotebook
         const ConversationManager* conversation,
         const ProgressionService* progression,
         const std::set<std::string>* committedLines,
-        float walletCash,
+        const ChoiceAvailabilityContext& choiceContext,
         bool navEnabled,
         const std::function<void(const std::string&)>& onChoiceSelected);
     void unloadSketchTextures();
@@ -105,7 +105,8 @@ class NarrativeNotebook
 
     Rectangle getDialogBounds() const;
     std::vector<ConversationChoiceDef> filterChoices(
-        const std::vector<ConversationChoiceDef>& choices) const;
+        const std::vector<ConversationChoiceDef>& choices,
+        const ChoiceAvailabilityContext& context) const;
 
     private:
     float getNarrativeLineHeight() const;
@@ -148,7 +149,7 @@ class NarrativeNotebook
     const ConversationManager* conversationMgr = nullptr;
     const ProgressionService* progressionService = nullptr;
     const std::set<std::string>* committedPlayerDialogLines = nullptr;
-    float walletCash = 0.0f;
+    ChoiceAvailabilityContext choiceContext{};
     bool notebookNavEnabled = true;
     std::function<void(const std::string&)> onChoiceSelected;
 

@@ -196,7 +196,7 @@
       "defaultSubScene": "unlit",
       "image": "resources/images/cellar_passage_storage.png",
       "description": "The shaft opens into a modest underground chamber — larger than most rooms in the cabin, roughly fifteen feet square. The same heavy beams and fitted fieldstone define the space, but here the ceiling rises enough to stand without ducking. A lantern hangs from a central beam, its wick cold until you tend it. In the center of the floor someone laid a worn rug over the rammed earth, an eleven-by-nine-foot island of wool that softens the room's utilitarian bones. To the right, rough wooden shelves are loaded with canned goods, sacks of flour, rice, beans, and coffee. To the left, a crude desk and chair face the room. A letter lies flat on the desk beside an ink quill and a small desk lamp. On the far wall, a heavy wooden door with broad iron hinges and an iron lock waits without apology.",
-      "examineDetails": "You take the room in properly. The construction matches the shaft — big beams, dry-laid stone, earth floor — but the proportions feel deliberate, as though someone needed storage and a place to write underground. The ceiling lantern hangs from a forged hook driven into the main beam; its glass is clean, the reservoir half full. The rug is Persian work, faded but serviceable, centered with care. The shelves on the right are stockpiled for winter: labeled tins, cloth sacks cinched with twine, a burlap bag of coffee beans. On the left, the desk is plain pine scarred by use. The letter on the blotter is written in a tight hand on cream stock, the ink still sharp. The quill rests in a chipped ceramic tray. The desk lamp is brass, small, with a turned reservoir. The far door is oak planks banded in iron, hinges black with age, lock face thick enough to resist a shoulder. Whatever lies beyond has not been opened to you.",
+      "examineDetails": "You take the room in properly. The construction matches the shaft — big beams, dry-laid stone, earth floor — but the proportions feel deliberate, as though someone needed storage and a place to write underground. The ceiling lantern hangs from a forged hook driven into the main beam; its glass is clean, the reservoir half full. The rug is Persian work, faded but serviceable, centered with care. The shelves on the right are stockpiled for winter: labeled tins, cloth sacks cinched with twine, a burlap bag of coffee beans. On the left, the desk is plain pine scarred by use. A cream letter lies pinned to the blotter by a large knife driven clear through the paper and into the wood — a violent punctuation that left a matching gouge in the scarred pine beneath. The handwriting is sloppy cursive, still legible if you lean close. The quill rests in a chipped ceramic tray. The desk lamp is brass, small, with a turned reservoir. The far door is oak planks banded in iron, hinges black with age, lock face thick enough to resist a shoulder. Whatever lies beyond has not been opened to you.",
       "interactions": [
         {
           "id": "light_passage_lanterns",
@@ -227,6 +227,12 @@
       },
       "movementExits": {
         "backward": [
+          {
+            "id": "back_from_letter",
+            "target": "cellar_passage_storage",
+            "masked": true,
+            "unmaskWhen": { "subScene": "desk_letter" }
+          },
           {
             "id": "back_to_shaft",
             "target": "cellar_passage_shaft#lit",
@@ -270,6 +276,15 @@
               "hideWhenStoryFlag": "cellar_passage:lanterns_lit",
               "requiresExamine": false,
               "repeat": false
+            },
+            {
+              "id": "read_hector_letter",
+              "label": "Read the letter on the desk.",
+              "useDetails": "You lean over the desk and study the letter in the lamplight. The hand is sloppy cursive, but you can follow it. You copy the words into your notebook in a clean manuscript hand:\n\nJ.C.\n\nMcFaddin's Ironworks has been dealt with. You shouldn't have trouble from them anymore. At least, not anytime soon. They will need to hire new staff, and clean out the Crucibles. Unfortunately, this one is going to cost you extra. Roland and his men showed up at the last minute and took out 8 of my men. In time, I will deal him if you do not. Until then, his increased attention to my team is complicating things. You can expect a significant hazard pay line item on my invoices, until he is dealt with.\n\nAnother thing. I want to meet in person this time. Let us just say I would like to meet my elusive benefactor. Don't worry, we will be discrete. Meet me on the ridge off the north face of the peak near your cabin on Sunday the 29th. Be there at 10 o'clock, I want to be off that summit before the storm comes in. I'll be alone and un-armed. I expect the same from you.\n\nHector,",
+              "useFlag": "cellar_passage:letter_read",
+              "exitSceneId": "cellar_passage_storage#desk_letter",
+              "requiresExamine": true,
+              "repeat": true
             }
           ]
         },
@@ -278,7 +293,38 @@
           "flags": ["provides_light"],
           "movement": { "backward": true, "forward": true },
           "movementMask": { "backward": true, "forward": true },
-          "actions": { "examine": true, "use": true }
+          "actions": { "examine": true, "use": true },
+          "interactions": [
+            {
+              "id": "read_hector_letter",
+              "label": "Read the letter on the desk.",
+              "useDetails": "You lean over the desk and study the letter in the lamplight. The hand is sloppy cursive, but you can follow it. You copy the words into your notebook in a clean manuscript hand:\n\nJ.C.\n\nMcFaddin's Ironworks has been dealt with. You shouldn't have trouble from them anymore. At least, not anytime soon. They will need to hire new staff, and clean out the Crucibles. Unfortunately, this one is going to cost you extra. Roland and his men showed up at the last minute and took out 8 of my men. In time, I will deal him if you do not. Until then, his increased attention to my team is complicating things. You can expect a significant hazard pay line item on my invoices, until he is dealt with.\n\nAnother thing. I want to meet in person this time. Let us just say I would like to meet my elusive benefactor. Don't worry, we will be discrete. Meet me on the ridge off the north face of the peak near your cabin on Sunday the 29th. Be there at 10 o'clock, I want to be off that summit before the storm comes in. I'll be alone and un-armed. I expect the same from you.\n\nHector,",
+              "useFlag": "cellar_passage:letter_read",
+              "exitSceneId": "cellar_passage_storage#desk_letter",
+              "requiresExamine": true,
+              "repeat": true
+            }
+          ]
+        },
+        "desk_letter": {
+          "focus": true,
+          "image": "resources/images/hector_letter_desk.png",
+          "description": "You lean over the scarred pine desk. A cream letter lies flat on the green blotter beside a brass desk lamp and a chipped ink tray. Sloppy cursive covers the page — too fine to read from this distance, but clear enough that someone meant every word of it.",
+          "examineDetails": "The desk is plain pine, scarred by years of use. Warm lamplight pools across a green felt blotter, a feather quill in a chipped ceramic tray, and the letter itself — cream stock warmed at the edges, covered in sprawling cursive. The ink has dried to a deep blue-black. You would need to hold the page closer to make out individual words, but the hand is impatient and sure of itself. Hector's, you would wager, once you have seen the loops on the capital H.",
+          "flags": ["provides_light"],
+          "movement": { "backward": true },
+          "movementMask": { "backward": true, "forward": false },
+          "actions": { "examine": true, "use": true },
+          "interactions": [
+            {
+              "id": "set_down_letter",
+              "label": "Set the letter down.",
+              "useDetails": "You lay the letter flat on the blotter and straighten up from the desk.",
+              "exitSceneId": "cellar_passage_storage",
+              "requiresExamine": false,
+              "repeat": true
+            }
+          ]
         }
       },
       "audio": {

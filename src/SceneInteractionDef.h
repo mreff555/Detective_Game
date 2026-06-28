@@ -14,6 +14,7 @@ struct SceneInteractionDef
     std::string id;
     std::string label;
     std::string useDetails;
+    std::string sketchPath;
     std::string exitSceneId;
     std::string useFlag;
     std::string hideWhenStoryFlag;

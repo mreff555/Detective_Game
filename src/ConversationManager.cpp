@@ -159,7 +159,8 @@ bool ConversationManager::isPhaseRequirementMet(
             && storyFlags.count("saloon_interior:blue_woman_hired") > 0)
             return false;
 
-        return storyFlags.count("saloon_interior:chose_usual") > 0;
+        return storyFlags.count("saloon_interior:chose_usual") > 0
+            || storyFlags.count("saloon_interior:chose_cheaper") > 0;
     }
 
     if (phase.id == "bartender_carrie_nudge")
@@ -935,6 +936,44 @@ SpeakResult ConversationManager::resolveScriptedChoice(
     const ConversationChoiceDef& choice,
     bool fromTopLevel)
 {
+    if (!choice.resumeChoiceId.empty())
+    {
+        const ConversationChoiceDef* resumeChoice =
+            findChoiceInPhase(phase, choice.resumeChoiceId, nullptr);
+        if (resumeChoice != nullptr && !resumeChoice->followUpChoices.empty())
+        {
+            activeParentChoiceId = resumeChoice->id;
+
+            SpeakResult result;
+            result.action = SpeakResult::Action::ShowChoices;
+            result.narrative = choice.response;
+            if (choice.status.hasDelta())
+                result.statusEffects.push_back(choice.status);
+            appendDialogAudioTrack(result, choice.responseAudio);
+            applyTtsFields(
+                result,
+                choice.tts,
+                choice.ttsText,
+                choice.ttsVoice,
+                choice.ttsAudio,
+                choice.response);
+            applyTtsAfterFields(
+                result,
+                choice.ttsAfter,
+                choice.ttsAfterText,
+                choice.ttsAfterVoice,
+                choice.ttsAfterAudio,
+                "");
+
+            result.choices = resumeChoice->followUpChoices;
+            awaitingChoice = true;
+            activeScriptPhaseId = phase.id;
+            pendingChoices = result.choices;
+            result.spokenActorId = phaseActorId(phase);
+            return result;
+        }
+    }
+
     if (choice.resumeTopLevel)
     {
         if (fromTopLevel && choice.consumeOnSelect)

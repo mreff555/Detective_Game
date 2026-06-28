@@ -1,5 +1,6 @@
 #include <GameSession.h>
 #include <ImageCompression.h>
+#include <MovementMappingDef.h>
 #include <PlayerStats.h>
 #include <RaylibCompat.h>
 #include <raylib.h>
@@ -41,12 +42,73 @@ namespace
         std::string randomLineId;
     };
 
+    std::string formatCurrency(float amount)
+    {
+        const int cents = static_cast<int>(std::lround(amount * 100.0f));
+        const int dollars = cents / 100;
+        const int remainder = cents % 100;
+
+        char buffer[32];
+        std::snprintf(buffer, sizeof(buffer), "$%d.%02d", dollars, remainder);
+        return buffer;
+    }
+
+    std::string substituteDialogTokens(const std::string& text, const WorldState& worldState)
+    {
+        std::string result = text;
+        const std::string amount = formatCurrency(worldState.actorTabOwedTo("bartender"));
+
+        for (const char* token : { "{tab_amount}", "{tab}" })
+        {
+            const std::string tokenText(token);
+            size_t position = 0;
+            while ((position = result.find(tokenText, position)) != std::string::npos)
+            {
+                result.replace(position, tokenText.size(), amount);
+                position += amount.size();
+            }
+        }
+
+        return result;
+    }
+
+    ChoiceAvailabilityContext makeChoiceContext(const WorldState& worldState)
+    {
+        ChoiceAvailabilityContext context;
+        context.walletCash = worldState.playerStats.walletCash;
+        context.actorTabOwed = &worldState.actorTabOwed;
+        context.currentDay = worldState.day;
+        context.saloonRoomPurchasedDay = worldState.saloonRoomPurchasedDay;
+        return context;
+    }
+
+    void augmentChoiceStatusEffects(
+        const ConversationChoiceDef& choice,
+        std::vector<StatusEffect>& effects,
+        const WorldState& worldState)
+    {
+        if (!choice.payActorTabInFull)
+            return;
+
+        const std::string actorId = choice.tabActor.empty() ? "bartender" : choice.tabActor;
+        const float tab = worldState.actorTabOwedTo(actorId);
+        if (tab <= 0.0f)
+            return;
+
+        StatusEffect payment;
+        payment.actor = actorId;
+        payment.money = -tab;
+        payment.actorTab = -tab;
+        effects.push_back(payment);
+    }
+
     bool hasSaloonBartenderProgress(
         const WorldState& worldState,
         const ConversationManager& conversationMgr)
     {
         return worldState.storyFlags.count("saloon_interior:chose_water") > 0
             || worldState.storyFlags.count("saloon_interior:chose_usual") > 0
+            || worldState.storyFlags.count("saloon_interior:chose_cheaper") > 0
             || worldState.storyFlags.count("saloon_interior:room_tab") > 0
             || conversationMgr.isPhaseComplete("bartender");
     }
@@ -74,13 +136,14 @@ namespace
     bool isActorIntroOnlySpeakPhase(
         const std::string& actorId,
         const std::string& phaseId,
-        const WorldState& worldState,
-        const ConversationManager& conversationMgr)
+        const WorldState& /*worldState*/,
+        const ConversationManager& /*conversationMgr*/)
     {
+        // Intro phases are started via auto-speak or return follow-ups, never the picker.
         if (actorId == "bartender" && phaseId == "bartender")
-            return !hasSaloonBartenderProgress(worldState, conversationMgr);
+            return true;
         if (actorId == "burgundy_woman" && phaseId == "burgundy_woman")
-            return !hasSaloonBurgundyProgress(worldState, conversationMgr);
+            return true;
         return false;
     }
 
@@ -1037,7 +1100,21 @@ namespace
         overrides.iconPath = granted.iconPath;
         overrides.examineImagePath = granted.examineImagePath;
 
-        inventoryMgr.addItem(buildInventoryItem(granted.id, overrides));
+        InventoryItem item = buildInventoryItem(granted.id, overrides);
+        if (!itemDatabase.hasDef(granted.id))
+        {
+            const std::string displayName = granted.name.empty() ? granted.id : granted.name;
+            item.isUndefined = true;
+            item.undefinedPurchaseSceneId = worldState.currentSceneId;
+            item.name = displayName;
+            item.iconPath.clear();
+            item.examineImagePath.clear();
+            item.examineText = ItemDatabase::formatUndefinedItemExamineText(
+                worldState.currentSceneId,
+                displayName);
+        }
+
+        inventoryMgr.addItem(item);
         evaluateMilestones();
     }
 
@@ -1102,11 +1179,12 @@ namespace
             appendNarrativeSketch(result.sketchPath);
 
         if (!result.narrative.empty())
-            appendNarrativeSection("Speaking:", result.narrative);
+            appendNarrativeSection("Speaking:", substituteDialogTokens(result.narrative, worldState));
 
         if (result.action == SpeakResult::Action::ShowChoices)
         {
             applyStatusEffects(result.statusEffects);
+            grantConversationItem(result.grantItem);
             playDialogAudio(result);
             const std::vector<ConversationChoiceDef>& pending = conversationMgr.getPendingChoices();
             appendChoiceLinesToNarrative(!pending.empty() ? pending : result.choices);
@@ -1149,7 +1227,8 @@ namespace
             }
         }
 
-        if (selectedChoice != nullptr && !selectedChoice->isAvailable(worldState.playerStats.walletCash))
+        const ChoiceAvailabilityContext choiceContext = makeChoiceContext(worldState);
+        if (selectedChoice != nullptr && !selectedChoice->isAvailable(choiceContext))
             return;
 
         const SceneSpeakConfig& speakConfig = sceneDatabase.getSpeakConfig(worldState.currentSceneId);
@@ -1162,8 +1241,10 @@ namespace
 
         recordPlayerAction();
 
-        const std::string responseText = result.narrative;
-        const std::vector<StatusEffect> effects = result.statusEffects;
+        std::string responseText = substituteDialogTokens(result.narrative, worldState);
+        std::vector<StatusEffect> effects = result.statusEffects;
+        if (selectedChoice != nullptr)
+            augmentChoiceStatusEffects(*selectedChoice, effects, worldState);
 
         narrativeNotebook.getChoiceHitAreas().clear();
 
@@ -1186,6 +1267,7 @@ namespace
         if (result.action == SpeakResult::Action::ShowChoices)
         {
             applyStatusEffects(effects);
+            grantConversationItem(result.grantItem);
             playDialogAudio(result);
             const std::vector<ConversationChoiceDef>& pending = conversationMgr.getPendingChoices();
             appendChoiceLinesToNarrative(
@@ -1516,6 +1598,12 @@ namespace
             applied = true;
         }
 
+        if (effect.hasActorTabDelta())
+        {
+            worldState.applyActorTabDelta(effect.actor, effect.actorTab);
+            applied = true;
+        }
+
         if (applied && !allowRepeat && !effect.key.empty()
             && worldState.playerStats.consumedStatusActions.count(effect.key) == 0)
             worldState.playerStats.consumedStatusActions.insert(effect.key);
@@ -1525,6 +1613,11 @@ namespace
 
     void GameSession::transitionToScene(const std::string& nextSceneId, const std::string& nextSubSceneId)
     {
+        const std::string fromSceneId = worldState.currentSceneId;
+        const std::string fromSubSceneId = worldState.activeSubSceneId;
+        const SubSceneDef* fromSubScene = sceneDatabase.getSubScene(fromSceneId, fromSubSceneId);
+        const std::string preservedNarrative = narrativeNotebook.getNarrativeText();
+
         if (!sceneController.transitionToScene(
                 nextSceneId,
                 nextSubSceneId,
@@ -1542,10 +1635,23 @@ namespace
             return;
         }
 
+        const SubSceneDef* enteredSubScene = sceneDatabase.getSubScene(
+            worldState.currentSceneId,
+            worldState.activeSubSceneId);
+        const bool preserveNarrative = fromSceneId == nextSceneId
+            && ((enteredSubScene != nullptr && enteredSubScene->focus)
+                || (fromSubScene != nullptr && fromSubScene->focus));
+
         closeAllUiPanels();
         resetDevSceneImagePreview();
         syncFromActiveScene();
-        narrativeNotebook.getNarrativeText() = worldState.narrativeText;
+        if (preserveNarrative)
+        {
+            worldState.narrativeText = preservedNarrative;
+            narrativeNotebook.getNarrativeText() = preservedNarrative;
+        }
+        else
+            narrativeNotebook.getNarrativeText() = worldState.narrativeText;
         conversationMgr.onEnterScene(worldState.currentSceneId, sceneDatabase.getSpeakConfig(worldState.currentSceneId));
         narrativeNotebook.resetNarrativeScroll();
         narrativeNotebook.invalidateLayout();
@@ -1724,7 +1830,12 @@ namespace
             return;
         }
 
-        if (!interaction.useDetails.empty())
+        const bool deferNarrativeForTransition = !interaction.exitSceneId.empty();
+
+        if (!interaction.sketchPath.empty())
+            appendNarrativeSketch(interaction.sketchPath);
+
+        if (!deferNarrativeForTransition && !interaction.useDetails.empty())
             appendNarrativeSection("Using:", interaction.useDetails);
 
         playInteractionTts(interaction);
@@ -1764,12 +1875,22 @@ namespace
         if (!interaction.useFlag.empty())
         {
             evaluateMilestones();
-            syncActiveSubScene();
-            refreshSceneImage();
+            if (interaction.exitSceneId.empty())
+            {
+                syncActiveSubScene();
+                refreshSceneImage();
+            }
         }
 
         if (!interaction.exitSceneId.empty())
-            transitionToScene(interaction.exitSceneId);
+        {
+            const MovementTarget exitTarget = parseMovementTarget(interaction.exitSceneId);
+            if (!exitTarget.sceneId.empty())
+                transitionToScene(exitTarget.sceneId, exitTarget.subSceneId);
+
+            if (!interaction.useDetails.empty())
+                appendNarrativeSection("Using:", interaction.useDetails);
+        }
         else
             updateActionAvailability();
     }
@@ -1796,9 +1917,12 @@ namespace
 
         recordPlayerAction();
 
-        const std::string exitSceneId = useExit;
-        if (!exitSceneId.empty())
-            transitionToScene(exitSceneId);
+        if (!useExit.empty())
+        {
+            const MovementTarget exitTarget = parseMovementTarget(useExit);
+            if (!exitTarget.sceneId.empty())
+                transitionToScene(exitTarget.sceneId, exitTarget.subSceneId);
+        }
         else
             updateActionAvailability();
     }
@@ -1818,8 +1942,12 @@ namespace
             return {};
 
         std::vector<SpeakTargetDef> targets;
+        std::set<std::string> seenActorIds;
         for (const SceneActorDef& actor : actors)
         {
+            if (!seenActorIds.insert(actor.id).second)
+                continue;
+
             const ResolvedActorSpeakTarget resolved = resolveActorSpeakTarget(
                 conversationMgr,
                 config,
@@ -2230,6 +2358,12 @@ namespace
         if (scene == nullptr)
             return;
 
+        const SubSceneDef* activeSubScene = sceneDatabase.getSubScene(
+            worldState.currentSceneId,
+            worldState.activeSubSceneId);
+        if (activeSubScene != nullptr && activeSubScene->focus)
+            return;
+
         const std::string resolvedSubSceneId = sceneDatabase.resolveActiveSubSceneId(
             *scene,
             worldState.storyFlags,
@@ -2538,6 +2672,7 @@ namespace
         worldState.storyFlags.insert(flag);
         if (flag == "saloon_interior:chose_water"
             || flag == "saloon_interior:chose_usual"
+            || flag == "saloon_interior:chose_cheaper"
             || flag == "saloon_interior:room_tab")
         {
             worldState.markActorKnown("bartender");
@@ -2551,6 +2686,7 @@ namespace
         {
             worldState.saloonRoomPurchasedDay = worldState.day;
             if (worldState.storyFlags.count("saloon_interior:chose_usual") == 0
+                && worldState.storyFlags.count("saloon_interior:chose_cheaper") == 0
                 && worldState.storyFlags.count("saloon_interior:chose_water") == 0)
             {
                 worldState.storyFlags.insert("saloon_interior:chose_water");
@@ -3235,7 +3371,7 @@ namespace
             &conversationMgr,
             &progressionService,
             &worldState.committedPlayerDialogLines,
-            worldState.playerStats.walletCash,
+            makeChoiceContext(worldState),
             canUseNotebookNav(),
             [this](const std::string& choiceId) { resolveDialogChoice(choiceId); });
     }
@@ -3313,7 +3449,7 @@ namespace
     std::vector<ConversationChoiceDef> GameSession::filterAvailableChoices(
         const std::vector<ConversationChoiceDef>& choices) const
     {
-        return narrativeNotebook.filterChoices(choices);
+        return narrativeNotebook.filterChoices(choices, makeChoiceContext(worldState));
     }
 
 

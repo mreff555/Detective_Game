@@ -8,7 +8,7 @@
         "id": "buy_crampons",
         "label": "I'll take it.",
         "requiresMoney": 3.25,
-        "response": "He sets the crampons on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+        "response": "He sets the crampons on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
         "grantItem": {
           "id": "crampons",
           "name": "Crampons",
@@ -18,12 +18,44 @@
         },
         "status": {
           "money": -3.25
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_crampons",
         "label": "Thanks, maybe next time.",
-        "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+        "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -36,7 +68,7 @@
         "id": "buy_mining_pick",
         "label": "I'll take it.",
         "requiresMoney": 4.5,
-        "response": "He sets the mining pick on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+        "response": "He sets the mining pick on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
         "grantItem": {
           "id": "mining_pick",
           "name": "Mining Pick",
@@ -46,12 +78,44 @@
         },
         "status": {
           "money": -4.5
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_mining_pick",
         "label": "Thanks, maybe next time.",
-        "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+        "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -64,7 +128,7 @@
         "id": "buy_shovel",
         "label": "I'll take it.",
         "requiresMoney": 1.75,
-        "response": "He sets the shovel on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+        "response": "He sets the shovel on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
         "grantItem": {
           "id": "shovel",
           "name": "Shovel",
@@ -74,12 +138,44 @@
         },
         "status": {
           "money": -1.75
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_shovel",
         "label": "Thanks, maybe next time.",
-        "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+        "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -92,7 +188,7 @@
         "id": "buy_garden_rake",
         "label": "I'll take it.",
         "requiresMoney": 1.25,
-        "response": "He sets the garden rake on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+        "response": "He sets the garden rake on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
         "grantItem": {
           "id": "garden_rake",
           "name": "Garden Rake",
@@ -102,12 +198,44 @@
         },
         "status": {
           "money": -1.25
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_garden_rake",
         "label": "Thanks, maybe next time.",
-        "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+        "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -120,7 +248,7 @@
         "id": "buy_hand_drill",
         "label": "I'll take it.",
         "requiresMoney": 2.5,
-        "response": "He sets the hand drill on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+        "response": "He sets the hand drill on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
         "grantItem": {
           "id": "hand_drill",
           "name": "Hand Drill",
@@ -130,12 +258,44 @@
         },
         "status": {
           "money": -2.5
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_hand_drill",
         "label": "Thanks, maybe next time.",
-        "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+        "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -148,7 +308,7 @@
         "id": "buy_blacksmith_hammer",
         "label": "I'll take it.",
         "requiresMoney": 2.0,
-        "response": "He sets the blacksmith's hammer on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+        "response": "He sets the blacksmith's hammer on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
         "grantItem": {
           "id": "blacksmith_hammer",
           "name": "Blacksmith's Hammer",
@@ -158,12 +318,44 @@
         },
         "status": {
           "money": -2.0
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_blacksmith_hammer",
         "label": "Thanks, maybe next time.",
-        "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+        "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -176,7 +368,7 @@
         "id": "buy_mid_anvil",
         "label": "I'll take it.",
         "requiresMoney": 28.0,
-        "response": "He sets the mid-sized anvil on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+        "response": "He sets the mid-sized anvil on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
         "grantItem": {
           "id": "mid_anvil",
           "name": "Mid-Sized Anvil",
@@ -186,12 +378,44 @@
         },
         "status": {
           "money": -28.0
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_mid_anvil",
         "label": "Thanks, maybe next time.",
-        "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+        "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -204,7 +428,7 @@
         "id": "buy_box_of_nails",
         "label": "I'll take it.",
         "requiresMoney": 0.45,
-        "response": "He sets the box of nails on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+        "response": "He sets the box of nails on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
         "grantItem": {
           "id": "box_of_nails",
           "name": "Box of Nails",
@@ -214,12 +438,44 @@
         },
         "status": {
           "money": -0.45
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_box_of_nails",
         "label": "Thanks, maybe next time.",
-        "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+        "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -232,7 +488,7 @@
         "id": "buy_copper_wire_spool",
         "label": "I'll take it.",
         "requiresMoney": 1.6,
-        "response": "He sets the spool of copper wire on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+        "response": "He sets the spool of copper wire on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
         "grantItem": {
           "id": "copper_wire_spool",
           "name": "Spool of Copper Wire",
@@ -242,12 +498,44 @@
         },
         "status": {
           "money": -1.6
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_copper_wire_spool",
         "label": "Thanks, maybe next time.",
-        "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+        "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"Take your time,\" he says, nodding toward the stock.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },

@@ -8,7 +8,7 @@
         "id": "buy_mens_cologne",
         "label": "I'll take it.",
         "requiresMoney": 4.5,
-        "response": "He wraps the men's cologne with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+        "response": "He wraps the men's cologne with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
         "grantItem": {
           "id": "mens_cologne",
           "name": "Men's Cologne",
@@ -18,12 +18,44 @@
         },
         "status": {
           "money": -4.5
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_mens_cologne",
         "label": "Thanks, maybe next time.",
-        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -36,7 +68,7 @@
         "id": "buy_straight_razor",
         "label": "I'll take it.",
         "requiresMoney": 12.0,
-        "response": "He wraps the straight razor with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+        "response": "He wraps the straight razor with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
         "grantItem": {
           "id": "straight_razor",
           "name": "Straight Razor",
@@ -46,12 +78,44 @@
         },
         "status": {
           "money": -12.0
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_straight_razor",
         "label": "Thanks, maybe next time.",
-        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -64,7 +128,7 @@
         "id": "buy_hair_tonic",
         "label": "I'll take it.",
         "requiresMoney": 0.75,
-        "response": "He wraps the hair tonic with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+        "response": "He wraps the hair tonic with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
         "grantItem": {
           "id": "hair_tonic",
           "name": "Hair Tonic",
@@ -74,12 +138,44 @@
         },
         "status": {
           "money": -0.75
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_hair_tonic",
         "label": "Thanks, maybe next time.",
-        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -92,7 +188,7 @@
         "id": "buy_shaving_brush",
         "label": "I'll take it.",
         "requiresMoney": 2.5,
-        "response": "He wraps the shaving brush with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+        "response": "He wraps the shaving brush with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
         "grantItem": {
           "id": "shaving_brush",
           "name": "Shaving Brush",
@@ -102,12 +198,44 @@
         },
         "status": {
           "money": -2.5
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_shaving_brush",
         "label": "Thanks, maybe next time.",
-        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -120,7 +248,7 @@
         "id": "buy_cuff_links",
         "label": "I'll take it.",
         "requiresMoney": 14.0,
-        "response": "He wraps the cuff links with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+        "response": "He wraps the cuff links with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
         "grantItem": {
           "id": "cuff_links",
           "name": "Cuff Links",
@@ -130,12 +258,44 @@
         },
         "status": {
           "money": -14.0
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_cuff_links",
         "label": "Thanks, maybe next time.",
-        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -148,7 +308,7 @@
         "id": "buy_bow_tie",
         "label": "I'll take it.",
         "requiresMoney": 2.75,
-        "response": "He wraps the bow tie with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+        "response": "He wraps the bow tie with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
         "grantItem": {
           "id": "bow_tie",
           "name": "Bow Tie",
@@ -158,12 +318,44 @@
         },
         "status": {
           "money": -2.75
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_bow_tie",
         "label": "Thanks, maybe next time.",
-        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -176,7 +368,7 @@
         "id": "buy_custom_shirt",
         "label": "Let's do this",
         "requiresMoney": 18.0,
-        "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"",
+        "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"\n\n\"Anything else I may help you find?\"",
         "grantItem": {
           "id": "custom_shirt",
           "name": "Custom Men's Shirt",
@@ -186,7 +378,23 @@
         },
         "status": {
           "money": -18.0
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "fabric_custom_shirt",
@@ -197,7 +405,7 @@
             "id": "buy_fabric_from_custom_shirt",
             "label": "I'll take it.",
             "requiresMoney": 0.25,
-            "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"",
+            "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"\n\n\"Anything else I may help you find?\"",
             "grantItem": {
               "id": "wool_fabric_sample",
               "name": "Wool Fabric Sample",
@@ -207,19 +415,67 @@
             },
             "status": {
               "money": -0.25
-            }
+            },
+            "closePhase": false,
+            "choices": [
+              {
+                "id": "shop_look_again",
+                "label": "Let me take another look.",
+                "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                "resumeChoiceId": "what_on_offer",
+                "closePhase": false
+              },
+              {
+                "id": "shop_no_thanks",
+                "label": "No, thanks.",
+                "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                "closePhase": true
+              }
+            ]
           },
           {
             "id": "decline_fabric_from_custom_shirt",
             "label": "Thanks, maybe next time.",
-            "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\""
+            "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\"\n\n\"Anything else I may help you find?\"",
+            "closePhase": false,
+            "choices": [
+              {
+                "id": "shop_look_again",
+                "label": "Let me take another look.",
+                "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                "resumeChoiceId": "what_on_offer",
+                "closePhase": false
+              },
+              {
+                "id": "shop_no_thanks",
+                "label": "No, thanks.",
+                "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                "closePhase": true
+              }
+            ]
           }
         ]
       },
       {
         "id": "decline_custom_shirt",
         "label": "Thanks, maybe next time.",
-        "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\""
+        "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\"\n\n\"Anything else I may help you find?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -232,7 +488,7 @@
         "id": "buy_custom_trousers",
         "label": "Let's do this",
         "requiresMoney": 22.0,
-        "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"",
+        "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"\n\n\"Anything else I may help you find?\"",
         "grantItem": {
           "id": "custom_trousers",
           "name": "Custom Men's Trousers",
@@ -242,7 +498,23 @@
         },
         "status": {
           "money": -22.0
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "fabric_custom_trousers",
@@ -253,7 +525,7 @@
             "id": "buy_fabric_from_custom_trousers",
             "label": "I'll take it.",
             "requiresMoney": 0.25,
-            "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"",
+            "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"\n\n\"Anything else I may help you find?\"",
             "grantItem": {
               "id": "wool_fabric_sample",
               "name": "Wool Fabric Sample",
@@ -263,19 +535,67 @@
             },
             "status": {
               "money": -0.25
-            }
+            },
+            "closePhase": false,
+            "choices": [
+              {
+                "id": "shop_look_again",
+                "label": "Let me take another look.",
+                "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                "resumeChoiceId": "what_on_offer",
+                "closePhase": false
+              },
+              {
+                "id": "shop_no_thanks",
+                "label": "No, thanks.",
+                "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                "closePhase": true
+              }
+            ]
           },
           {
             "id": "decline_fabric_from_custom_trousers",
             "label": "Thanks, maybe next time.",
-            "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\""
+            "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\"\n\n\"Anything else I may help you find?\"",
+            "closePhase": false,
+            "choices": [
+              {
+                "id": "shop_look_again",
+                "label": "Let me take another look.",
+                "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                "resumeChoiceId": "what_on_offer",
+                "closePhase": false
+              },
+              {
+                "id": "shop_no_thanks",
+                "label": "No, thanks.",
+                "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                "closePhase": true
+              }
+            ]
           }
         ]
       },
       {
         "id": "decline_custom_trousers",
         "label": "Thanks, maybe next time.",
-        "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\""
+        "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\"\n\n\"Anything else I may help you find?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -288,7 +608,7 @@
         "id": "buy_custom_jacket",
         "label": "Let's do this",
         "requiresMoney": 45.0,
-        "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"",
+        "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"\n\n\"Anything else I may help you find?\"",
         "grantItem": {
           "id": "custom_jacket",
           "name": "Custom Men's Jacket",
@@ -298,7 +618,23 @@
         },
         "status": {
           "money": -45.0
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "fabric_custom_jacket",
@@ -309,7 +645,7 @@
             "id": "buy_fabric_from_custom_jacket",
             "label": "I'll take it.",
             "requiresMoney": 0.25,
-            "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"",
+            "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"\n\n\"Anything else I may help you find?\"",
             "grantItem": {
               "id": "wool_fabric_sample",
               "name": "Wool Fabric Sample",
@@ -319,19 +655,67 @@
             },
             "status": {
               "money": -0.25
-            }
+            },
+            "closePhase": false,
+            "choices": [
+              {
+                "id": "shop_look_again",
+                "label": "Let me take another look.",
+                "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                "resumeChoiceId": "what_on_offer",
+                "closePhase": false
+              },
+              {
+                "id": "shop_no_thanks",
+                "label": "No, thanks.",
+                "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                "closePhase": true
+              }
+            ]
           },
           {
             "id": "decline_fabric_from_custom_jacket",
             "label": "Thanks, maybe next time.",
-            "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\""
+            "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\"\n\n\"Anything else I may help you find?\"",
+            "closePhase": false,
+            "choices": [
+              {
+                "id": "shop_look_again",
+                "label": "Let me take another look.",
+                "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                "resumeChoiceId": "what_on_offer",
+                "closePhase": false
+              },
+              {
+                "id": "shop_no_thanks",
+                "label": "No, thanks.",
+                "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                "closePhase": true
+              }
+            ]
           }
         ]
       },
       {
         "id": "decline_custom_jacket",
         "label": "Thanks, maybe next time.",
-        "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\""
+        "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\"\n\n\"Anything else I may help you find?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -344,7 +728,7 @@
         "id": "buy_mens_pea_coat",
         "label": "I'll take it.",
         "requiresMoney": 32.0,
-        "response": "He wraps the men's pea coat with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+        "response": "He wraps the men's pea coat with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
         "grantItem": {
           "id": "mens_pea_coat",
           "name": "Men's Pea Coat",
@@ -354,12 +738,44 @@
         },
         "status": {
           "money": -32.0
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_mens_pea_coat",
         "label": "Thanks, maybe next time.",
-        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },
@@ -372,7 +788,7 @@
         "id": "buy_mens_duster",
         "label": "I'll take it.",
         "requiresMoney": 24.0,
-        "response": "He wraps the men's duster with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+        "response": "He wraps the men's duster with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
         "grantItem": {
           "id": "mens_duster",
           "name": "Men's Duster",
@@ -382,12 +798,44 @@
         },
         "status": {
           "money": -24.0
-        }
+        },
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       },
       {
         "id": "decline_mens_duster",
         "label": "Thanks, maybe next time.",
-        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+        "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+        "closePhase": false,
+        "choices": [
+          {
+            "id": "shop_look_again",
+            "label": "Let me take another look.",
+            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+            "resumeChoiceId": "what_on_offer",
+            "closePhase": false
+          },
+          {
+            "id": "shop_no_thanks",
+            "label": "No, thanks.",
+            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+            "closePhase": true
+          }
+        ]
       }
     ]
   },

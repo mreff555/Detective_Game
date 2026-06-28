@@ -85,6 +85,7 @@ class InventoryMgr
     void handleItemCombineInput();
     bool applyItemCombination(const ItemCombineApplication& application);
     void drawDragGhost() const;
+    void drawUndefinedItemIcon(const Rectangle& iconArea) const;
     void drawWalletCashBadge(const Rectangle& slot) const;
     int findItemSlotAtMouse() const;
     void handleCloseButtonInput();

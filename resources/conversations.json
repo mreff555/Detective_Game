@@ -39,14 +39,6 @@
             "id": "water",
             "label": "> No, just a water",
             "sketch": "resources/sketches/bartender_glass.png",
-            "tts": true,
-            "ttsVoice": "leo",
-            "ttsAudio": "resources/audio/tts/saloon_interior/water.mp3",
-            "ttsText": "The bartender holds your gaze a beat longer than necessary, then turns away for a glass. He sets it on the bar without ceremony. Water, clear and cold. Under his breath, barely audible above the piano, he mutters that he is perfectly all right with you not drinking in his establishment. The words are flat. Not cruel. Not kind. Simply settled.",
-            "ttsAfter": true,
-            "ttsAfterVoice": "leo",
-            "ttsAfterAudio": "resources/audio/tts/saloon_interior/water_after.mp3",
-            "ttsAfterText": "You lift the glass and drink. The water cuts clean through the smoke in your throat and the ash at the back of your tongue. Your head steadies. The room feels a fraction less unreal, as though someone has wiped a smear from a window you did not know was dirty. The bartender sets the rag aside and looks at you again. Need anything else, he asks.",
             "response": "The bartender holds your gaze a beat longer than necessary, then turns away for a glass. He sets it on the bar without ceremony. Water, clear and cold. Under his breath, barely audible above the piano, he mutters that he is perfectly all right with you not drinking in his establishment. The words are flat. Not cruel. Not kind. Simply settled.\n\nYou lift the glass and drink. The water cuts clean through the smoke in your throat and the ash at the back of your tongue. Your head steadies. The room feels a fraction less unreal, as though someone has wiped a smear from a window you did not know was dirty.\n\nThe bartender sets the rag aside and looks at you again. \"Need anything else?\"",
             "closePhase": false,
             "grantStoryFlag": "saloon_interior:chose_water",
@@ -57,29 +49,71 @@
             },
             "choices": [
               {
-                "id": "get_room",
+                "id": "get_room_cash",
                 "label": "> Can I get a room?",
+                "requiresMoney": 4.0,
                 "closePhase": false,
-                "tts": true,
-                "ttsVoice": "leo",
-                "ttsAudio": "resources/audio/tts/saloon_interior/get_room.mp3",
-                "ttsText": "Sure, the bartender says, without looking up from the glass he is polishing. First on the right.",
-                "ttsAfter": true,
-                "ttsAfterVoice": "leo",
-                "ttsAfterAudio": "resources/audio/tts/saloon_interior/get_room_after.mp3",
-                "ttsAfterText": "You reach for your wallet and come up with nothing useful, a few bent coins, a scrap of paper, the feeling that money belonged to someone who used to live in your skin. Your fingers fumble at the lining as though the act of searching might summon cash by embarrassment alone. The bartender's expression settles somewhere between pity and frustration, the look of a man who has watched too many drifters arrive broke and leave owing. He raises one hand and stops you before you can finish the apology forming in your throat. Don't worry about it, he says. I can run a tab. You don't look like you will be going anywhere soon.",
-                "response": "\"Sure,\" the bartender says, without looking up from the glass he is polishing. \"First on the right.\"\n\nYou reach for your wallet and come up with nothing useful - a few bent coins, a scrap of paper, the feeling that money belonged to someone who used to live in your skin. Your fingers fumble at the lining as though the act of searching might summon cash by embarrassment alone.\n\nThe bartender's expression settles somewhere between pity and frustration, the look of a man who has watched too many drifters arrive broke and leave owing.\n\nHe raises one hand and stops you before you can finish the apology forming in your throat.\n\n\"Don't worry about it,\" he says. \"I can run a tab. You don't look like you will be going anywhere soon.\"",
+                "response": "\"Four dollars for the night,\" he says, wiping the bar. \"First door on the right.\"",
                 "choices": [
                   {
-                    "id": "thank_you",
-                    "label": "> Thank you",
-                    "tts": true,
-                    "ttsVoice": "leo",
-                    "ttsAudio": "resources/audio/tts/saloon_interior/thank_you.mp3",
-                    "ttsText": "You manage a quiet thanks. The bartender gives a short nod and turns back to his work, as though the matter is already closed on his ledger.",
-                    "response": "You manage a quiet thanks. The bartender gives a short nod and turns back to his work, as though the matter is already closed on his ledger.",
+                    "id": "pay_room_cash",
+                    "label": "> You slide the money across the bar.",
+                    "requiresMoney": 4.0,
+                    "response": "You count out four dollars and slide them across the pine. He sweeps the bills into the drawer without comment. \"First on the right,\" he says.",
+                    "status": {
+                      "money": -4.0
+                    },
                     "grantStoryFlag": "saloon_interior:room_tab",
                     "startPhase": "burgundy_woman"
+                  }
+                ],
+                "requiresSaloonRoomAvailable": true
+              },
+              {
+                "id": "get_room_tab",
+                "label": "> Can I get a room?",
+                "requiresInsufficientMoney": 4.0,
+                "closePhase": false,
+                "response": "\"Four dollars for the night,\" he says. \"First door on the right.\"\n\nYou reach for your wallet and come up short. Your fingers fumble at the lining as though embarrassment might summon cash by force of will.\n\nThe bartender watches without cruelty and without charity. He makes a small mark on his ledger.\n\n\"Don't worry about it,\" he says. \"I'll run it on your tab.\"",
+                "choices": [
+                  {
+                    "id": "thank_you_room_tab",
+                    "label": "> Thank you",
+                    "response": "You manage a quiet thanks. The bartender gives a short nod and turns back to his work, as though the matter is already filed.",
+                    "status": {
+                      "actor": "bartender",
+                      "actorTab": 4.0
+                    },
+                    "grantStoryFlag": "saloon_interior:room_tab",
+                    "startPhase": "burgundy_woman"
+                  }
+                ],
+                "requiresSaloonRoomAvailable": true
+              },
+              {
+                "id": "pay_tab",
+                "label": "> I'd like to pay my tab.",
+                "requiresPositiveActorTab": true,
+                "tabActor": "bartender",
+                "closePhase": false,
+                "response": "He wipes his hands on a bar rag and consults the chalk marks behind the glass. \"That'll be {tab_amount}.\"",
+                "choices": [
+                  {
+                    "id": "pay_tab_cash",
+                    "label": "> Slide the cash across the bar.",
+                    "requiresPayActorTabInFull": true,
+                    "tabActor": "bartender",
+                    "payActorTabInFull": true,
+                    "response": "You slide the cash across the bar. He takes it without comment, marks the ledger, and meets your eyes. \"We're square. You're paid up.\"",
+                    "closePhase": true
+                  },
+                  {
+                    "id": "pay_tab_later",
+                    "label": "> I'll be back with more later.",
+                    "requiresInsufficientForActorTab": true,
+                    "tabActor": "bartender",
+                    "response": "He gives a short nod. \"Door's open.\"",
+                    "closePhase": true
                   }
                 ]
               },
@@ -87,10 +121,6 @@
                 "id": "thanks",
                 "label": "> Thanks.",
                 "closePhase": true,
-                "tts": true,
-                "ttsVoice": "leo",
-                "ttsAudio": "resources/audio/tts/saloon_interior/thanks.mp3",
-                "ttsText": "You give a short nod. The bartender turns back to the room with the flat efficiency of a man who has already filed you under handled.",
                 "response": "You give a short nod. The bartender turns back to the room with the flat efficiency of a man who has already filed you under handled."
               }
             ]
@@ -98,48 +128,84 @@
           {
             "id": "usual",
             "label": "> Sure",
-            "tts": true,
-            "ttsVoice": "leo",
-            "ttsAudio": "resources/audio/tts/saloon_interior/usual.mp3",
-            "ttsText": "The bartender's jaw tightens almost imperceptibly. He reaches high above the backbar, to a shelf you would need a ladder to trust, and brings down a bottle of bourbon with an artistic label and a wax seal dark as blood. He pours a single shot without measuring, slides it across the pine, and watches you with a look that could crush stone.",
-            "ttsAfter": true,
-            "ttsAfterVoice": "leo",
-            "ttsAfterAudio": "resources/audio/tts/saloon_interior/usual_after.mp3",
-            "ttsAfterText": "You down it anyway. Fire and oak. The room tilts half a degree and rights itself. Your resolve hardens even as your thoughts go slippery at the edges. The bartender sets the rag aside and looks at you again. Need anything else, he asks.",
-            "response": "The bartender's jaw tightens almost imperceptibly. He reaches high above the backbar, to a shelf you would need a ladder to trust, and brings down a bottle of bourbon with an artistic label and a wax seal dark as blood. He pours a single shot without measuring, slides it across the pine, and watches you with a look that could crush stone.\n\nYou down it anyway. Fire and oak. The room tilts half a degree and rights itself. Your resolve hardens even as your thoughts go slippery at the edges.\n\nThe bartender sets the rag aside and looks at you again. \"Need anything else?\"",
+            "response": "The bartender's jaw tightens almost imperceptibly. He reaches high above the backbar, to a shelf you would need a ladder to trust, and brings down a bottle of bourbon with an artistic label and a wax seal dark as blood. He pours a single shot without measuring, slides it across the pine, and watches you with a look that could crush stone.\n\nYou down it anyway. Fire and oak. The room tilts half a degree and rights itself. Your resolve hardens even as your thoughts go slippery at the edges.\n\nThe bartender makes a small mark on his ledger and looks at you again. \"Need anything else?\"",
             "closePhase": false,
             "grantStoryFlag": "saloon_interior:chose_usual",
             "status": {
               "key": "saloon_interior:usual",
               "resolve": 20,
               "lucidity": -10,
+              "actor": "bartender",
+              "actorTab": 0.25,
               "onZeroLucidity": "restart_cabin"
             },
             "choices": [
               {
-                "id": "get_room",
+                "id": "get_room_cash",
                 "label": "> Can I get a room?",
+                "requiresMoney": 4.0,
                 "closePhase": false,
-                "tts": true,
-                "ttsVoice": "leo",
-                "ttsAudio": "resources/audio/tts/saloon_interior/get_room.mp3",
-                "ttsText": "Sure, the bartender says, without looking up from the glass he is polishing. First on the right.",
-                "ttsAfter": true,
-                "ttsAfterVoice": "leo",
-                "ttsAfterAudio": "resources/audio/tts/saloon_interior/get_room_after.mp3",
-                "ttsAfterText": "You reach for your wallet and come up with nothing useful, a few bent coins, a scrap of paper, the feeling that money belonged to someone who used to live in your skin. Your fingers fumble at the lining as though the act of searching might summon cash by embarrassment alone. The bartender's expression settles somewhere between pity and frustration, the look of a man who has watched too many drifters arrive broke and leave owing. He raises one hand and stops you before you can finish the apology forming in your throat. Don't worry about it, he says. I can run a tab. You don't look like you will be going anywhere soon.",
-                "response": "\"Sure,\" the bartender says, without looking up from the glass he is polishing. \"First on the right.\"\n\nYou reach for your wallet and come up with nothing useful - a few bent coins, a scrap of paper, the feeling that money belonged to someone who used to live in your skin. Your fingers fumble at the lining as though the act of searching might summon cash by embarrassment alone.\n\nThe bartender's expression settles somewhere between pity and frustration, the look of a man who has watched too many drifters arrive broke and leave owing.\n\nHe raises one hand and stops you before you can finish the apology forming in your throat.\n\n\"Don't worry about it,\" he says. \"I can run a tab. You don't look like you will be going anywhere soon.\"",
+                "response": "\"Four dollars for the night,\" he says, wiping the bar. \"First door on the right.\"",
                 "choices": [
                   {
-                    "id": "thank_you",
-                    "label": "> Thank you",
-                    "tts": true,
-                    "ttsVoice": "leo",
-                    "ttsAudio": "resources/audio/tts/saloon_interior/thank_you.mp3",
-                    "ttsText": "You manage a quiet thanks. The bartender gives a short nod and turns back to his work, as though the matter is already closed on his ledger.",
-                    "response": "You manage a quiet thanks. The bartender gives a short nod and turns back to his work, as though the matter is already closed on his ledger.",
+                    "id": "pay_room_cash",
+                    "label": "> You slide the money across the bar.",
+                    "requiresMoney": 4.0,
+                    "response": "You count out four dollars and slide them across the pine. He sweeps the bills into the drawer without comment. \"First on the right,\" he says.",
+                    "status": {
+                      "money": -4.0
+                    },
                     "grantStoryFlag": "saloon_interior:room_tab",
                     "startPhase": "burgundy_woman"
+                  }
+                ],
+                "requiresSaloonRoomAvailable": true
+              },
+              {
+                "id": "get_room_tab",
+                "label": "> Can I get a room?",
+                "requiresInsufficientMoney": 4.0,
+                "closePhase": false,
+                "response": "\"Four dollars for the night,\" he says. \"First door on the right.\"\n\nYou reach for your wallet and come up short. Your fingers fumble at the lining as though embarrassment might summon cash by force of will.\n\nThe bartender watches without cruelty and without charity. He makes a small mark on his ledger.\n\n\"Don't worry about it,\" he says. \"I'll run it on your tab.\"",
+                "choices": [
+                  {
+                    "id": "thank_you_room_tab",
+                    "label": "> Thank you",
+                    "response": "You manage a quiet thanks. The bartender gives a short nod and turns back to his work, as though the matter is already filed.",
+                    "status": {
+                      "actor": "bartender",
+                      "actorTab": 4.0
+                    },
+                    "grantStoryFlag": "saloon_interior:room_tab",
+                    "startPhase": "burgundy_woman"
+                  }
+                ],
+                "requiresSaloonRoomAvailable": true
+              },
+              {
+                "id": "pay_tab",
+                "label": "> I'd like to pay my tab.",
+                "requiresPositiveActorTab": true,
+                "tabActor": "bartender",
+                "closePhase": false,
+                "response": "He wipes his hands on a bar rag and consults the chalk marks behind the glass. \"That'll be {tab_amount}.\"",
+                "choices": [
+                  {
+                    "id": "pay_tab_cash",
+                    "label": "> Slide the cash across the bar.",
+                    "requiresPayActorTabInFull": true,
+                    "tabActor": "bartender",
+                    "payActorTabInFull": true,
+                    "response": "You slide the cash across the bar. He takes it without comment, marks the ledger, and meets your eyes. \"We're square. You're paid up.\"",
+                    "closePhase": true
+                  },
+                  {
+                    "id": "pay_tab_later",
+                    "label": "> I'll be back with more later.",
+                    "requiresInsufficientForActorTab": true,
+                    "tabActor": "bartender",
+                    "response": "He gives a short nod. \"Door's open.\"",
+                    "closePhase": true
                   }
                 ]
               },
@@ -147,11 +213,142 @@
                 "id": "thanks",
                 "label": "> Thanks.",
                 "closePhase": true,
-                "tts": true,
-                "ttsVoice": "leo",
-                "ttsAudio": "resources/audio/tts/saloon_interior/thanks.mp3",
-                "ttsText": "You give a short nod. The bartender turns back to the room with the flat efficiency of a man who has already filed you under handled.",
                 "response": "You give a short nod. The bartender turns back to the room with the flat efficiency of a man who has already filed you under handled."
+              }
+            ]
+          },
+          {
+            "id": "cheaper",
+            "label": "> Got anything cheaper?",
+            "response": "He holds your gaze a moment, then reaches below the bar to the well. The pour that comes up is murky, smelling of varnish and regret. He slides it across without pride.\n\nYou drink it anyway. It hits like coal oil and old sin. Your resolve knots itself a little tighter. Your body protests. Your thoughts go slippery at the edges.\n\nThe bartender makes a small mark on his ledger. \"Need anything else?\"",
+            "closePhase": false,
+            "grantStoryFlag": "saloon_interior:chose_cheaper",
+            "status": {
+              "key": "saloon_interior:cheaper",
+              "resolve": 20,
+              "lucidity": -10,
+              "health": -1,
+              "actor": "bartender",
+              "actorTab": 0.1,
+              "onZeroLucidity": "restart_cabin"
+            },
+            "choices": [
+              {
+                "id": "get_room_cash",
+                "label": "> Can I get a room?",
+                "requiresMoney": 4.0,
+                "closePhase": false,
+                "response": "\"Four dollars for the night,\" he says, wiping the bar. \"First door on the right.\"",
+                "choices": [
+                  {
+                    "id": "pay_room_cash",
+                    "label": "> You slide the money across the bar.",
+                    "requiresMoney": 4.0,
+                    "response": "You count out four dollars and slide them across the pine. He sweeps the bills into the drawer without comment. \"First on the right,\" he says.",
+                    "status": {
+                      "money": -4.0
+                    },
+                    "grantStoryFlag": "saloon_interior:room_tab",
+                    "startPhase": "burgundy_woman"
+                  }
+                ],
+                "requiresSaloonRoomAvailable": true
+              },
+              {
+                "id": "get_room_tab",
+                "label": "> Can I get a room?",
+                "requiresInsufficientMoney": 4.0,
+                "closePhase": false,
+                "response": "\"Four dollars for the night,\" he says. \"First door on the right.\"\n\nYou reach for your wallet and come up short. Your fingers fumble at the lining as though embarrassment might summon cash by force of will.\n\nThe bartender watches without cruelty and without charity. He makes a small mark on his ledger.\n\n\"Don't worry about it,\" he says. \"I'll run it on your tab.\"",
+                "choices": [
+                  {
+                    "id": "thank_you_room_tab",
+                    "label": "> Thank you",
+                    "response": "You manage a quiet thanks. The bartender gives a short nod and turns back to his work, as though the matter is already filed.",
+                    "status": {
+                      "actor": "bartender",
+                      "actorTab": 4.0
+                    },
+                    "grantStoryFlag": "saloon_interior:room_tab",
+                    "startPhase": "burgundy_woman"
+                  }
+                ],
+                "requiresSaloonRoomAvailable": true
+              },
+              {
+                "id": "pay_tab",
+                "label": "> I'd like to pay my tab.",
+                "requiresPositiveActorTab": true,
+                "tabActor": "bartender",
+                "closePhase": false,
+                "response": "He wipes his hands on a bar rag and consults the chalk marks behind the glass. \"That'll be {tab_amount}.\"",
+                "choices": [
+                  {
+                    "id": "pay_tab_cash",
+                    "label": "> Slide the cash across the bar.",
+                    "requiresPayActorTabInFull": true,
+                    "tabActor": "bartender",
+                    "payActorTabInFull": true,
+                    "response": "You slide the cash across the bar. He takes it without comment, marks the ledger, and meets your eyes. \"We're square. You're paid up.\"",
+                    "closePhase": true
+                  },
+                  {
+                    "id": "pay_tab_later",
+                    "label": "> I'll be back with more later.",
+                    "requiresInsufficientForActorTab": true,
+                    "tabActor": "bartender",
+                    "response": "He gives a short nod. \"Door's open.\"",
+                    "closePhase": true
+                  }
+                ]
+              },
+              {
+                "id": "thanks",
+                "label": "> Thanks.",
+                "closePhase": true,
+                "response": "You give a short nod. The bartender turns back to the room with the flat efficiency of a man who has already filed you under handled."
+              }
+            ]
+          },
+          {
+            "id": "get_room_cash",
+            "label": "> Can I get a room?",
+            "requiresSaloonRoomAvailable": true,
+            "requiresMoney": 4.0,
+            "closePhase": false,
+            "response": "\"Four dollars for the night,\" he says, wiping the bar. \"First door on the right.\"",
+            "choices": [
+              {
+                "id": "pay_room_cash",
+                "label": "> You slide the money across the bar.",
+                "requiresMoney": 4.0,
+                "response": "You count out four dollars and slide them across the pine. He sweeps the bills into the drawer without comment. \"First on the right,\" he says.",
+                "status": {
+                  "money": -4.0
+                },
+                "grantStoryFlag": "saloon_interior:room_tab",
+                "startPhase": "burgundy_woman"
+              }
+            ]
+          },
+          {
+            "id": "get_room_tab",
+            "label": "> Can I get a room?",
+            "requiresSaloonRoomAvailable": true,
+            "requiresInsufficientMoney": 4.0,
+            "closePhase": false,
+            "response": "\"Four dollars for the night,\" he says. \"First door on the right.\"\n\nYou reach for your wallet and come up short. Your fingers fumble at the lining as though embarrassment might summon cash by force of will.\n\nThe bartender watches without cruelty and without charity. He makes a small mark on his ledger.\n\n\"Don't worry about it,\" he says. \"I'll run it on your tab.\"",
+            "choices": [
+              {
+                "id": "thank_you_room_tab",
+                "label": "> Thank you",
+                "response": "You manage a quiet thanks. The bartender gives a short nod and turns back to his work, as though the matter is already filed.",
+                "status": {
+                  "actor": "bartender",
+                  "actorTab": 4.0
+                },
+                "grantStoryFlag": "saloon_interior:room_tab",
+                "startPhase": "burgundy_woman"
               }
             ]
           }
@@ -206,6 +403,75 @@
               "actor": "bartender",
               "actorOpinion": 1
             }
+          },
+          {
+            "id": "pay_tab",
+            "label": "> I'd like to pay my tab.",
+            "requiresPositiveActorTab": true,
+            "tabActor": "bartender",
+            "closePhase": false,
+            "response": "He wipes his hands on a bar rag and consults the chalk marks behind the glass. \"That'll be {tab_amount}.\"",
+            "choices": [
+              {
+                "id": "pay_tab_cash",
+                "label": "> Slide the cash across the bar.",
+                "requiresPayActorTabInFull": true,
+                "tabActor": "bartender",
+                "payActorTabInFull": true,
+                "response": "You slide the cash across the bar. He takes it without comment, marks the ledger, and meets your eyes. \"We're square. You're paid up.\"",
+                "closePhase": true
+              },
+              {
+                "id": "pay_tab_later",
+                "label": "> I'll be back with more later.",
+                "requiresInsufficientForActorTab": true,
+                "tabActor": "bartender",
+                "response": "He gives a short nod. \"Door's open.\"",
+                "closePhase": true
+              }
+            ]
+          },
+          {
+            "id": "get_room_cash",
+            "label": "> Can I get a room?",
+            "requiresSaloonRoomAvailable": true,
+            "requiresMoney": 4.0,
+            "closePhase": false,
+            "response": "\"Four dollars for the night,\" he says, wiping the bar. \"First door on the right.\"",
+            "choices": [
+              {
+                "id": "pay_room_cash",
+                "label": "> You slide the money across the bar.",
+                "requiresMoney": 4.0,
+                "response": "You count out four dollars and slide them across the pine. He sweeps the bills into the drawer without comment. \"First on the right,\" he says.",
+                "status": {
+                  "money": -4.0
+                },
+                "grantStoryFlag": "saloon_interior:room_tab",
+                "startPhase": "burgundy_woman"
+              }
+            ]
+          },
+          {
+            "id": "get_room_tab",
+            "label": "> Can I get a room?",
+            "requiresSaloonRoomAvailable": true,
+            "requiresInsufficientMoney": 4.0,
+            "closePhase": false,
+            "response": "\"Four dollars for the night,\" he says. \"First door on the right.\"\n\nYou reach for your wallet and come up short. Your fingers fumble at the lining as though embarrassment might summon cash by force of will.\n\nThe bartender watches without cruelty and without charity. He makes a small mark on his ledger.\n\n\"Don't worry about it,\" he says. \"I'll run it on your tab.\"",
+            "choices": [
+              {
+                "id": "thank_you_room_tab",
+                "label": "> Thank you",
+                "response": "You manage a quiet thanks. The bartender gives a short nod and turns back to his work, as though the matter is already filed.",
+                "status": {
+                  "actor": "bartender",
+                  "actorTab": 4.0
+                },
+                "grantStoryFlag": "saloon_interior:room_tab",
+                "startPhase": "burgundy_woman"
+              }
+            ]
           }
         ]
       },
@@ -231,7 +497,8 @@
               "lucidity": -10,
               "onZeroLucidity": "restart_cabin",
               "actor": "bartender",
-              "actorOpinion": -1
+              "actorOpinion": -1,
+              "actorTab": 0.25
             }
           },
           {
@@ -245,6 +512,75 @@
               "actor": "bartender",
               "actorOpinion": 1
             }
+          },
+          {
+            "id": "pay_tab",
+            "label": "> I'd like to pay my tab.",
+            "requiresPositiveActorTab": true,
+            "tabActor": "bartender",
+            "closePhase": false,
+            "response": "He wipes his hands on a bar rag and consults the chalk marks behind the glass. \"That'll be {tab_amount}.\"",
+            "choices": [
+              {
+                "id": "pay_tab_cash",
+                "label": "> Slide the cash across the bar.",
+                "requiresPayActorTabInFull": true,
+                "tabActor": "bartender",
+                "payActorTabInFull": true,
+                "response": "You slide the cash across the bar. He takes it without comment, marks the ledger, and meets your eyes. \"We're square. You're paid up.\"",
+                "closePhase": true
+              },
+              {
+                "id": "pay_tab_later",
+                "label": "> I'll be back with more later.",
+                "requiresInsufficientForActorTab": true,
+                "tabActor": "bartender",
+                "response": "He gives a short nod. \"Door's open.\"",
+                "closePhase": true
+              }
+            ]
+          },
+          {
+            "id": "get_room_cash",
+            "label": "> Can I get a room?",
+            "requiresSaloonRoomAvailable": true,
+            "requiresMoney": 4.0,
+            "closePhase": false,
+            "response": "\"Four dollars for the night,\" he says, wiping the bar. \"First door on the right.\"",
+            "choices": [
+              {
+                "id": "pay_room_cash",
+                "label": "> You slide the money across the bar.",
+                "requiresMoney": 4.0,
+                "response": "You count out four dollars and slide them across the pine. He sweeps the bills into the drawer without comment. \"First on the right,\" he says.",
+                "status": {
+                  "money": -4.0
+                },
+                "grantStoryFlag": "saloon_interior:room_tab",
+                "startPhase": "burgundy_woman"
+              }
+            ]
+          },
+          {
+            "id": "get_room_tab",
+            "label": "> Can I get a room?",
+            "requiresSaloonRoomAvailable": true,
+            "requiresInsufficientMoney": 4.0,
+            "closePhase": false,
+            "response": "\"Four dollars for the night,\" he says. \"First door on the right.\"\n\nYou reach for your wallet and come up short. Your fingers fumble at the lining as though embarrassment might summon cash by force of will.\n\nThe bartender watches without cruelty and without charity. He makes a small mark on his ledger.\n\n\"Don't worry about it,\" he says. \"I'll run it on your tab.\"",
+            "choices": [
+              {
+                "id": "thank_you_room_tab",
+                "label": "> Thank you",
+                "response": "You manage a quiet thanks. The bartender gives a short nod and turns back to his work, as though the matter is already filed.",
+                "status": {
+                  "actor": "bartender",
+                  "actorTab": 4.0
+                },
+                "grantStoryFlag": "saloon_interior:room_tab",
+                "startPhase": "burgundy_woman"
+              }
+            ]
           }
         ]
       },
@@ -331,6 +667,8 @@
       },
       {
         "id": "bartender_path",
+        "actorId": "bartender",
+        "actorName": "Bartender",
         "type": "once",
         "resetOnSceneEnter": false,
         "requiresPhase": "bartender",
@@ -660,7 +998,6 @@
       {
         "id": "shopkeeper",
         "type": "scripted",
-        "requiresFlag": "ridge_haberdashery:greeting_done",
         "resetOnSceneEnter": true,
         "intro": "The gentleman behind the counter sets down his pen and regards you with practiced courtesy. His vest is pressed, his collar crisp, his hands clean in the manner of a man who sells refinement at altitude.\n\n\"Good day, sir. Is there anything I can help you find?\"",
         "resumeIntro": "\"Now then, sir,\" he says, settling his hands on the counter. \"What else may I help you find?\"",
@@ -679,7 +1016,7 @@
                     "id": "buy_mens_cologne",
                     "label": "I'll take it.",
                     "requiresMoney": 4.5,
-                    "response": "He wraps the men's cologne with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+                    "response": "He wraps the men's cologne with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
                     "grantItem": {
                       "id": "mens_cologne",
                       "name": "Men's Cologne",
@@ -689,12 +1026,44 @@
                     },
                     "status": {
                       "money": -4.5
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_mens_cologne",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -706,8 +1075,8 @@
                   {
                     "id": "buy_straight_razor",
                     "label": "I'll take it.",
-                    "requiresMoney": 12,
-                    "response": "He wraps the straight razor with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+                    "requiresMoney": 12.0,
+                    "response": "He wraps the straight razor with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
                     "grantItem": {
                       "id": "straight_razor",
                       "name": "Straight Razor",
@@ -716,13 +1085,45 @@
                       "examineText": "A straight razor in a fitted leather sheath, the blade hollow-ground and polished to a mirror that shows your face in fragments. The handle is horn, warm from the maker's bench, pinned with a brass tang. The edge is sharp enough to part a hair without complaint."
                     },
                     "status": {
-                      "money": -12
-                    }
+                      "money": -12.0
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_straight_razor",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -735,7 +1136,7 @@
                     "id": "buy_hair_tonic",
                     "label": "I'll take it.",
                     "requiresMoney": 0.75,
-                    "response": "He wraps the hair tonic with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+                    "response": "He wraps the hair tonic with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
                     "grantItem": {
                       "id": "hair_tonic",
                       "name": "Hair Tonic",
@@ -745,12 +1146,44 @@
                     },
                     "status": {
                       "money": -0.75
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_hair_tonic",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -763,7 +1196,7 @@
                     "id": "buy_shaving_brush",
                     "label": "I'll take it.",
                     "requiresMoney": 2.5,
-                    "response": "He wraps the shaving brush with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+                    "response": "He wraps the shaving brush with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
                     "grantItem": {
                       "id": "shaving_brush",
                       "name": "Shaving Brush",
@@ -773,12 +1206,44 @@
                     },
                     "status": {
                       "money": -2.5
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_shaving_brush",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -790,8 +1255,8 @@
                   {
                     "id": "buy_cuff_links",
                     "label": "I'll take it.",
-                    "requiresMoney": 14,
-                    "response": "He wraps the cuff links with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+                    "requiresMoney": 14.0,
+                    "response": "He wraps the cuff links with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
                     "grantItem": {
                       "id": "cuff_links",
                       "name": "Cuff Links",
@@ -800,13 +1265,45 @@
                       "examineText": "A pair of cuff links in a small velvet tray: onyx faces set in sterling, engine-turned at the border so they catch lamplight without shouting. The posts click shut with the satisfying precision of good mechanism. The sort of detail a man buys when he wants a room to revise its estimate of him."
                     },
                     "status": {
-                      "money": -14
-                    }
+                      "money": -14.0
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_cuff_links",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -819,7 +1316,7 @@
                     "id": "buy_bow_tie",
                     "label": "I'll take it.",
                     "requiresMoney": 2.75,
-                    "response": "He wraps the bow tie with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+                    "response": "He wraps the bow tie with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
                     "grantItem": {
                       "id": "bow_tie",
                       "name": "Bow Tie",
@@ -829,12 +1326,44 @@
                     },
                     "status": {
                       "money": -2.75
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_bow_tie",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -846,8 +1375,8 @@
                   {
                     "id": "buy_custom_shirt",
                     "label": "Let's do this",
-                    "requiresMoney": 18,
-                    "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"",
+                    "requiresMoney": 18.0,
+                    "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"\n\n\"Anything else I may help you find?\"",
                     "grantItem": {
                       "id": "custom_shirt",
                       "name": "Custom Men's Shirt",
@@ -856,8 +1385,24 @@
                       "examineText": "A measurement card and fabric swatch pinned to a tailor's ticket for a custom shirt: long-grain cotton, mother-of-pearl buttons, collar cut to your measure. The haberdasher notes a six-week lead time and, with quiet pride, Savile Row construction. The garment itself is not here yet. The promise is."
                     },
                     "status": {
-                      "money": -18
-                    }
+                      "money": -18.0
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "fabric_custom_shirt",
@@ -868,7 +1413,7 @@
                         "id": "buy_fabric_from_custom_shirt",
                         "label": "I'll take it.",
                         "requiresMoney": 0.25,
-                        "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"",
+                        "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"\n\n\"Anything else I may help you find?\"",
                         "grantItem": {
                           "id": "wool_fabric_sample",
                           "name": "Wool Fabric Sample",
@@ -878,19 +1423,67 @@
                         },
                         "status": {
                           "money": -0.25
-                        }
+                        },
+                        "closePhase": false,
+                        "choices": [
+                          {
+                            "id": "shop_look_again",
+                            "label": "Let me take another look.",
+                            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                            "resumeChoiceId": "what_on_offer",
+                            "closePhase": false
+                          },
+                          {
+                            "id": "shop_no_thanks",
+                            "label": "No, thanks.",
+                            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                            "closePhase": true
+                          }
+                        ]
                       },
                       {
                         "id": "decline_fabric_from_custom_shirt",
                         "label": "Thanks, maybe next time.",
-                        "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\""
+                        "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\"\n\n\"Anything else I may help you find?\"",
+                        "closePhase": false,
+                        "choices": [
+                          {
+                            "id": "shop_look_again",
+                            "label": "Let me take another look.",
+                            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                            "resumeChoiceId": "what_on_offer",
+                            "closePhase": false
+                          },
+                          {
+                            "id": "shop_no_thanks",
+                            "label": "No, thanks.",
+                            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                            "closePhase": true
+                          }
+                        ]
                       }
                     ]
                   },
                   {
                     "id": "decline_custom_shirt",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\""
+                    "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\"\n\n\"Anything else I may help you find?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -902,8 +1495,8 @@
                   {
                     "id": "buy_custom_trousers",
                     "label": "Let's do this",
-                    "requiresMoney": 22,
-                    "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"",
+                    "requiresMoney": 22.0,
+                    "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"\n\n\"Anything else I may help you find?\"",
                     "grantItem": {
                       "id": "custom_trousers",
                       "name": "Custom Men's Trousers",
@@ -912,8 +1505,24 @@
                       "examineText": "A tailor's order for custom trousers: waist, inseam, and rise recorded in ink that does not smudge. The cloth sample is worsted wool, dark enough for church and boardrooms that do not exist on the High Line but might in Graysmill. Six weeks, the card says. Made on Savile Row in London."
                     },
                     "status": {
-                      "money": -22
-                    }
+                      "money": -22.0
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "fabric_custom_trousers",
@@ -924,7 +1533,7 @@
                         "id": "buy_fabric_from_custom_trousers",
                         "label": "I'll take it.",
                         "requiresMoney": 0.25,
-                        "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"",
+                        "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"\n\n\"Anything else I may help you find?\"",
                         "grantItem": {
                           "id": "wool_fabric_sample",
                           "name": "Wool Fabric Sample",
@@ -934,19 +1543,67 @@
                         },
                         "status": {
                           "money": -0.25
-                        }
+                        },
+                        "closePhase": false,
+                        "choices": [
+                          {
+                            "id": "shop_look_again",
+                            "label": "Let me take another look.",
+                            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                            "resumeChoiceId": "what_on_offer",
+                            "closePhase": false
+                          },
+                          {
+                            "id": "shop_no_thanks",
+                            "label": "No, thanks.",
+                            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                            "closePhase": true
+                          }
+                        ]
                       },
                       {
                         "id": "decline_fabric_from_custom_trousers",
                         "label": "Thanks, maybe next time.",
-                        "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\""
+                        "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\"\n\n\"Anything else I may help you find?\"",
+                        "closePhase": false,
+                        "choices": [
+                          {
+                            "id": "shop_look_again",
+                            "label": "Let me take another look.",
+                            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                            "resumeChoiceId": "what_on_offer",
+                            "closePhase": false
+                          },
+                          {
+                            "id": "shop_no_thanks",
+                            "label": "No, thanks.",
+                            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                            "closePhase": true
+                          }
+                        ]
                       }
                     ]
                   },
                   {
                     "id": "decline_custom_trousers",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\""
+                    "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\"\n\n\"Anything else I may help you find?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -958,8 +1615,8 @@
                   {
                     "id": "buy_custom_jacket",
                     "label": "Let's do this",
-                    "requiresMoney": 45,
-                    "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"",
+                    "requiresMoney": 45.0,
+                    "response": "He produces his measuring tape without another word and begins the ritual of numbers and posture, writing each measure as though recording scripture. \"Very good, sir. Six weeks. I will send word when it arrives from London.\"\n\n\"Anything else I may help you find?\"",
                     "grantItem": {
                       "id": "custom_jacket",
                       "name": "Custom Men's Jacket",
@@ -968,8 +1625,24 @@
                       "examineText": "A commission card for a custom jacket: shoulder width, chest, and lapel style noted with the care of a man who believes fit is morality. The fabric sample is long-grain wool in charcoal, substantial enough to hold a ridge wind at bay. Six weeks' lead. Designed and constructed on Savile Row in London, as though the address itself were a kind of guarantee."
                     },
                     "status": {
-                      "money": -45
-                    }
+                      "money": -45.0
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "fabric_custom_jacket",
@@ -980,7 +1653,7 @@
                         "id": "buy_fabric_from_custom_jacket",
                         "label": "I'll take it.",
                         "requiresMoney": 0.25,
-                        "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"",
+                        "response": "He cuts a small square from the bolt with scissors that barely whisper, folds it into a card, and ties it with twine. \"For consideration, sir.\"\n\n\"Anything else I may help you find?\"",
                         "grantItem": {
                           "id": "wool_fabric_sample",
                           "name": "Wool Fabric Sample",
@@ -990,19 +1663,67 @@
                         },
                         "status": {
                           "money": -0.25
-                        }
+                        },
+                        "closePhase": false,
+                        "choices": [
+                          {
+                            "id": "shop_look_again",
+                            "label": "Let me take another look.",
+                            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                            "resumeChoiceId": "what_on_offer",
+                            "closePhase": false
+                          },
+                          {
+                            "id": "shop_no_thanks",
+                            "label": "No, thanks.",
+                            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                            "closePhase": true
+                          }
+                        ]
                       },
                       {
                         "id": "decline_fabric_from_custom_jacket",
                         "label": "Thanks, maybe next time.",
-                        "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\""
+                        "response": "\"No trouble at all, sir,\" he says. \"The cloth isn't going anywhere.\"\n\n\"Anything else I may help you find?\"",
+                        "closePhase": false,
+                        "choices": [
+                          {
+                            "id": "shop_look_again",
+                            "label": "Let me take another look.",
+                            "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                            "resumeChoiceId": "what_on_offer",
+                            "closePhase": false
+                          },
+                          {
+                            "id": "shop_no_thanks",
+                            "label": "No, thanks.",
+                            "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                            "closePhase": true
+                          }
+                        ]
                       }
                     ]
                   },
                   {
                     "id": "decline_custom_jacket",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\""
+                    "response": "\"Of course, sir,\" he says. \"Custom work requires patience on both sides.\"\n\n\"Anything else I may help you find?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -1014,8 +1735,8 @@
                   {
                     "id": "buy_mens_pea_coat",
                     "label": "I'll take it.",
-                    "requiresMoney": 32,
-                    "response": "He wraps the men's pea coat with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+                    "requiresMoney": 32.0,
+                    "response": "He wraps the men's pea coat with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
                     "grantItem": {
                       "id": "mens_pea_coat",
                       "name": "Men's Pea Coat",
@@ -1024,13 +1745,45 @@
                       "examineText": "A men's pea coat of heavy navy melton wool, double-breasted with anchor buttons and a collar that can be turned against wind that has never learned manners. The lining is quilted. The shoulders are broad. It smells of new cloth and cold air, as though it has been waiting for a ship that docks at altitude."
                     },
                     "status": {
-                      "money": -32
-                    }
+                      "money": -32.0
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_mens_pea_coat",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -1042,8 +1795,8 @@
                   {
                     "id": "buy_mens_duster",
                     "label": "I'll take it.",
-                    "requiresMoney": 24,
-                    "response": "He wraps the men's duster with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"",
+                    "requiresMoney": 24.0,
+                    "response": "He wraps the men's duster with the care of a man who believes presentation is part of the purchase. \"A pleasure doing business with you, sir.\"\n\n\"Anything else I may help you find?\"",
                     "grantItem": {
                       "id": "mens_duster",
                       "name": "Men's Duster",
@@ -1052,13 +1805,45 @@
                       "examineText": "A full-length men's duster in oiled canvas the color of winter road dust, with a split back for riding and pockets deep enough to lose a man's intentions. The metal buttons are darkened against tarnish. It is less garment than declaration: a man who expects distance, weather, and the kind of work that keeps his hands dirty."
                     },
                     "status": {
-                      "money": -24
-                    }
+                      "money": -24.0
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_mens_duster",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\""
+                    "response": "\"Of course, sir,\" he says with a courteous nod. \"The goods will be here when you return.\"\n\n\"Anything else I may help you find?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"By all means, sir,\" he says, stepping back from the counter.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -1083,7 +1868,8 @@
             "label": "Just browsing at the moment.",
             "response": "\"Of course, sir,\" he says warmly. \"Take your time. I will be here if you need anything.\""
           }
-        ]
+        ],
+        "requiresFlag": "ridge_haberdashery:greeting_done"
       }
     ]
   },
@@ -1110,7 +1896,7 @@
                     "id": "buy_crampons",
                     "label": "I'll take it.",
                     "requiresMoney": 3.25,
-                    "response": "He sets the crampons on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+                    "response": "He sets the crampons on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
                     "grantItem": {
                       "id": "crampons",
                       "name": "Crampons",
@@ -1120,12 +1906,44 @@
                     },
                     "status": {
                       "money": -3.25
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_crampons",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+                    "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -1138,7 +1956,7 @@
                     "id": "buy_mining_pick",
                     "label": "I'll take it.",
                     "requiresMoney": 4.5,
-                    "response": "He sets the mining pick on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+                    "response": "He sets the mining pick on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
                     "grantItem": {
                       "id": "mining_pick",
                       "name": "Mining Pick",
@@ -1148,12 +1966,44 @@
                     },
                     "status": {
                       "money": -4.5
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_mining_pick",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+                    "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -1166,7 +2016,7 @@
                     "id": "buy_shovel",
                     "label": "I'll take it.",
                     "requiresMoney": 1.75,
-                    "response": "He sets the shovel on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+                    "response": "He sets the shovel on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
                     "grantItem": {
                       "id": "shovel",
                       "name": "Shovel",
@@ -1176,12 +2026,44 @@
                     },
                     "status": {
                       "money": -1.75
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_shovel",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+                    "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -1194,7 +2076,7 @@
                     "id": "buy_garden_rake",
                     "label": "I'll take it.",
                     "requiresMoney": 1.25,
-                    "response": "He sets the garden rake on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+                    "response": "He sets the garden rake on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
                     "grantItem": {
                       "id": "garden_rake",
                       "name": "Garden Rake",
@@ -1204,12 +2086,44 @@
                     },
                     "status": {
                       "money": -1.25
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_garden_rake",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+                    "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -1222,7 +2136,7 @@
                     "id": "buy_hand_drill",
                     "label": "I'll take it.",
                     "requiresMoney": 2.5,
-                    "response": "He sets the hand drill on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+                    "response": "He sets the hand drill on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
                     "grantItem": {
                       "id": "hand_drill",
                       "name": "Hand Drill",
@@ -1232,12 +2146,44 @@
                     },
                     "status": {
                       "money": -2.5
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_hand_drill",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+                    "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -1250,7 +2196,7 @@
                     "id": "buy_blacksmith_hammer",
                     "label": "I'll take it.",
                     "requiresMoney": 2.0,
-                    "response": "He sets the blacksmith's hammer on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+                    "response": "He sets the blacksmith's hammer on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
                     "grantItem": {
                       "id": "blacksmith_hammer",
                       "name": "Blacksmith's Hammer",
@@ -1260,12 +2206,44 @@
                     },
                     "status": {
                       "money": -2.0
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_blacksmith_hammer",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+                    "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -1278,7 +2256,7 @@
                     "id": "buy_mid_anvil",
                     "label": "I'll take it.",
                     "requiresMoney": 28.0,
-                    "response": "He sets the mid-sized anvil on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+                    "response": "He sets the mid-sized anvil on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
                     "grantItem": {
                       "id": "mid_anvil",
                       "name": "Mid-Sized Anvil",
@@ -1288,12 +2266,44 @@
                     },
                     "status": {
                       "money": -28.0
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_mid_anvil",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+                    "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -1306,7 +2316,7 @@
                     "id": "buy_box_of_nails",
                     "label": "I'll take it.",
                     "requiresMoney": 0.45,
-                    "response": "He sets the box of nails on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+                    "response": "He sets the box of nails on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
                     "grantItem": {
                       "id": "box_of_nails",
                       "name": "Box of Nails",
@@ -1316,12 +2326,44 @@
                     },
                     "status": {
                       "money": -0.45
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_box_of_nails",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+                    "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },
@@ -1334,7 +2376,7 @@
                     "id": "buy_copper_wire_spool",
                     "label": "I'll take it.",
                     "requiresMoney": 1.6,
-                    "response": "He sets the spool of copper wire on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"",
+                    "response": "He sets the spool of copper wire on the counter with both hands, the way a man handles weight he respects. \"Good iron. It'll serve you.\"\n\n\"Need anything else while you're here?\"",
                     "grantItem": {
                       "id": "copper_wire_spool",
                       "name": "Spool of Copper Wire",
@@ -1344,12 +2386,44 @@
                     },
                     "status": {
                       "money": -1.6
-                    }
+                    },
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   },
                   {
                     "id": "decline_copper_wire_spool",
                     "label": "Thanks, maybe next time.",
-                    "response": "\"No trouble,\" he says. \"Stock's not going anywhere.\""
+                    "response": "\"No trouble,\" he says. \"Stock's not going nowhere.\"\n\n\"Need anything else while you're here?\"",
+                    "closePhase": false,
+                    "choices": [
+                      {
+                        "id": "shop_look_again",
+                        "label": "Let me take another look.",
+                        "response": "\"Take your time,\" he says, nodding toward the stock.",
+                        "resumeChoiceId": "what_on_offer",
+                        "closePhase": false
+                      },
+                      {
+                        "id": "shop_no_thanks",
+                        "label": "No, thanks.",
+                        "response": "\"Fair enough,\" he says. \"Door's open when you need us.\"",
+                        "closePhase": true
+                      }
+                    ]
                   }
                 ]
               },

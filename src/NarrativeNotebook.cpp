@@ -131,14 +131,14 @@ void NarrativeNotebook::setContext(
     const ConversationManager* conversation,
     const ProgressionService* progression,
     const std::set<std::string>* committedLines,
-    float wallet,
+    const ChoiceAvailabilityContext& context,
     bool navEnabled,
     const std::function<void(const std::string&)>& onChoice)
 {
     conversationMgr = conversation;
     progressionService = progression;
     committedPlayerDialogLines = committedLines;
-    walletCash = wallet;
+    choiceContext = context;
     notebookNavEnabled = navEnabled;
     onChoiceSelected = onChoice;
 }
@@ -152,13 +152,14 @@ Rectangle NarrativeNotebook::getDialogBounds() const
 }
 
 std::vector<ConversationChoiceDef> NarrativeNotebook::filterChoices(
-    const std::vector<ConversationChoiceDef>& choices) const
+    const std::vector<ConversationChoiceDef>& choices,
+    const ChoiceAvailabilityContext& context) const
 {
     std::vector<ConversationChoiceDef> available;
     available.reserve(choices.size());
     for (const ConversationChoiceDef& choice : choices)
     {
-        if (choice.isAvailable(walletCash))
+        if (choice.isAvailable(context))
             available.push_back(choice);
     }
     return available;
@@ -809,7 +810,7 @@ std::vector<ConversationChoiceDef> NarrativeNotebook::filterChoices(
         const std::vector<ConversationChoiceDef>& choices,
         const std::string& scrollAnchorLine)
     {
-        const std::vector<ConversationChoiceDef> available = filterChoices(choices);
+        const std::vector<ConversationChoiceDef> available = filterChoices(choices, choiceContext);
         for (const ConversationChoiceDef& choice : available)
         {
             narrativeText += "\n";
@@ -1015,7 +1016,7 @@ void NarrativeNotebook::resetInventoryExamineScroll()
             if (isDialogChoiceLine(line))
             {
                 for (const ConversationChoiceDef& choice :
-                    filterChoices(conversationMgr->getPendingChoices()))
+                    filterChoices(conversationMgr->getPendingChoices(), choiceContext))
                 {
                     if (line != choice.label)
                         continue;
@@ -1176,14 +1177,37 @@ void NarrativeNotebook::resetInventoryExamineScroll()
             textColor);
         contentY += lineHeight * 1.2f;
 
-        layoutWrappedParagraph(
-            item->examineText.c_str(),
-            descriptionFont,
-            fontSize,
-            contentY,
-            true,
-            inventoryExamineScroll.getScrollY(),
-            textColor);
+        if (item->isUndefined)
+        {
+            DrawTextEx(
+                boldFont,
+                "Item not defined",
+                { dialog.x + xOffset, clipArea.y + contentY - inventoryExamineScroll.getScrollY() },
+                fontSize,
+                spacing,
+                textColor);
+            contentY += lineHeight * 1.2f;
+
+            layoutWrappedParagraph(
+                item->examineText.c_str(),
+                descriptionFont,
+                fontSize,
+                contentY,
+                true,
+                inventoryExamineScroll.getScrollY(),
+                textColor);
+        }
+        else
+        {
+            layoutWrappedParagraph(
+                item->examineText.c_str(),
+                descriptionFont,
+                fontSize,
+                contentY,
+                true,
+                inventoryExamineScroll.getScrollY(),
+                textColor);
+        }
 
         if (item->weightLb > 0.0f)
         {

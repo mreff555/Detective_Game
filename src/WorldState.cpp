@@ -1,6 +1,7 @@
 #include "WorldState.h"
 
 #include <InventoryMgr.h>
+#include <algorithm>
 namespace highline_ridge
 {
 
@@ -37,6 +38,7 @@ SavedGameState WorldState::snapshot(
     state.actionCount = actionCount;
     state.saloonRoomPurchasedDay = saloonRoomPurchasedDay;
     state.actorOpinions = actorOpinions;
+    state.actorTabOwed = actorTabOwed;
     state.knownActorIds = knownActorIds;
     conversationMgr.exportPersistState(state.conversation);
     milestoneMgr.exportPersistState(state.milestones);
@@ -75,6 +77,7 @@ bool WorldState::restore(
     actionCount = state.actionCount;
     saloonRoomPurchasedDay = state.saloonRoomPurchasedDay;
     actorOpinions = state.actorOpinions;
+    actorTabOwed = state.actorTabOwed;
     knownActorIds = state.knownActorIds;
 
     inventoryMgr.restoreFromSnapshots(state.inventoryItems);
@@ -112,6 +115,29 @@ void WorldState::applyActorOpinionDelta(const std::string& actorId, int delta)
         return;
 
     actorOpinions[actorId] += delta;
+}
+
+float WorldState::actorTabOwedTo(const std::string& actorId) const
+{
+    if (actorId.empty())
+        return 0.0f;
+
+    std::map<std::string, float>::const_iterator it = actorTabOwed.find(actorId);
+    if (it == actorTabOwed.end())
+        return 0.0f;
+
+    return std::max(0.0f, it->second);
+}
+
+void WorldState::applyActorTabDelta(const std::string& actorId, float delta)
+{
+    if (actorId.empty() || delta == 0.0f)
+        return;
+
+    float& tab = actorTabOwed[actorId];
+    tab = std::max(0.0f, tab + delta);
+    if (tab <= 0.0001f)
+        actorTabOwed.erase(actorId);
 }
 
 }

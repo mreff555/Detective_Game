@@ -494,4 +494,15 @@ std::string ItemDatabase::appendWalletCashDescription(
     return result;
 }
 
+std::string ItemDatabase::formatUndefinedItemExamineText(
+    const std::string& purchaseSceneId,
+    const std::string& itemName)
+{
+    std::string result = "Scene: ";
+    result += purchaseSceneId.empty() ? "(unknown)" : purchaseSceneId;
+    result += "\nItem: ";
+    result += itemName.empty() ? "(unnamed)" : itemName;
+    return result;
+}
+
 }

@@ -52,6 +52,7 @@ struct SavedGameState
     int actionCount = 0;
     int saloonRoomPurchasedDay = 0;
     std::map<std::string, int> actorOpinions;
+    std::map<std::string, float> actorTabOwed;
     std::set<std::string> knownActorIds;
 };
 

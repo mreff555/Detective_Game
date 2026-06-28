@@ -81,7 +81,7 @@
     },
     "straight_razor": {
       "name": "Straight Razor",
-      "description": "This Straignt razor was make by an experienced crafstment.  The french point, hollow-ground blade is made carbon steel, polished to a mirror finish and completed with the manufacturer's logo artisticaly etched on the tang.  The scale, made of Padauk wood was meticulously shaped and smoothed to both accomodate the blade and feel natural in hand. Finished with multiple coats of tounge oil.  The brass pins were installed with precision.  Peen marks are symmetrical and nearly non-existant.  The blade is sharp enough to split a hair without complaint.",
+      "description": "A straight razor in a fitted leather sheath, the blade hollow-ground and polished to a mirror that shows your face in fragments. The handle is horn, warm from the maker's bench, pinned with a brass tang. The edge is sharp enough to part a hair without complaint.",
       "weightLb": 0.22,
       "visuals": {
         "image": "resources/images/straight_razor_examine.png"
@@ -369,7 +369,7 @@
     },
     "spent_9mm_bullet": {
       "name": "Spent 9mm Bullet",
-      "description": "A nine-millimeter bullet retrieved from the dead man's thigh — projectile only, no brass casing attached. The round has been fired: the copper jacket is split and the lead nose is slightly mushroomed and misshapen from impact and whatever tissue it crossed before lodging against bone. Frozen blood still clings to the rifling grooves. Evidence, if you can find a laboratory above timberline.",
+      "description": "A nine-millimeter bullet retrieved from the dead man's thigh \u2014 projectile only, no brass casing attached. The round has been fired: the copper jacket is split and the lead nose is slightly mushroomed and misshapen from impact and whatever tissue it crossed before lodging against bone. Frozen blood still clings to the rifling grooves. Evidence, if you can find a laboratory above timberline.",
       "weightLb": 0.02,
       "visuals": {
         "image": "resources/images/spent_9mm_bullet_examine.png"

@@ -19,6 +19,8 @@ struct InventoryItem
     Texture2D examineImage{};
     std::string examineText;
     float weightLb = 0.0f;
+    bool isUndefined = false;
+    std::string undefinedPurchaseSceneId;
 };
 
 }

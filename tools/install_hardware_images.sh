@@ -15,12 +15,24 @@ install_examine() {
   sips -s format png -z 832 1248 "$SESSION/$src" --out "$ROOT/resources/images/$dest" >/dev/null
 }
 
+install_icon_file() {
+  local src="$1"
+  local dest="$2"
+  sips -s format png -z 256 256 "$src" --out "$ROOT/resources/icons/$dest" >/dev/null
+}
+
+install_examine_file() {
+  local src="$1"
+  local dest="$2"
+  sips -s format png -z 832 1248 "$src" --out "$ROOT/resources/images/$dest" >/dev/null
+}
+
 sips -s format png -z 1117 750 "$SESSION/80.jpg" --out "$ROOT/resources/images/alpine_hardware.png" >/dev/null
 
 install_icon 87.jpg mining_pick_icon.png
 install_icon 85.jpg shovel_icon.png
 install_icon 88.jpg garden_rake_icon.png
-install_icon 84.jpg hand_drill_icon.png
+install_icon_file "$ROOT/tools/hardware_sources/hand_drill_icon_src.jpg" hand_drill_icon.png
 install_icon 84.jpg blacksmith_hammer_icon.png
 install_icon 83.jpg mid_anvil_icon.png
 install_icon 82.jpg box_of_nails_icon.png
@@ -29,7 +41,7 @@ install_icon 81.jpg copper_wire_spool_icon.png
 install_examine 90.jpg mining_pick_examine.png
 install_examine 91.jpg shovel_examine.png
 install_examine 92.jpg garden_rake_examine.png
-install_examine 89.jpg hand_drill_examine.png
+install_examine_file "$ROOT/tools/hardware_sources/hand_drill_examine_src.jpg" hand_drill_examine.png
 install_examine 89.jpg blacksmith_hammer_examine.png
 install_examine 94.jpg mid_anvil_examine.png
 install_examine 95.jpg box_of_nails_examine.png

@@ -45,6 +45,7 @@ struct SubSceneDef
     std::vector<std::string> flags;
     std::vector<std::string> actorsPresent;
     std::vector<SceneInteractionDef> interactions;
+    bool focus = false;
 
     bool hasFlag(const std::string& flag) const;
     bool isDark() const { return hasFlag("dark"); }

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""Shared helpers for ridge shop item catalogs and 1891 pricing."""
+"""Boilerplate helpers for ridge merchant shops: catalogs, dialog, and post-purchase flow."""
 
 from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any
 
 ONES = {
     0: "zero",
@@ -35,6 +38,38 @@ TENS = {
     8: "eighty",
     9: "ninety",
 }
+
+
+@dataclass
+class ShopDialogConfig:
+    """Standard merchant dialog; every field may be overridden per shop."""
+
+    merchant_tone: str = "haberdasher"
+    phase_id: str = "shopkeeper"
+    catalog_choice_id: str = "what_on_offer"
+
+    intro: str = ""
+    resume_intro: str = ""
+
+    catalog_offer_label: str = "Yes, what do you have on offer?"
+    catalog_offer_response: str = ""
+
+    just_browsing_label: str = "Just browsing at the moment."
+    just_browsing_response: str = ""
+
+    catalog_done_label: str = "Thanks, just browsing."
+    catalog_done_response: str = ""
+
+    buy_label: str = "I'll take it."
+    decline_label: str = "Thanks, maybe next time."
+
+    anything_else_question: str = ""
+    look_again_label: str = "Let me take another look."
+    look_again_response: str = ""
+    no_thanks_label: str = "No, thanks."
+    no_thanks_response: str = ""
+
+    extra_top_level_choices: list[dict[str, Any]] = field(default_factory=list)
 
 
 def format_price(amount: float) -> str:
@@ -88,62 +123,218 @@ def grant_item(item: dict) -> dict:
     }
 
 
-def standard_purchase_choice(
-    item: dict,
-    *,
-    merchant_tone: str = "haberdasher",
-    sample_item: dict | None = None,
-) -> dict:
-    price = item["price"]
-    label = f"{item['name']} - {format_price(price)}"
+def _tone_defaults(config: ShopDialogConfig) -> ShopDialogConfig:
+    if config.merchant_tone == "hardware":
+        if not config.intro:
+            config.intro = (
+                "The merchant straightens from a ledger behind the counter and meets your "
+                "eyes without hurry. He is tall, broad through the chest and shoulders, "
+                "built like a man who has lifted iron all his life and meant to keep doing "
+                "it. His shirt is clean, his suspenders straight, his beard trimmed with "
+                "the same discipline he brings to stock and shelf.\n\n"
+                "\"Afternoon. What can I help you find?\""
+            )
+        if not config.resume_intro:
+            config.resume_intro = (
+                "He rests both hands on the counter, patient and square-shouldered. "
+                "\"What else do you need?\""
+            )
+        if not config.catalog_offer_response:
+            config.catalog_offer_response = (
+                "\"Everything you see and most of what you don't.\" He jerks his "
+                "chin toward the floor stock and wall tools. \"Picks, shovels, "
+                "rakes, drills, hammers, anvils, nails, wire, rope, lanterns, "
+                "mining goods. If a man means to build or dig at altitude, I stock "
+                "for it.\""
+            )
+        if not config.just_browsing_response:
+            config.just_browsing_response = (
+                "\"Then browse,\" he says. \"Mind the barrels and the low lantern "
+                "hooks. Holler if you want something down from the wall.\""
+            )
+        if not config.catalog_done_response:
+            config.catalog_done_response = (
+                "\"Suit yourself,\" he says, not unkindly. "
+                "\"Walk the aisles. Holler if you need a hand.\""
+            )
+        if not config.anything_else_question:
+            config.anything_else_question = "\"Need anything else while you're here?\""
+        if not config.look_again_response:
+            config.look_again_response = (
+                "\"Take your time,\" he says, nodding toward the stock."
+            )
+        if not config.no_thanks_response:
+            config.no_thanks_response = (
+                "\"Fair enough,\" he says. \"Door's open when you need us.\""
+            )
+    else:
+        if not config.intro:
+            config.intro = (
+                "The gentleman behind the counter sets down his pen and regards you with "
+                "practiced courtesy. His vest is pressed, his collar crisp, his hands clean "
+                "in the manner of a man who sells refinement at altitude.\n\n"
+                "\"Good day, sir. Is there anything I can help you find?\""
+            )
+        if not config.resume_intro:
+            config.resume_intro = (
+                "\"Now then, sir,\" he says, settling his hands on the counter. "
+                "\"What else may I help you find?\""
+            )
+        if not config.catalog_offer_response:
+            config.catalog_offer_response = (
+                "\"Well... anything you see here.\" He sweeps one hand across the "
+                "shelves and counter with the easy pride of a man who knows his "
+                "stock by heart. \"We also do custom jackets, shirts, vests, and "
+                "trousers.\""
+            )
+        if not config.just_browsing_response:
+            config.just_browsing_response = (
+                "\"Of course, sir,\" he says warmly. \"Take your time. "
+                "I will be here if you need anything.\""
+            )
+        if not config.catalog_done_response:
+            config.catalog_done_response = (
+                "\"Very well, sir,\" he says pleasantly. "
+                "\"Take your time with the room. I am here if you change your mind.\""
+            )
+        if not config.anything_else_question:
+            config.anything_else_question = "\"Anything else I may help you find?\""
+        if not config.look_again_response:
+            config.look_again_response = (
+                "\"By all means, sir,\" he says, stepping back from the counter."
+            )
+        if not config.no_thanks_response:
+            config.no_thanks_response = (
+                "\"A pleasure, sir,\" he says with a small bow. \"Do call again.\""
+            )
+    return config
 
-    if merchant_tone == "hardware":
-        pitch = (
-            f"\"Solid choice,\" he says. \"That'll be {price_words(price)}.\""
-        )
-        purchase = (
+
+def _merchant_pitch(item: dict, config: ShopDialogConfig) -> str:
+    price = item["price"]
+    if config.merchant_tone == "hardware":
+        return f"\"Solid choice,\" he says. \"That'll be {price_words(price)}.\""
+    return f"\"Excellent choice, sir,\" he says. \"That will be {price_words(price)}.\""
+
+
+def _merchant_purchase(item: dict, config: ShopDialogConfig) -> str:
+    if config.merchant_tone == "hardware":
+        return (
             f"He sets the {item['name'].lower()} on the counter with both hands, "
             "the way a man handles weight he respects. \"Good iron. It'll serve you.\""
         )
-        decline = (
-            "\"No trouble,\" he says. \"Stock's not going anywhere.\""
-        )
-    else:
-        pitch = (
-            f"\"Excellent choice, sir,\" he says. \"That will be {price_words(price)}.\""
-        )
-        purchase = (
-            f"He wraps the {item['name'].lower()} with the care of a man who believes "
-            "presentation is part of the purchase. \"A pleasure doing business with you, sir.\""
-        )
-        decline = (
-            "\"Of course, sir,\" he says with a courteous nod. "
-            "\"The goods will be here when you return.\""
-        )
+    return (
+        f"He wraps the {item['name'].lower()} with the care of a man who believes "
+        "presentation is part of the purchase. \"A pleasure doing business with you, sir.\""
+    )
 
+
+def _merchant_decline(config: ShopDialogConfig) -> str:
+    if config.merchant_tone == "hardware":
+        return "\"No trouble,\" he says. \"Stock's not going nowhere.\""
+    return (
+        "\"Of course, sir,\" he says with a courteous nod. "
+        "\"The goods will be here when you return.\""
+    )
+
+
+def post_transaction_followups(config: ShopDialogConfig) -> list[dict[str, Any]]:
+    return [
+        {
+            "id": "shop_look_again",
+            "label": config.look_again_label,
+            "response": config.look_again_response,
+            "resumeChoiceId": config.catalog_choice_id,
+            "closePhase": False,
+        },
+        {
+            "id": "shop_no_thanks",
+            "label": config.no_thanks_label,
+            "response": config.no_thanks_response,
+            "closePhase": True,
+        },
+    ]
+
+
+def wrap_transaction_leaf(
+    choice: dict[str, Any],
+    config: ShopDialogConfig,
+    *,
+    is_purchase: bool,
+) -> dict[str, Any]:
+    wrapped = dict(choice)
+    wrapped["closePhase"] = False
+    response = wrapped.get("response", "").rstrip()
+    if config.anything_else_question:
+        response = f"{response}\n\n{config.anything_else_question}"
+    wrapped["response"] = response
+    wrapped["choices"] = post_transaction_followups(config)
+    if not is_purchase:
+        wrapped.pop("requiresMoney", None)
+        wrapped.pop("grantItem", None)
+        wrapped.pop("status", None)
+    return wrapped
+
+
+def apply_post_transaction_to_leaves(
+    choices: list[dict[str, Any]],
+    config: ShopDialogConfig,
+) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    for choice in choices:
+        entry = dict(choice)
+        nested = entry.get("choices")
+        if nested:
+            entry["choices"] = apply_post_transaction_to_leaves(nested, config)
+            result.append(entry)
+            continue
+        if entry.get("id") == "catalog_done":
+            result.append(entry)
+            continue
+        choice_id = entry.get("id", "")
+        if choice_id.startswith("buy_"):
+            result.append(wrap_transaction_leaf(entry, config, is_purchase=True))
+        elif choice_id.startswith("decline_"):
+            result.append(wrap_transaction_leaf(entry, config, is_purchase=False))
+        else:
+            result.append(entry)
+    return result
+
+
+def standard_purchase_choice(
+    item: dict,
+    *,
+    config: ShopDialogConfig,
+) -> dict[str, Any]:
+    price = item["price"]
     return {
         "id": f"browse_{item['id']}",
-        "label": label,
-        "response": pitch,
+        "label": f"{item['name']} - {format_price(price)}",
+        "response": _merchant_pitch(item, config),
         "choices": [
             {
                 "id": f"buy_{item['id']}",
-                "label": "I'll take it.",
+                "label": config.buy_label,
                 "requiresMoney": price,
-                "response": purchase,
+                "response": _merchant_purchase(item, config),
                 "grantItem": grant_item(item),
                 "status": {"money": -price},
             },
             {
                 "id": f"decline_{item['id']}",
-                "label": "Thanks, maybe next time.",
-                "response": decline,
+                "label": config.decline_label,
+                "response": _merchant_decline(config),
             },
         ],
     }
 
 
-def custom_purchase_choice(item: dict, *, sample_item: dict) -> dict:
+def custom_purchase_choice(
+    item: dict,
+    *,
+    config: ShopDialogConfig,
+    sample_item: dict,
+) -> dict[str, Any]:
     price = item["price"]
     sample_price = sample_item["price"]
     return {
@@ -182,7 +373,7 @@ def custom_purchase_choice(item: dict, *, sample_item: dict) -> dict:
                 "choices": [
                     {
                         "id": f"buy_fabric_from_{item['id']}",
-                        "label": "I'll take it.",
+                        "label": config.buy_label,
                         "requiresMoney": sample_price,
                         "response": (
                             "He cuts a small square from the bolt with scissors that barely "
@@ -194,7 +385,7 @@ def custom_purchase_choice(item: dict, *, sample_item: dict) -> dict:
                     },
                     {
                         "id": f"decline_fabric_from_{item['id']}",
-                        "label": "Thanks, maybe next time.",
+                        "label": config.decline_label,
                         "response": (
                             "\"No trouble at all, sir,\" he says. "
                             "\"The cloth isn't going anywhere.\""
@@ -204,7 +395,7 @@ def custom_purchase_choice(item: dict, *, sample_item: dict) -> dict:
             },
             {
                 "id": f"decline_{item['id']}",
-                "label": "Thanks, maybe next time.",
+                "label": config.decline_label,
                 "response": (
                     "\"Of course, sir,\" he says. "
                     "\"Custom work requires patience on both sides.\""
@@ -217,39 +408,96 @@ def custom_purchase_choice(item: dict, *, sample_item: dict) -> dict:
 def catalog_choices(
     items: list[dict],
     *,
+    config: ShopDialogConfig | None = None,
     merchant_tone: str = "haberdasher",
     sample_item: dict | None = None,
-    browse_done_label: str = "Thanks, just browsing.",
-    browse_done_response: str = "",
-) -> list[dict]:
-    choices = []
+    browse_done_label: str | None = None,
+    browse_done_response: str | None = None,
+) -> list[dict[str, Any]]:
+    if config is None:
+        config = ShopDialogConfig(merchant_tone=merchant_tone)
+    config = _tone_defaults(config)
+    if config.merchant_tone != merchant_tone:
+        config.merchant_tone = merchant_tone
+        config = _tone_defaults(config)
+
+    if browse_done_label is not None:
+        config.catalog_done_label = browse_done_label
+    if browse_done_response is not None:
+        config.catalog_done_response = browse_done_response
+
+    choices: list[dict[str, Any]] = []
     for item in items:
         if sample_item is not None and item.get("custom"):
-            choices.append(custom_purchase_choice(item, sample_item=sample_item))
+            choices.append(
+                custom_purchase_choice(item, config=config, sample_item=sample_item)
+            )
         elif item.get("custom"):
             raise ValueError(f"custom item {item['id']} requires sample_item")
         else:
-            choices.append(
-                standard_purchase_choice(item, merchant_tone=merchant_tone)
-            )
-
-    if not browse_done_response:
-        if merchant_tone == "hardware":
-            browse_done_response = (
-                "\"Suit yourself,\" he says, not unkindly. "
-                "\"Walk the aisles. Holler if you need a hand.\""
-            )
-        else:
-            browse_done_response = (
-                "\"Very well, sir,\" he says pleasantly. "
-                "\"Take your time with the room. I am here if you change your mind.\""
-            )
+            choices.append(standard_purchase_choice(item, config=config))
 
     choices.append(
         {
             "id": "catalog_done",
-            "label": browse_done_label,
-            "response": browse_done_response,
+            "label": config.catalog_done_label,
+            "response": config.catalog_done_response,
         }
     )
-    return choices
+    return apply_post_transaction_to_leaves(choices, config)
+
+
+def build_shop_main_phase(
+    items: list[dict],
+    *,
+    config: ShopDialogConfig,
+    sample_item: dict | None = None,
+    requires_flag: str = "",
+) -> dict[str, Any]:
+    config = _tone_defaults(config)
+    catalog = catalog_choices(items, config=config, sample_item=sample_item)
+
+    phase: dict[str, Any] = {
+        "id": config.phase_id,
+        "type": "scripted",
+        "resetOnSceneEnter": True,
+        "intro": config.intro,
+        "resumeIntro": config.resume_intro,
+        "choices": [
+            {
+                "id": config.catalog_choice_id,
+                "label": config.catalog_offer_label,
+                "response": config.catalog_offer_response,
+                "choices": catalog,
+            },
+            *config.extra_top_level_choices,
+            {
+                "id": "just_browsing",
+                "label": config.just_browsing_label,
+                "response": config.just_browsing_response,
+            },
+        ],
+    }
+    if requires_flag:
+        phase["requiresFlag"] = requires_flag
+    return phase
+
+
+def build_shop_conversation(
+    items: list[dict],
+    *,
+    config: ShopDialogConfig,
+    sample_item: dict | None = None,
+    greeting_phases: list[dict[str, Any]] | None = None,
+    requires_flag: str = "",
+) -> dict[str, Any]:
+    phases = list(greeting_phases or [])
+    phases.append(
+        build_shop_main_phase(
+            items,
+            config=config,
+            sample_item=sample_item,
+            requires_flag=requires_flag,
+        )
+    )
+    return {"speakPhases": phases}

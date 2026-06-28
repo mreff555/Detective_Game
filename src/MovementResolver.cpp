@@ -183,20 +183,43 @@ MovementResolution MovementResolver::resolveDirection(
     if (unmasked.empty())
         return resolution;
 
+    const MovementMappingDef* chosen = unmasked.front();
     if (unmasked.size() > 1)
     {
-        TraceLog(
-            LOG_WARNING,
-            "Movement mask ambiguity in scene '%s' direction '%s': %d unmasked mappings; using '%s'",
-            scene.id.c_str(),
-            direction.c_str(),
-            (int)unmasked.size(),
-            unmasked.front()->id.c_str());
+        std::vector<const MovementMappingDef*> conditional;
+        std::vector<const MovementMappingDef*> unconditional;
+        conditional.reserve(unmasked.size());
+        unconditional.reserve(unmasked.size());
+        for (const MovementMappingDef* candidate : unmasked)
+        {
+            if (candidate->defaultMasked)
+                conditional.push_back(candidate);
+            else
+                unconditional.push_back(candidate);
+        }
+
+        if (!conditional.empty())
+            chosen = conditional.front();
+        else
+            chosen = unconditional.front();
+
+        const bool stillAmbiguous = conditional.size() > 1
+            || (conditional.empty() && unconditional.size() > 1);
+        if (stillAmbiguous)
+        {
+            TraceLog(
+                LOG_WARNING,
+                "Movement mask ambiguity in scene '%s' direction '%s': %d unmasked mappings; using '%s'",
+                scene.id.c_str(),
+                direction.c_str(),
+                (int)unmasked.size(),
+                chosen->id.c_str());
+        }
     }
 
     resolution.available = true;
-    resolution.target = unmasked.front()->target;
-    resolution.mappingId = unmasked.front()->id;
+    resolution.target = chosen->target;
+    resolution.mappingId = chosen->id;
     return resolution;
 }
 

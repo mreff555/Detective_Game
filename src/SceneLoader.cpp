@@ -226,6 +226,7 @@ bool parseStatusEffect(const nlohmann::json& status, StatusEffect& out)
     out.charisma = status.value("charisma", 0.0f);
     out.money = status.value("money", 0.0f);
     out.actorOpinion = status.value("actorOpinion", 0);
+    out.actorTab = status.value("actorTab", 0.0f);
     out.repeat = status.value("repeat", false);
     out.onZeroLucidity = status.value("onZeroLucidity", "");
 
@@ -300,10 +301,18 @@ bool parseConversationChoice(const nlohmann::json& choice, ConversationChoiceDef
         return false;
 
     out.requiresMoney = choice.value("requiresMoney", 0.0f);
+    out.requiresInsufficientMoney = choice.value("requiresInsufficientMoney", 0.0f);
+    out.tabActor = choice.value("tabActor", "");
+    out.requiresPositiveActorTab = choice.value("requiresPositiveActorTab", false);
+    out.requiresPayActorTabInFull = choice.value("requiresPayActorTabInFull", false);
+    out.requiresInsufficientForActorTab = choice.value("requiresInsufficientForActorTab", false);
+    out.payActorTabInFull = choice.value("payActorTabInFull", false);
+    out.requiresSaloonRoomAvailable = choice.value("requiresSaloonRoomAvailable", false);
     out.closePhase = choice.value("closePhase", true);
     out.consumeOnSelect = choice.value("consumeOnSelect", false);
     out.persistConsumed = choice.value("persistConsumed", false);
     out.resumeTopLevel = choice.value("resumeTopLevel", false);
+    out.resumeChoiceId = choice.value("resumeChoiceId", "");
     out.grantStoryFlag = choice.value("grantStoryFlag", "");
     out.startPhase = choice.value("startPhase", "");
     out.skipIntroOnStartPhase = choice.value("skipIntroOnStartPhase", false);
@@ -776,6 +785,7 @@ bool parseInteraction(const nlohmann::json& interaction, SceneInteractionDef& ou
     out.id = interaction.value("id", "");
     out.label = interaction.value("label", "");
     out.useDetails = interaction.value("useDetails", "");
+    out.sketchPath = interaction.value("sketch", "");
     out.exitSceneId = interaction.value("exitSceneId", "");
     out.useFlag = interaction.value("useFlag", "");
     out.hideWhenStoryFlag = interaction.value("hideWhenStoryFlag", "");
@@ -1117,6 +1127,7 @@ bool parseSubScene(
     out.useRequiresExamine = node.value("useRequiresExamine", true);
     out.useAdvancesDay = node.value("advancesDay", false);
     out.useExit = node.value("useExit", "");
+    out.focus = node.value("focus", false);
 
     if (!parseMovement(node.value("movement", nlohmann::json::object()), out.movement))
         return false;

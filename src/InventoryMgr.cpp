@@ -84,14 +84,14 @@ void InventoryMgr::setUiBackdrop(const UiBackdrop* backdrop)
 
 bool InventoryMgr::isItemIconReady(const InventoryItem& item) const
 {
-    return item.icon.id != 0 && IsTextureValid(item.icon);
+    return item.isUndefined || (item.icon.id != 0 && IsTextureValid(item.icon));
 }
 
 bool InventoryMgr::hasLoadedAssets() const
 {
     for (const InventoryItem& item : items)
     {
-        if (!isItemIconReady(item))
+        if (!item.isUndefined && !isItemIconReady(item))
             return false;
     }
 
@@ -395,7 +395,7 @@ void InventoryMgr::refreshItemFromDatabase(const std::string& id)
         return;
 
     InventoryItem* item = findMutableItem(id);
-    if (item == nullptr)
+    if (item == nullptr || item->isUndefined)
         return;
 
     const Texture2D icon = item->icon;
@@ -823,7 +823,7 @@ void InventoryMgr::drawItemGrid() const
 
         DrawRectangleRounded(slot, 0.18f, 8, fill);
 
-        if (isItemIconReady(items[i]) && !(isDraggingItem && items[i].id == dragItemId))
+        if (!(isDraggingItem && items[i].id == dragItemId))
         {
             const float iconPad = 10.0f;
             const Rectangle iconArea = {
@@ -832,16 +832,22 @@ void InventoryMgr::drawItemGrid() const
                 slot.width - iconPad * 2.0f,
                 slot.height - iconPad * 2.0f
             };
-            DrawTexturePro(
-                items[i].icon,
-                { 0.0f, 0.0f, (float)items[i].icon.width, (float)items[i].icon.height },
-                iconArea,
-                { 0.0f, 0.0f },
-                0.0f,
-                WHITE);
 
-            if (items[i].id == "wallet")
-                drawWalletCashBadge(slot);
+            if (items[i].isUndefined)
+                drawUndefinedItemIcon(iconArea);
+            else if (isItemIconReady(items[i]))
+            {
+                DrawTexturePro(
+                    items[i].icon,
+                    { 0.0f, 0.0f, (float)items[i].icon.width, (float)items[i].icon.height },
+                    iconArea,
+                    { 0.0f, 0.0f },
+                    0.0f,
+                    WHITE);
+
+                if (items[i].id == "wallet")
+                    drawWalletCashBadge(slot);
+            }
         }
     }
 
@@ -860,13 +866,31 @@ void InventoryMgr::drawItemGrid() const
     }
 }
 
+void InventoryMgr::drawUndefinedItemIcon(const Rectangle& iconArea) const
+{
+    const Color xColor = { 220, 48, 48, 255 };
+    const float thickness = std::max(4.0f, iconArea.width * 0.12f);
+    const float inset = iconArea.width * 0.12f;
+
+    DrawLineEx(
+        { iconArea.x + inset, iconArea.y + inset },
+        { iconArea.x + iconArea.width - inset, iconArea.y + iconArea.height - inset },
+        thickness,
+        xColor);
+    DrawLineEx(
+        { iconArea.x + iconArea.width - inset, iconArea.y + inset },
+        { iconArea.x + inset, iconArea.y + iconArea.height - inset },
+        thickness,
+        xColor);
+}
+
 void InventoryMgr::drawDragGhost() const
 {
     if (!isDraggingItem || dragItemId.empty())
         return;
 
     const InventoryItem* item = findItem(dragItemId);
-    if (item == nullptr || !isItemIconReady(*item))
+    if (item == nullptr || (!item->isUndefined && !isItemIconReady(*item)))
         return;
 
     const Vector2 mousePos = GetMousePosition();
@@ -888,6 +912,13 @@ void InventoryMgr::drawDragGhost() const
         ghostArea.width - iconPad * 2.0f,
         ghostArea.height - iconPad * 2.0f
     };
+
+    if (item->isUndefined)
+    {
+        drawUndefinedItemIcon(iconArea);
+        return;
+    }
+
     DrawTexturePro(
         item->icon,
         { 0.0f, 0.0f, (float)item->icon.width, (float)item->icon.height },
@@ -1021,6 +1052,8 @@ std::vector<InventoryItem> InventoryMgr::exportItemSnapshots() const
         snapshot.examineImagePath = item.examineImagePath;
         snapshot.examineText = item.examineText;
         snapshot.weightLb = item.weightLb;
+        snapshot.isUndefined = item.isUndefined;
+        snapshot.undefinedPurchaseSceneId = item.undefinedPurchaseSceneId;
         snapshot.instance = item.instance;
         snapshots.push_back(snapshot);
     }
@@ -1075,7 +1108,9 @@ void InventoryMgr::restoreFromSnapshots(const std::vector<InventoryItem>& savedI
             continue;
 
         InventoryItem restored = savedItem;
-        if (itemDatabase != nullptr && itemDatabase->hasDef(savedItem.id))
+        if (itemDatabase != nullptr
+            && itemDatabase->hasDef(savedItem.id)
+            && !savedItem.isUndefined)
         {
             ItemDefOverrides overrides;
             overrides.name = savedItem.name;

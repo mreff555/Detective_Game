@@ -41,12 +41,15 @@ class WorldState
     int actionCount = 0;
     int saloonRoomPurchasedDay = 0;
     std::map<std::string, int> actorOpinions;
+    std::map<std::string, float> actorTabOwed;
 
     void recordAction() { ++actionCount; }
     bool isActorKnown(const std::string& actorId) const;
     void markActorKnown(const std::string& actorId);
     int actorOpinionOf(const std::string& actorId) const;
     void applyActorOpinionDelta(const std::string& actorId, int delta);
+    float actorTabOwedTo(const std::string& actorId) const;
+    void applyActorTabDelta(const std::string& actorId, float delta);
     void advanceDay() { ++day; }
 
     SavedGameState snapshot(

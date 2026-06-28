@@ -2,6 +2,8 @@
 #define CONVERSATION_STRUCT_H
 
 #include <SceneOverlayDef.h>
+#include <algorithm>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -19,6 +21,7 @@ struct StatusEffect
     float money = 0.0f;
     std::string actor;
     int actorOpinion = 0;
+    float actorTab = 0.0f;
     bool repeat = false;
     std::string onZeroLucidity;
 
@@ -33,9 +36,39 @@ struct StatusEffect
         return !actor.empty() && actorOpinion != 0;
     }
 
+    bool hasActorTabDelta() const
+    {
+        return !actor.empty() && actorTab != 0.0f;
+    }
+
     bool hasDelta() const
     {
-        return hasPlayerDelta() || hasActorOpinionDelta();
+        return hasPlayerDelta() || hasActorOpinionDelta() || hasActorTabDelta();
+    }
+};
+
+struct ChoiceAvailabilityContext
+{
+    float walletCash = 0.0f;
+    const std::map<std::string, float>* actorTabOwed = nullptr;
+    int currentDay = 1;
+    int saloonRoomPurchasedDay = 0;
+
+    bool hasSaloonRoomTonight() const
+    {
+        return saloonRoomPurchasedDay > 0 && saloonRoomPurchasedDay == currentDay;
+    }
+
+    float actorTabOwedTo(const std::string& actorId) const
+    {
+        if (actorId.empty() || actorTabOwed == nullptr)
+            return 0.0f;
+
+        std::map<std::string, float>::const_iterator it = actorTabOwed->find(actorId);
+        if (it == actorTabOwed->end())
+            return 0.0f;
+
+        return std::max(0.0f, it->second);
     }
 };
 
@@ -68,19 +101,55 @@ struct ConversationChoiceDef
     StatusEffect status;
     GrantedInventoryItemDef grantItem;
     float requiresMoney = 0.0f;
+    float requiresInsufficientMoney = 0.0f;
+    std::string tabActor;
+    bool requiresPositiveActorTab = false;
+    bool requiresPayActorTabInFull = false;
+    bool requiresInsufficientForActorTab = false;
+    bool payActorTabInFull = false;
+    bool requiresSaloonRoomAvailable = false;
     bool closePhase = true;
     bool consumeOnSelect = false;
     bool persistConsumed = false;
     bool resumeTopLevel = false;
+    std::string resumeChoiceId;
     std::string grantStoryFlag;
     std::string startPhase;
     bool skipIntroOnStartPhase = false;
     std::vector<OverlaySequenceStep> overlaySequence;
     std::vector<ConversationChoiceDef> followUpChoices;
 
+    bool isAvailable(const ChoiceAvailabilityContext& context) const
+    {
+        if (requiresMoney > 0.0f && context.walletCash < requiresMoney)
+            return false;
+
+        if (requiresInsufficientMoney > 0.0f && context.walletCash >= requiresInsufficientMoney)
+            return false;
+
+        const std::string actorId = tabActor;
+        const float tabOwed = context.actorTabOwedTo(actorId);
+
+        if (requiresPositiveActorTab && tabOwed <= 0.0f)
+            return false;
+
+        if (requiresPayActorTabInFull && (tabOwed <= 0.0f || context.walletCash < tabOwed))
+            return false;
+
+        if (requiresInsufficientForActorTab && (tabOwed <= 0.0f || context.walletCash >= tabOwed))
+            return false;
+
+        if (requiresSaloonRoomAvailable && context.hasSaloonRoomTonight())
+            return false;
+
+        return true;
+    }
+
     bool isAvailable(float walletCash) const
     {
-        return requiresMoney <= 0.0f || walletCash >= requiresMoney;
+        ChoiceAvailabilityContext context;
+        context.walletCash = walletCash;
+        return isAvailable(context);
     }
 };
 

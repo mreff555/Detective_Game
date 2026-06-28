@@ -56,6 +56,9 @@ class ItemDatabase
     static std::string appendWalletCashDescription(
         const std::string& baseDescription,
         float walletCash);
+    static std::string formatUndefinedItemExamineText(
+        const std::string& purchaseSceneId,
+        const std::string& itemName);
 
     private:
     std::map<std::string, ItemDef> items;

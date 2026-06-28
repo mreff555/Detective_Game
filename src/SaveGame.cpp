@@ -49,6 +49,32 @@ void actorOpinionsFromJson(const nlohmann::json& object, std::map<std::string, i
     }
 }
 
+nlohmann::json actorTabOwedToJson(const std::map<std::string, float>& actorTabOwed)
+{
+    nlohmann::json object = nlohmann::json::object();
+    for (std::map<std::string, float>::const_iterator it = actorTabOwed.begin();
+         it != actorTabOwed.end();
+         ++it)
+        object[it->first] = it->second;
+    return object;
+}
+
+void actorTabOwedFromJson(const nlohmann::json& object, std::map<std::string, float>& outActorTabOwed)
+{
+    outActorTabOwed.clear();
+    if (!object.is_object())
+        return;
+
+    for (auto it = object.begin(); it != object.end(); ++it)
+    {
+        if (!it.value().is_number())
+            continue;
+        const float tab = std::max(0.0f, it.value().get<float>());
+        if (tab > 0.0f)
+            outActorTabOwed[it.key()] = tab;
+    }
+}
+
 template<typename Set>
 void jsonArrayToSet(const nlohmann::json& array, Set& outValues)
 {
@@ -127,7 +153,7 @@ nlohmann::json inventoryToJson(const std::vector<InventoryItem>& items)
         if (item.id.empty())
             continue;
 
-        array.push_back({
+        nlohmann::json entry = {
             {"id", item.id},
             {"name", item.name},
             {"iconPath", item.iconPath},
@@ -135,7 +161,13 @@ nlohmann::json inventoryToJson(const std::vector<InventoryItem>& items)
             {"examineText", item.examineText},
             {"weightLb", item.weightLb},
             {"instance", itemInstanceToJson(item.instance)}
-        });
+        };
+        if (item.isUndefined)
+        {
+            entry["isUndefined"] = true;
+            entry["undefinedPurchaseSceneId"] = item.undefinedPurchaseSceneId;
+        }
+        array.push_back(entry);
     }
     return array;
 }
@@ -342,6 +374,8 @@ void inventoryFromJson(const nlohmann::json& array, std::vector<InventoryItem>& 
         item.examineImagePath = entry.value("examineImagePath", "");
         item.examineText = entry.value("examineText", "");
         item.weightLb = entry.value("weightLb", 0.0f);
+        item.isUndefined = entry.value("isUndefined", false);
+        item.undefinedPurchaseSceneId = entry.value("undefinedPurchaseSceneId", "");
 
         const nlohmann::json& instance = entry.value("instance", nlohmann::json::object());
         if (instance.is_object() && !instance.empty())
@@ -643,6 +677,7 @@ bool writeSaveFile(const std::string& path, const SavedGameState& state, const S
     root["actionCount"] = state.actionCount;
     root["saloonRoomPurchasedDay"] = state.saloonRoomPurchasedDay;
     root["actorOpinions"] = actorOpinionsToJson(state.actorOpinions);
+    root["actorTabOwed"] = actorTabOwedToJson(state.actorTabOwed);
     root["knownActorIds"] = setToJsonArray(state.knownActorIds);
 
     std::ofstream file(path.c_str());
@@ -709,6 +744,7 @@ bool readSaveFile(const std::string& path, SavedGameState& state, SaveSlotMetada
     state.actionCount = root.value("actionCount", state.actionCount);
     state.saloonRoomPurchasedDay = root.value("saloonRoomPurchasedDay", state.saloonRoomPurchasedDay);
     actorOpinionsFromJson(root.value("actorOpinions", nlohmann::json::object()), state.actorOpinions);
+    actorTabOwedFromJson(root.value("actorTabOwed", nlohmann::json::object()), state.actorTabOwed);
 
     const int saveVersion = root.value("version", 4);
     if (saveVersion >= 8)
