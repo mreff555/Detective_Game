@@ -9,6 +9,7 @@
 #include <InventoryMgr.h>
 #include <ItemCombinationDatabase.h>
 #include <ItemDatabase.h>
+#include <ItemDef.h>
 #include <DropConfirmMgr.h>
 #include <SaveLoadMenuMgr.h>
 #include <PauseMenuMgr.h>
@@ -116,6 +117,8 @@ class GameSession
     void takeFromExaminedItem();
     void playDialogAudio(const SpeakResult& result);
     void playInteractionTts(const SceneInteractionDef& interaction, bool includeAfter = false);
+    void playSceneNarrativeTts(const ItemTtsDef& tts);
+    void playSceneNarrativeTtsSequence(const std::vector<std::string>& audioPaths);
     void applyStatusEffects(const std::vector<StatusEffect>& effects);
     void handleNarrativeChoiceInput();
     void appendChoiceLinesToNarrative(
@@ -131,7 +134,10 @@ class GameSession
     void triggerCaveWakeHypoxiaSequence();
     void recordPlayerAction();
     void evaluateMilestones();
-    void applyLocationStruct(const LocationStruct& locationStruct, const std::string& fromRoom = "");
+    void applyLocationStruct(
+        const LocationStruct& locationStruct,
+        const std::string& fromRoom = "",
+        bool playDescriptionTts = true);
     void transitionToScene(const std::string& sceneId, const std::string& subSceneId = "");
     void syncActiveSubScene();
     void tryMove(const std::string& direction);
@@ -233,7 +239,9 @@ class GameSession
     bool ownsLocationImage = false;
     bool isUnderConstruction = false;
     std::string baseDescription;
+    ItemTtsDef descriptionTts;
     std::string examineDetails;
+    ItemTtsDef examineTts;
     std::string examineFlag;
     float examineLucidityDelta = 0.0f;
     bool examineLucidityOncePerDay = false;

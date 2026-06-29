@@ -231,7 +231,9 @@
             "id": "back_from_letter",
             "target": "cellar_passage_storage",
             "masked": true,
-            "unmaskWhen": { "subScene": "desk_letter" }
+            "unmaskWhen": {
+              "subScene": "desk_letter"
+            }
           },
           {
             "id": "back_to_shaft",
@@ -244,29 +246,64 @@
             "id": "forward_beyond_door",
             "target": "cellar_passage_beyond_door",
             "masked": true,
-            "unmaskWhen": { "flag": "cellar_passage:door_open" }
+            "unmaskWhen": {
+              "flag": "cellar_passage:door_open"
+            }
           }
         ]
       },
       "subSceneRules": [
-        { "when": { "flag": "cellar_passage:door_open" }, "subScene": "lit_door_open" },
-        { "when": { "flag": "cellar_passage:lanterns_lit" }, "subScene": "lit" },
-        { "default": true, "subScene": "unlit" }
+        {
+          "when": {
+            "flag": "cellar_passage:door_open"
+          },
+          "subScene": "lit_door_open"
+        },
+        {
+          "when": {
+            "flag": "cellar_passage:lanterns_lit"
+          },
+          "subScene": "lit"
+        },
+        {
+          "default": true,
+          "subScene": "unlit"
+        }
       ],
       "subScenes": {
         "unlit": {
           "image": "resources/images/cellar_passage_storage.png",
-          "flags": ["dark"],
-          "movement": { "backward": true },
-          "movementMask": { "backward": true, "forward": false },
-          "actions": { "examine": true, "use": true }
+          "flags": [
+            "dark"
+          ],
+          "movement": {
+            "backward": true
+          },
+          "movementMask": {
+            "backward": true,
+            "forward": false
+          },
+          "actions": {
+            "examine": true,
+            "use": true
+          }
         },
         "lit": {
           "image": "resources/images/cellar_passage_storage_lit.png",
-          "flags": ["provides_light"],
-          "movement": { "backward": true },
-          "movementMask": { "backward": true, "forward": false },
-          "actions": { "examine": true, "use": true },
+          "flags": [
+            "provides_light"
+          ],
+          "movement": {
+            "backward": true
+          },
+          "movementMask": {
+            "backward": true,
+            "forward": false
+          },
+          "actions": {
+            "examine": true,
+            "use": true
+          },
           "interactions": [
             {
               "id": "light_passage_lanterns",
@@ -290,10 +327,21 @@
         },
         "lit_door_open": {
           "image": "resources/images/cellar_passage_storage_door_open.png",
-          "flags": ["provides_light"],
-          "movement": { "backward": true, "forward": true },
-          "movementMask": { "backward": true, "forward": true },
-          "actions": { "examine": true, "use": true },
+          "flags": [
+            "provides_light"
+          ],
+          "movement": {
+            "backward": true,
+            "forward": true
+          },
+          "movementMask": {
+            "backward": true,
+            "forward": true
+          },
+          "actions": {
+            "examine": true,
+            "use": true
+          },
           "interactions": [
             {
               "id": "read_hector_letter",
@@ -311,10 +359,20 @@
           "image": "resources/images/hector_letter_desk.png",
           "description": "You lean over the scarred pine desk. A cream letter lies flat on the green blotter beside a brass desk lamp and a chipped ink tray. Sloppy cursive covers the page — too fine to read from this distance, but clear enough that someone meant every word of it.",
           "examineDetails": "The desk is plain pine, scarred by years of use. Warm lamplight pools across a green felt blotter, a feather quill in a chipped ceramic tray, and the letter itself — cream stock warmed at the edges, covered in sprawling cursive. The ink has dried to a deep blue-black. You would need to hold the page closer to make out individual words, but the hand is impatient and sure of itself. Hector's, you would wager, once you have seen the loops on the capital H.",
-          "flags": ["provides_light"],
-          "movement": { "backward": true },
-          "movementMask": { "backward": true, "forward": false },
-          "actions": { "examine": true, "use": true },
+          "flags": [
+            "provides_light"
+          ],
+          "movement": {
+            "backward": true
+          },
+          "movementMask": {
+            "backward": true,
+            "forward": false
+          },
+          "actions": {
+            "examine": true,
+            "use": true
+          },
           "interactions": [
             {
               "id": "set_down_letter",
@@ -719,7 +777,7 @@
       "audio": {
         "music": {
           "path": "resources/audio/music/mountain_wind.mp3",
-          "volume": 0.40,
+          "volume": 0.4,
           "fade_in": 4.0,
           "fade_out": 2.5,
           "loop": true
@@ -734,7 +792,7 @@
           },
           {
             "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
-            "volume": 0.20,
+            "volume": 0.2,
             "fade_in": 3.0,
             "fade_out": 2.0,
             "loop": true
@@ -1041,12 +1099,17 @@
       },
       "subSceneRules": [
         {
-          "when": { "flag": "saloon_interior:room_tab" },
+          "when": {
+            "flag": "saloon_interior:room_tab"
+          },
           "subScene": "burgundy_encounter",
           "untilPhase": "burgundy_woman",
           "applyOnEnter": false
         },
-        { "default": true, "subScene": "main_bar" }
+        {
+          "default": true,
+          "subScene": "main_bar"
+        }
       ],
       "subScenes": {
         "main_bar": {
@@ -1054,7 +1117,9 @@
         },
         "burgundy_encounter": {
           "image": "resources/images/saloon_interior_carrie_encounter.png",
-          "actorsPresent": ["burgundy_woman"]
+          "actorsPresent": [
+            "burgundy_woman"
+          ]
         }
       },
       "audio": {
@@ -1576,7 +1641,26 @@
       "defaultSubScene": "toward_exit",
       "image": "resources/images/snow_cave_interior.png",
       "description": "You come to in pain — a deep, sick ache behind your eyes and along your ribs, as though the mountain struck you and left you here to think about it. You are disoriented. You do not remember how you arrived, who brought you, or what day it is.\n\nThe dark behind you is absolute. Ahead, pale daylight cuts a low opening in the stone — the cave mouth, rimed with ice, barely wide enough for a man on his knees. On the frozen floor within arm's reach, a fan of blood has stiffened to black-red ice. No body. No witness. You stare at it long enough to understand, with a cold certainty that settles worse than the pain: it is yours.\n\nYou pull yourself to your knees and prepare to crawl out of this eerie little cave.",
+      "descriptionTts": {
+        "tts": true,
+        "ttsAudio": "resources/audio/tts/snow_cave_interior/toward_exit_description.mp3",
+        "ttsText": "You come to in pain. A deep, sick ache sits behind your eyes and along your ribs, as though the mountain struck you and left you here to think about it. You are disoriented. You do not remember how you arrived, who brought you, or what day it is. The dark behind you is absolute. Ahead, pale daylight cuts a low opening in the stone, the cave mouth rimed with ice, barely wide enough for a man on his knees. On the frozen floor within arm's reach, a fan of blood has stiffened to black-red ice. No body. No witness. You stare at it long enough to understand, with a cold certainty that settles worse than the pain. It is yours. You pull yourself to your knees and prepare to crawl out of this eerie little cave.",
+        "ttsTextSha256": "60aec4cd151c6af138186c10381cd8ecdfda5be65687b6c89aeece3433b9e262"
+      },
+      "wakeNarrative": "Consciousness returns in fragments — pain first, then cold stone, then the thin daylight at the cave mouth. Your mouth tastes of iron. Memory stays blank.",
+      "wakeTts": {
+        "tts": true,
+        "ttsAudio": "resources/audio/tts/snow_cave_interior/lucidity_wake.mp3",
+        "ttsText": "Consciousness returns in fragments. Pain first, then cold stone, then the thin daylight at the cave mouth. Your mouth tastes of iron. Memory stays blank.",
+        "ttsTextSha256": "71fd45f5943d7eace21df1c33fcee0c53aec2ee9878f0581ac7148fa74650a11"
+      },
       "examineDetails": "You brace on the wet stone and force yourself to take inventory while the pain clears in slow, unwilling waves.\n\nThe cave is natural basalt, slick with melt and rimed where the cold holds. Sound behaves wrongly here — your breath returns from the dark a half beat late, as though the chamber were listening. The wind outside is a distant complaint through the mouth of the cave.\n\nThe blood is frozen in a ragged fan where you must have fallen. The edges are sharp against the stone. Nothing suggests a struggle beyond your own collapse — no drag marks, no second set of prints in the snow dust.\n\nThe only light is the pale day at the low entrance ahead. The rest of the cave stays black. You have one way out: crawl toward the rimed opening and the howling ridge beyond.",
+      "examineTts": {
+        "tts": true,
+        "ttsAudio": "resources/audio/tts/snow_cave_interior/toward_exit_examine.mp3",
+        "ttsText": "You brace on the wet stone and force yourself to take inventory while the pain clears in slow, unwilling waves. The cave is natural basalt, slick with melt and rimed where the cold holds. Sound behaves wrongly here. Your breath returns from the dark a half beat late, as though the chamber were listening. The wind outside is a distant complaint through the mouth of the cave. The blood is frozen in a ragged fan where you must have fallen. The edges are sharp against the stone. Nothing suggests a struggle beyond your own collapse. No drag marks. No second set of prints in the snow dust. The only light is the pale day at the low entrance ahead. The rest of the cave stays black. You have one way out. Crawl toward the rimed opening and the howling ridge beyond.",
+        "ttsTextSha256": "52da1028d32411e87fe7502dac1d26c05fd9a9d16f94056d1048841a225c8fda"
+      },
       "useDetails": "",
       "movement": {
         "forward": false,
@@ -1594,26 +1678,69 @@
         "right": "snow_cave_exterior"
       },
       "subSceneRules": [
-        { "default": true, "subScene": "toward_exit" }
+        {
+          "default": true,
+          "subScene": "toward_exit"
+        }
       ],
       "subScenes": {
         "chamber": {
           "image": "resources/images/snow_cave_interior.png",
           "description": "You duck through the low entrance and the howling ridge falls away behind you — not gone, but muffled, as though the mountain were speaking through wool. Inside, the cold is worse. It does not bite the skin so much as settle in the bones and stay. Your lantern throws a small honest circle across wet stone and packed snow. Every sound you make comes back wrong: a drip, a boot scrape, your own breath — each returned from the dark with a thin eerie echo, as if the cave were listening.\n\nOn the floor before you, a pool of blood has frozen in a ragged fan, black-red in the lamplight. No body. No explanation. Only the stain and the feeling that someone left in a hurry.",
+          "descriptionTts": {
+            "tts": true,
+            "ttsAudio": "resources/audio/tts/snow_cave_interior/chamber_description.mp3",
+            "ttsText": "You duck through the low entrance and the howling ridge falls away behind you, not gone, but muffled, as though the mountain were speaking through wool. Inside, the cold is worse. It does not bite the skin so much as settle in the bones and stay. Your lantern throws a small honest circle across wet stone and packed snow. Every sound you make comes back wrong. A drip. A boot scrape. Your own breath. Each returned from the dark with a thin eerie echo, as if the cave were listening. On the floor before you, a pool of blood has frozen in a ragged fan, black-red in the lamplight. No body. No explanation. Only the stain and the feeling that someone left in a hurry.",
+            "ttsTextSha256": "7a6935d24cf04aba6fd002fbb2836f3510e093bd211418f059dfa479016d961e"
+          },
           "examineDetails": "You keep the lantern low and work the scene the way altitude teaches you — slow, careful, unwilling to trust the walls.\n\nThe chamber is natural stone, basalt by the grain, slick with melt and frost. The ceiling drops low enough to force your shoulders inward. Sound behaves strangely here: the wind outside is a distant complaint, but your movements bounce back from the rear wall half a beat late.\n\nThe blood pool is recent enough that the cold has not made it entirely honest. Edges are sharp where it met stone. Nothing leads away in a trail — no drag marks, no footprints in the snow dust beyond your own.\n\nTo the right, pale daylight leaks through the entrance — a small opening barely wide enough for a man on his knees. It is your only way back out to the ridge.",
-          "flags": ["dark"],
-          "movement": { "right": true },
-          "movementMask": { "right": true },
-          "actions": { "examine": true }
+          "examineTts": {
+            "tts": true,
+            "ttsAudio": "resources/audio/tts/snow_cave_interior/chamber_examine.mp3",
+            "ttsText": "You keep the lantern low and work the scene the way altitude teaches you, slow, careful, unwilling to trust the walls. The chamber is natural stone, basalt by the grain, slick with melt and frost. The ceiling drops low enough to force your shoulders inward. Sound behaves strangely here. The wind outside is a distant complaint, but your movements bounce back from the rear wall half a beat late. The blood pool is recent enough that the cold has not made it entirely honest. Edges are sharp where it met stone. Nothing leads away in a trail. No drag marks. No footprints in the snow dust beyond your own. To the right, pale daylight leaks through the entrance, a small opening barely wide enough for a man on his knees. It is your only way back out to the ridge.",
+            "ttsTextSha256": "1d6646f009408c36d4a24650b3b4fb1107e1860b744e7d5c0c4e32f5a8aa11f6"
+          },
+          "flags": [
+            "dark"
+          ],
+          "movement": {
+            "right": true
+          },
+          "movementMask": {
+            "right": true
+          },
+          "actions": {
+            "examine": true
+          }
         },
         "toward_exit": {
           "image": "resources/images/snow_cave_interior_low.png",
           "description": "You come to in pain — a deep, sick ache behind your eyes and along your ribs, as though the mountain struck you and left you here to think about it. You are disoriented. You do not remember how you arrived, who brought you, or what day it is.\n\nThe dark behind you is absolute. Ahead, pale daylight cuts a low opening in the stone — the cave mouth, rimed with ice, barely wide enough for a man on your knees. On the frozen floor within arm's reach, a fan of blood has stiffened to black-red ice. No body. No witness. You stare at it long enough to understand, with a cold certainty that settles worse than the pain: it is yours.\n\nYou pull yourself to your knees and prepare to crawl out of this eerie little cave.",
+          "descriptionTts": {
+            "tts": true,
+            "ttsAudio": "resources/audio/tts/snow_cave_interior/toward_exit_description.mp3",
+            "ttsText": "You come to in pain. A deep, sick ache sits behind your eyes and along your ribs, as though the mountain struck you and left you here to think about it. You are disoriented. You do not remember how you arrived, who brought you, or what day it is. The dark behind you is absolute. Ahead, pale daylight cuts a low opening in the stone, the cave mouth rimed with ice, barely wide enough for a man on his knees. On the frozen floor within arm's reach, a fan of blood has stiffened to black-red ice. No body. No witness. You stare at it long enough to understand, with a cold certainty that settles worse than the pain. It is yours. You pull yourself to your knees and prepare to crawl out of this eerie little cave.",
+            "ttsTextSha256": "60aec4cd151c6af138186c10381cd8ecdfda5be65687b6c89aeece3433b9e262"
+          },
           "examineDetails": "You brace on the wet stone and force yourself to take inventory while the pain clears in slow, unwilling waves.\n\nThe cave is natural basalt, slick with melt and rimed where the cold holds. Sound behaves wrongly here — your breath returns from the dark a half beat late, as though the chamber were listening. The wind outside is a distant complaint through the mouth of the cave.\n\nThe blood is frozen in a ragged fan where you must have fallen. The edges are sharp against the stone. Nothing suggests a struggle beyond your own collapse — no drag marks, no second set of prints in the snow dust.\n\nThe only light is the pale day at the low entrance ahead. The rest of the cave stays black. You have one way out: crawl toward the rimed opening and the howling ridge beyond.",
-          "flags": ["dark"],
-          "movement": { "right": true },
-          "movementMask": { "right": true },
-          "actions": { "examine": true }
+          "examineTts": {
+            "tts": true,
+            "ttsAudio": "resources/audio/tts/snow_cave_interior/toward_exit_examine.mp3",
+            "ttsText": "You brace on the wet stone and force yourself to take inventory while the pain clears in slow, unwilling waves. The cave is natural basalt, slick with melt and rimed where the cold holds. Sound behaves wrongly here. Your breath returns from the dark a half beat late, as though the chamber were listening. The wind outside is a distant complaint through the mouth of the cave. The blood is frozen in a ragged fan where you must have fallen. The edges are sharp against the stone. Nothing suggests a struggle beyond your own collapse. No drag marks. No second set of prints in the snow dust. The only light is the pale day at the low entrance ahead. The rest of the cave stays black. You have one way out. Crawl toward the rimed opening and the howling ridge beyond.",
+            "ttsTextSha256": "52da1028d32411e87fe7502dac1d26c05fd9a9d16f94056d1048841a225c8fda"
+          },
+          "flags": [
+            "dark"
+          ],
+          "movement": {
+            "right": true
+          },
+          "movementMask": {
+            "right": true
+          },
+          "actions": {
+            "examine": true
+          }
         }
       },
       "audio": {
@@ -1668,7 +1795,10 @@
       },
       "exitRequirements": {
         "up": {
-          "requiresInventoryItems": ["mining_pick", "crampons"],
+          "requiresInventoryItems": [
+            "mining_pick",
+            "crampons"
+          ],
           "blockedDetails": "You study the face above and know better than to try. The glazed snow and bare rock offer nothing for a boot alone. You need a pick to find purchase in the ice and crampons to hold what you gain — without both, you would slide a thousand feet before the mountain bothered to notice."
         }
       },
@@ -1765,7 +1895,10 @@
           "useFlag": "sawtooth_ridge:bullet_retrieved",
           "hideWhenStoryFlag": "sawtooth_ridge:bullet_retrieved",
           "requiresExamine": true,
-          "requiresAnyInventoryItems": ["hunting_knife", "straight_razor"],
+          "requiresAnyInventoryItems": [
+            "hunting_knife",
+            "straight_razor"
+          ],
           "grantItem": {
             "id": "spent_9mm_bullet"
           },
@@ -1882,14 +2015,14 @@
         "ambient": [
           {
             "path": "resources/audio/ambient/wind.mp3",
-            "volume": 0.30,
+            "volume": 0.3,
             "fade_in": 2.0,
             "fade_out": 2.0,
             "loop": true
           },
           {
             "path": "resources/audio/ambient/narrow_path_aspen_grove.mp3",
-            "volume": 0.10,
+            "volume": 0.1,
             "fade_in": 2.5,
             "fade_out": 2.0,
             "loop": true

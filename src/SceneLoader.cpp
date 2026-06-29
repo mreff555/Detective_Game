@@ -1104,6 +1104,30 @@ bool parseMovementExits(
     return true;
 }
 
+bool parseNarrativeTts(const nlohmann::json& node, ItemTtsDef& out)
+{
+    if (!node.is_object())
+        return true;
+
+    out.enabled = node.value("tts", node.value("enabled", false));
+    out.voice = node.value("ttsVoice", node.value("voice", ""));
+    out.text = node.value("ttsText", node.value("text", ""));
+    out.audio = node.value("ttsAudio", node.value("audio", ""));
+    return true;
+}
+
+bool subSceneOverridesTts(const ItemTtsDef& tts)
+{
+    return tts.enabled || !tts.audio.empty() || !tts.text.empty();
+}
+
+ItemTtsDef pickSceneTts(const ItemTtsDef& sceneTts, const ItemTtsDef& subSceneTts)
+{
+    if (subSceneOverridesTts(subSceneTts))
+        return subSceneTts;
+    return sceneTts;
+}
+
 bool parseSubScene(
     const std::string& id,
     const nlohmann::json& node,
@@ -1115,7 +1139,9 @@ bool parseSubScene(
     out.id = id;
     out.imagePath = node.value("image", "");
     out.description = node.value("description", "");
+    parseNarrativeTts(node.value("descriptionTts", nlohmann::json::object()), out.descriptionTts);
     out.examineDetails = node.value("examineDetails", "");
+    parseNarrativeTts(node.value("examineTts", nlohmann::json::object()), out.examineTts);
     out.examineFlag = node.value("examineFlag", "");
     out.examineLucidityDelta = node.value("examineLucidityDelta", 0.0f);
     out.examineLucidityOncePerDay = node.value("examineLucidityOncePerDay", false);
@@ -1263,7 +1289,9 @@ void buildDefaultSubScene(SceneData& scene)
     subScene.id = "default";
     subScene.imagePath = scene.imagePath;
     subScene.description = scene.description;
+    subScene.descriptionTts = scene.descriptionTts;
     subScene.examineDetails = scene.examineDetails;
+    subScene.examineTts = scene.examineTts;
     subScene.examineFlag = scene.examineFlag;
     subScene.examineLucidityDelta = scene.examineLucidityDelta;
     subScene.examineLucidityOncePerDay = scene.examineLucidityOncePerDay;
@@ -1440,7 +1468,11 @@ bool parseScene(const std::string& id, const nlohmann::json& sceneJson, SceneDat
     }
 
     out.description = sceneJson.value("description", "");
+    parseNarrativeTts(sceneJson.value("descriptionTts", nlohmann::json::object()), out.descriptionTts);
+    out.wakeNarrative = sceneJson.value("wakeNarrative", "");
+    parseNarrativeTts(sceneJson.value("wakeTts", nlohmann::json::object()), out.wakeTts);
     out.examineDetails = sceneJson.value("examineDetails", "");
+    parseNarrativeTts(sceneJson.value("examineTts", nlohmann::json::object()), out.examineTts);
     out.examineFlag = sceneJson.value("examineFlag", "");
     out.examineLucidityDelta = sceneJson.value("examineLucidityDelta", 0.0f);
     out.examineLucidityOncePerDay = sceneJson.value("examineLucidityOncePerDay", false);
@@ -1793,9 +1825,11 @@ bool SceneDatabase::buildLocationStruct(
     outLocation.locationDescription = !subScene->description.empty()
         ? subScene->description
         : scene.description;
+    outLocation.descriptionTts = pickSceneTts(scene.descriptionTts, subScene->descriptionTts);
     outLocation.examineDetails = !subScene->examineDetails.empty()
         ? subScene->examineDetails
         : scene.examineDetails;
+    outLocation.examineTts = pickSceneTts(scene.examineTts, subScene->examineTts);
     outLocation.examineFlag = !subScene->examineFlag.empty()
         ? subScene->examineFlag
         : scene.examineFlag;

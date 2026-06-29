@@ -271,6 +271,45 @@ void collectRandomLineEntries(
     }
 }
 
+void collectSceneNarrativeEntries(
+    std::vector<TtsVoiceEntry>& entries,
+    const nlohmann::json& node,
+    const std::string& defaultVoiceId)
+{
+    if (!node.is_object())
+        return;
+
+    if (node.contains("descriptionTts") && node["descriptionTts"].is_object())
+    {
+        addPrimaryTtsEntry(
+            entries,
+            node["descriptionTts"],
+            defaultVoiceId,
+            node.value("description", ""),
+            &node);
+    }
+
+    if (node.contains("examineTts") && node["examineTts"].is_object())
+    {
+        addPrimaryTtsEntry(
+            entries,
+            node["examineTts"],
+            defaultVoiceId,
+            node.value("examineDetails", ""),
+            &node);
+    }
+
+    if (node.contains("wakeTts") && node["wakeTts"].is_object())
+    {
+        addPrimaryTtsEntry(
+            entries,
+            node["wakeTts"],
+            defaultVoiceId,
+            node.value("wakeNarrative", ""),
+            &node);
+    }
+}
+
 void collectSceneInteractionEntries(
     std::vector<TtsVoiceEntry>& entries,
     const std::string& scenesPath,
@@ -298,6 +337,15 @@ void collectSceneInteractionEntries(
     {
         if (!sceneIt.value().is_object())
             continue;
+
+        collectSceneNarrativeEntries(entries, sceneIt.value(), defaultVoiceId);
+
+        const nlohmann::json& subScenes = sceneIt.value().value("subScenes", nlohmann::json::object());
+        if (subScenes.is_object())
+        {
+            for (auto subSceneIt = subScenes.begin(); subSceneIt != subScenes.end(); ++subSceneIt)
+                collectSceneNarrativeEntries(entries, subSceneIt.value(), defaultVoiceId);
+        }
 
         const nlohmann::json& interactions = sceneIt.value().value("interactions", nlohmann::json::array());
         if (!interactions.is_array())

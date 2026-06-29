@@ -2,6 +2,7 @@
 #define SUB_SCENE_DEF_H
 
 #include <ActionStruct.h>
+#include <ItemDef.h>
 #include <MaskConditionDef.h>
 #include <AudioTypes.h>
 #include <MovementStruct.h>
@@ -26,7 +27,9 @@ struct SubSceneDef
     std::string id;
     std::string imagePath;
     std::string description;
+    ItemTtsDef descriptionTts;
     std::string examineDetails;
+    ItemTtsDef examineTts;
     std::string examineFlag;
     float examineLucidityDelta = 0.0f;
     bool examineLucidityOncePerDay = false;

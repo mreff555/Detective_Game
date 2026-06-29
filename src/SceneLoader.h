@@ -2,6 +2,7 @@
 #define SCENE_LOADER_H
 
 #include <AudioTypes.h>
+#include <ItemDef.h>
 #include <ConversationStruct.h>
 #include <LocationStruct.h>
 #include <AlternateImageDef.h>
@@ -39,7 +40,11 @@ struct SceneData
     std::string alternateImageUntilPhase;
     std::vector<AlternateImageDef> alternateImages;
     std::string description;
+    ItemTtsDef descriptionTts;
+    std::string wakeNarrative;
+    ItemTtsDef wakeTts;
     std::string examineDetails;
+    ItemTtsDef examineTts;
     std::string examineFlag;
     float examineLucidityDelta = 0.0f;
     bool examineLucidityOncePerDay = false;

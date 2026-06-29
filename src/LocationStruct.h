@@ -2,6 +2,7 @@
 #define LOCATION_STRUCT_H
 
 #include <ActionStruct.h>
+#include <ItemDef.h>
 #include <MovementStruct.h>
 #include <raylib.h>
 #include <string>
@@ -15,7 +16,9 @@ struct LocationStruct
     bool ownsLocationImage = true;
     bool isUnderConstruction = false;
     std::string locationDescription;
+    ItemTtsDef descriptionTts;
     std::string examineDetails;
+    ItemTtsDef examineTts;
     std::string examineFlag;
     float examineLucidityDelta = 0.0f;
     bool examineLucidityOncePerDay = false;

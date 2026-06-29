@@ -1099,6 +1099,7 @@ namespace
             return;
 
         appendNarrativeSection("Examining:", details);
+        playSceneNarrativeTts(examineTts);
         if (!examineFlag.empty())
             worldState.storyFlags.insert(examineFlag);
 
@@ -1232,7 +1233,20 @@ namespace
         if (includeAfter && interaction.ttsAfter && !interaction.ttsAfterAudio.empty())
             audioPaths.push_back(interaction.ttsAfterAudio);
 
-        if (audioPaths.empty())
+        playSceneNarrativeTtsSequence(audioPaths);
+    }
+
+    void GameSession::playSceneNarrativeTts(const ItemTtsDef& tts)
+    {
+        if (!tts.enabled || !gameConfig.tts.enabled || tts.audio.empty())
+            return;
+
+        playSceneNarrativeTtsSequence({ tts.audio });
+    }
+
+    void GameSession::playSceneNarrativeTtsSequence(const std::vector<std::string>& audioPaths)
+    {
+        if (!gameConfig.tts.enabled || audioPaths.empty())
             return;
 
         if (audioManager.playDialogAssetSequence(audioPaths))
@@ -1662,12 +1676,27 @@ namespace
         worldState.droppedItemsByScene.clear();
         worldState.knownActorIds.clear();
         closeAllUiPanels();
-        applyLocationStruct(startLocation, worldState.currentSceneId);
+        applyLocationStruct(startLocation, worldState.currentSceneId, false);
+
+        const SceneData* sceneData = sceneDatabase.getScene(startSceneId);
+        const std::string wakeNarrative = sceneData != nullptr && !sceneData->wakeNarrative.empty()
+            ? sceneData->wakeNarrative
+            : kWakeOnFloorPrefix;
 
         narrativeNotebook.getNarrativeText() += "\n\n";
-        narrativeNotebook.getNarrativeText() += kWakeOnFloorPrefix;
+        narrativeNotebook.getNarrativeText() += wakeNarrative;
         narrativeNotebook.getNarrativeText() += "\n\n";
         narrativeNotebook.getNarrativeText() += baseDescription;
+
+        if (sceneData != nullptr)
+        {
+            std::vector<std::string> wakeAudio;
+            if (sceneData->wakeTts.enabled && !sceneData->wakeTts.audio.empty())
+                wakeAudio.push_back(sceneData->wakeTts.audio);
+            if (descriptionTts.enabled && !descriptionTts.audio.empty())
+                wakeAudio.push_back(descriptionTts.audio);
+            playSceneNarrativeTtsSequence(wakeAudio);
+        }
 
         StatusEffect wakeEffect;
         wakeEffect.energy = 5.0f;
@@ -1792,6 +1821,8 @@ namespace
         evaluateMilestones();
         refreshSceneImage();
         updateActionAvailability();
+        if (!preserveNarrative)
+            playSceneNarrativeTts(descriptionTts);
     }
 
     std::string GameSession::formatNewspaperDate(int day)
@@ -2598,7 +2629,9 @@ namespace
         ownsLocationImage = false;
         isUnderConstruction = locationStruct.isUnderConstruction;
         baseDescription = locationStruct.locationDescription;
+        descriptionTts = locationStruct.descriptionTts;
         examineDetails = locationStruct.examineDetails;
+        examineTts = locationStruct.examineTts;
         examineFlag = locationStruct.examineFlag;
         examineLucidityDelta = locationStruct.examineLucidityDelta;
         examineLucidityOncePerDay = locationStruct.examineLucidityOncePerDay;
@@ -2622,7 +2655,10 @@ namespace
         applySceneOverlays();
     }
 
-    void GameSession::applyLocationStruct(const LocationStruct& locationStruct, const std::string& fromRoom)
+    void GameSession::applyLocationStruct(
+        const LocationStruct& locationStruct,
+        const std::string& fromRoom,
+        bool playDescriptionTts)
     {
         sceneController.getActiveScene().loadFromStruct(worldState.currentSceneId, locationStruct);
         syncFromActiveScene();
@@ -2646,6 +2682,9 @@ namespace
         evaluateMilestones();
         refreshSceneImage();
         updateActionAvailability();
+
+        if (playDescriptionTts)
+            playSceneNarrativeTts(descriptionTts);
     }
 
     SavedGameState GameSession::captureSaveState() const
@@ -3243,6 +3282,7 @@ namespace
             audioManager.onRoomEnter(
                 sceneDatabase.getSceneAudio(worldState.currentSceneId, worldState.activeSubSceneId));
             deferInitialRoomAudio = false;
+            playSceneNarrativeTts(descriptionTts);
         }
 
         audioManager.update(GetFrameTime());
